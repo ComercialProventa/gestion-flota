@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { createClient } from "@/utils/supabase/server";
+import CombustibleForm from "./combustible-form";
 
 export const metadata: Metadata = {
   title: "Operaciones | Gestión de Flota",
@@ -8,19 +10,34 @@ export const metadata: Metadata = {
 /**
  * Dashboard de Operaciones — Server Component.
  *
- * Página principal para los usuarios con rol "taller_conductor".
- * Acceso a funciones de mantenimiento, checklists diarios, reportes de incidentes, etc.
+ * Página principal para el rol "taller_conductor".
+ *
+ * Al ser un Server Component, podemos:
+ * 1. Hacer la consulta a Supabase directamente en el servidor (sin fetch)
+ * 2. Pasar los datos como props al Client Component (CombustibleForm)
+ * 3. No exponer la lógica de consulta al navegador
+ *
+ * Consulta la tabla `buses` para obtener id y patente, que se usan
+ * para poblar el selector del formulario de combustible.
  */
-export default function OperacionesDashboard() {
+export default async function OperacionesDashboard() {
+  const supabase = await createClient();
+
+  // Obtener lista de buses (id y patente) desde Supabase
+  const { data: buses } = await supabase
+    .from("buses")
+    .select("id, patente")
+    .order("patente", { ascending: true });
+
   return (
     <div className="min-h-screen bg-slate-900">
       {/* Header */}
-      <header className="border-b border-slate-700/50 bg-slate-800/80 backdrop-blur-sm">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
+      <header className="sticky top-0 z-10 border-b border-slate-700/50 bg-slate-800/80 backdrop-blur-sm">
+        <div className="mx-auto flex max-w-2xl items-center justify-between px-4 py-3">
           <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-600/20 text-amber-400">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M11.42 15.17l-5.385 3.07A.75.75 0 015 17.655V5.846a.75.75 0 01.386-.66l5.386-3.07a.75.75 0 01.728 0l5.386 3.07a.75.75 0 01.386.66v11.81a.75.75 0 01-1.035.684l-5.385-3.07a.75.75 0 00-.728 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 00-3.213-9.193 2.056 2.056 0 00-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 00-10.026 0 1.106 1.106 0 00-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12" />
               </svg>
             </div>
             <h1 className="text-lg font-semibold text-white">Operaciones</h1>
@@ -31,10 +48,26 @@ export default function OperacionesDashboard() {
         </div>
       </header>
 
-      {/* Contenido */}
-      <main className="mx-auto max-w-7xl px-6 py-10">
-        <h2 className="mb-6 text-2xl font-bold text-white">Bienvenido al panel de operaciones</h2>
-        <p className="text-slate-400">Los módulos de operaciones estarán disponibles próximamente.</p>
+      {/* Contenido principal */}
+      <main className="mx-auto max-w-2xl px-4 py-6">
+        {/* Sección: Registro de Combustible */}
+        <div className="rounded-2xl border border-slate-700/50 bg-slate-800/60 p-5">
+          <div className="mb-5 flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-600/20 text-amber-400">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.362 5.214A8.252 8.252 0 0112 21 8.25 8.25 0 016.038 7.048 8.287 8.287 0 009 9.6a8.983 8.983 0 013.361-6.867 8.21 8.21 0 003 2.48z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 18a3.75 3.75 0 00.495-7.467 5.99 5.99 0 00-1.925 3.546 5.974 5.974 0 01-2.133-1.001A3.75 3.75 0 0012 18z" />
+              </svg>
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-white">Registro de Combustible</h2>
+              <p className="text-sm text-slate-400">Ingresa los datos de la carga</p>
+            </div>
+          </div>
+
+          {/* Formulario (Client Component) */}
+          <CombustibleForm buses={buses || []} />
+        </div>
       </main>
     </div>
   );

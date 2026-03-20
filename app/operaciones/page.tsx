@@ -68,6 +68,22 @@ export default async function OperacionesDashboard() {
           {/* Formulario (Client Component) */}
           <CombustibleForm buses={buses || []} />
         </div>
+
+        {/* Sección: Acceso a Taller */}
+        <a
+          href="/operaciones/taller/rotacion"
+          className="mt-6 flex items-center gap-4 rounded-2xl border border-slate-700/50 bg-slate-800/60 p-5 transition-all hover:border-amber-500/30 hover:bg-slate-800 group"
+        >
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-600/20 text-amber-400 transition-colors group-hover:bg-amber-600/30 shrink-0">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182M4.031 9.865l-.001.001" />
+            </svg>
+          </div>
+          <div>
+            <h3 className="text-base font-semibold text-white">Rotación de Neumáticos</h3>
+            <p className="text-sm text-slate-400">Rotar, intercambiar o dar de baja neumáticos</p>
+          </div>
+        </a>
       </main>
     </div>
   );

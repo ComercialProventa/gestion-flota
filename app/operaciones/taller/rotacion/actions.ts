@@ -329,3 +329,178 @@ export async function instalarNeumaticoDesdeInventario(params: {
     mensaje: "Neumático instalado exitosamente",
   };
 }
+
+/**
+ * Tipo de modelo de neumático para el selector de Compra Directa.
+ */
+export type ModeloNeumatico = {
+  id: string;
+  marca: string;
+  medida: string;
+  vida_util_km: number;
+};
+
+/**
+ * Obtiene todos los modelos de neumáticos para el select de "Compra Directa".
+ */
+export async function obtenerModelosNeumaticos(): Promise<ModeloNeumatico[]> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("modelos_neumaticos")
+    .select("id, marca, medida, vida_util_km")
+    .order("marca", { ascending: true });
+
+  if (error) {
+    console.error("Error al obtener modelos:", error.message);
+    return [];
+  }
+  return data || [];
+}
+
+/**
+ * Server Action TRANSACCIONAL — Reemplazo de neumático en 1 paso.
+ *
+ * Flujo:
+ * 1. Si hay neumático viejo en el slot → estado='reciclaje' + movimiento de baja
+ * 2a. Si viene de inventario (Tab1) → UPDATE neumático existente a 'instalado'
+ * 2b. Si es compra directa (Tab2)  → INSERT nuevo neumático + movimiento
+ * 3. revalidatePath para refrescar el chasis
+ */
+export async function ejecutarReemplazoNeumatico(params: {
+  busId: string;
+  posicion: string;
+  kilometrajeMomento: number;
+  // Datos del neumático viejo (si había uno)
+  neumaticoViejoId?: string | null;
+  // --- Tab 1: Desde Inventario ---
+  modo: "inventario" | "compra_directa";
+  neumaticoInventarioId?: string | null;
+  // --- Tab 2: Compra Directa ---
+  modeloId?: string | null;
+  factura?: string | null;
+  proveedor?: string | null;
+}) {
+  const supabase = await createClient();
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "No estás autenticado" };
+
+  // Validar kilometraje
+  const ultimoKm = await obtenerUltimoKmBus(params.busId);
+  if (params.kilometrajeMomento < ultimoKm) {
+    return { error: `El kilometraje (${params.kilometrajeMomento}) no puede ser menor al último registrado (${ultimoKm})` };
+  }
+
+  try {
+    // ═══ PASO 1: Enviar neumático viejo a reciclaje (si existía) ═══
+    if (params.neumaticoViejoId) {
+      const { error: reciclarErr } = await supabase
+        .from("neumaticos")
+        .update({ estado: "reciclaje", bus_actual_id: null, posicion_actual: null })
+        .eq("id", params.neumaticoViejoId);
+
+      if (reciclarErr) return { error: `Error al reciclar neumático viejo: ${reciclarErr.message}` };
+
+      // Registrar movimiento de baja
+      await supabase.from("movimientos_neumaticos").insert({
+        neumatico_id: params.neumaticoViejoId,
+        bus_id: params.busId,
+        usuario_id: user.id,
+        accion: "reciclaje",
+        posicion_origen: params.posicion,
+        posicion_destino: null,
+        kilometraje_bus_momento: params.kilometrajeMomento,
+      });
+    }
+
+    // ═══ PASO 2: Instalar nuevo neumático ═══
+    let nuevoNeumaticoId: string;
+
+    if (params.modo === "inventario") {
+      // --- Desde Inventario ---
+      if (!params.neumaticoInventarioId) return { error: "Selecciona un neumático del inventario" };
+
+      const { data: neum, error: fetchErr } = await supabase
+        .from("neumaticos")
+        .select("id, estado")
+        .eq("id", params.neumaticoInventarioId)
+        .single();
+
+      if (fetchErr || !neum) return { error: "Neumático no encontrado" };
+      if (neum.estado !== "inventario") return { error: "Este neumático ya no está disponible" };
+
+      const { error: instErr } = await supabase
+        .from("neumaticos")
+        .update({
+          estado: "instalado",
+          bus_actual_id: params.busId,
+          posicion_actual: params.posicion,
+          desgaste_acumulado_km: 0,
+        })
+        .eq("id", params.neumaticoInventarioId);
+
+      if (instErr) return { error: `Error al instalar: ${instErr.message}` };
+      nuevoNeumaticoId = params.neumaticoInventarioId;
+
+    } else {
+      // --- Compra Directa ---
+      if (!params.modeloId) return { error: "Selecciona un modelo de neumático" };
+
+      // Generar código único: YYYYMMDD-NNN
+      const hoy = new Date();
+      const prefijo = `${hoy.getFullYear()}${String(hoy.getMonth() + 1).padStart(2, "0")}${String(hoy.getDate()).padStart(2, "0")}`;
+
+      // Obtener correlativo del día
+      const { count } = await supabase
+        .from("neumaticos")
+        .select("id", { count: "exact", head: true })
+        .like("codigo_unico", `${prefijo}-%`);
+
+      const correlativo = String((count || 0) + 1).padStart(3, "0");
+      const codigoUnico = `${prefijo}-${correlativo}`;
+
+      // INSERT directo con estado 'instalado'
+      const { data: nuevoNeum, error: insertErr } = await supabase
+        .from("neumaticos")
+        .insert({
+          codigo_unico: codigoUnico,
+          modelo_id: params.modeloId,
+          estado: "instalado",
+          bus_actual_id: params.busId,
+          posicion_actual: params.posicion,
+          desgaste_acumulado_km: 0,
+          factura: params.factura || null,
+          proveedor: params.proveedor || null,
+        })
+        .select("id")
+        .single();
+
+      if (insertErr) return { error: `Error al crear neumático: ${insertErr.message}` };
+      nuevoNeumaticoId = nuevoNeum!.id;
+    }
+
+    // ═══ PASO 3: Registrar movimiento de instalación ═══
+    await supabase.from("movimientos_neumaticos").insert({
+      neumatico_id: nuevoNeumaticoId,
+      bus_id: params.busId,
+      usuario_id: user.id,
+      accion: "instalacion",
+      posicion_origen: null,
+      posicion_destino: params.posicion,
+      kilometraje_bus_momento: params.kilometrajeMomento,
+    });
+
+  } catch (err) {
+    return { error: `Error inesperado: ${String(err)}` };
+  }
+
+  revalidatePath("/operaciones/taller/rotacion");
+
+  return {
+    success: true,
+    mensaje: params.neumaticoViejoId
+      ? "Neumático reemplazado exitosamente (viejo → reciclaje)"
+      : "Neumático instalado exitosamente",
+  };
+}

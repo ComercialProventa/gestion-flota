@@ -57,6 +57,9 @@ export default function ModalReemplazo({
   const [factura, setFactura] = useState("");
   const [proveedor, setProveedor] = useState("");
   const [precio, setPrecio] = useState("");
+  const [numeroSerie, setNumeroSerie] = useState("");
+  const [dot, setDot] = useState("");
+  const [cicloVida, setCicloVida] = useState("nuevo");
 
   // Shared
   const [km, setKm] = useState("");
@@ -97,6 +100,9 @@ export default function ModalReemplazo({
       factura: tab === "compra_directa" ? factura : null,
       proveedor: tab === "compra_directa" ? proveedor : null,
       precio: tab === "compra_directa" && precio ? parseInt(precio, 10) : 0,
+      numeroSerie: tab === "compra_directa" ? numeroSerie : null,
+      codigoDot: tab === "compra_directa" ? dot : null,
+      cicloVida: tab === "compra_directa" ? cicloVida : null,
     });
 
     setLoading(false);
@@ -264,6 +270,50 @@ export default function ModalReemplazo({
                   className={inputClasses}
                 />
               </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-slate-400 mb-1.5">
+                    Número de Serie *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={numeroSerie}
+                    onChange={(e) => setNumeroSerie(e.target.value)}
+                    placeholder="Grabado en la goma"
+                    className={inputClasses}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-400 mb-1.5">
+                    DOT (Semana/Año) *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    maxLength={4}
+                    value={dot}
+                    onChange={(e) => setDot(e.target.value.replace(/\D/g, ''))}
+                    placeholder="Ej: 4223"
+                    className={inputClasses}
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-400 mb-1.5">
+                  Condición del Neumático
+                </label>
+                <select
+                  value={cicloVida}
+                  onChange={(e) => setCicloVida(e.target.value)}
+                  className={inputClasses}
+                >
+                  <option value="nuevo">Nuevo</option>
+                  <option value="recapado_1">Recapado 1</option>
+                  <option value="recapado_2">Recapado 2</option>
+                  <option value="recapado_3">Recapado 3</option>
+                </select>
+              </div>
             </div>
           )}
 
@@ -306,7 +356,7 @@ export default function ModalReemplazo({
           <button
             type="button"
             onClick={handleConfirmar}
-            disabled={loading || !km || (tab === "inventario" ? !neumaticoInvId : (!modeloId || !precio))}
+            disabled={loading || !km || (tab === "inventario" ? !neumaticoInvId : (!modeloId || !precio || !numeroSerie || dot.length !== 4))}
             className={`flex-1 rounded-xl px-4 py-3 text-sm font-semibold text-white shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer ${
               esReemplazo
                 ? "bg-amber-600 shadow-amber-600/25 hover:bg-amber-500"

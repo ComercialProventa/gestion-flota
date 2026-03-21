@@ -100,22 +100,52 @@ export default function InventarioForm() {
         )}
       </div>
 
-      {/* Serial / Código Proveedor */}
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label htmlFor="numero_serie" className="block text-sm font-medium text-slate-300 mb-1.5">
+            Número de Serie *
+          </label>
+          <input
+            id="numero_serie"
+            name="numero_serie"
+            type="text"
+            required
+            placeholder="Grabado en la goma"
+            className={`${inputClasses} font-mono uppercase`}
+          />
+        </div>
+        <div>
+          <label htmlFor="codigo_dot" className="block text-sm font-medium text-slate-300 mb-1.5">
+            DOT (Semana/Año) *
+          </label>
+          <input
+            id="codigo_dot"
+            name="codigo_dot"
+            type="text"
+            required
+            maxLength={4}
+            placeholder="Ej: 4223"
+            className={inputClasses}
+            onChange={(e) => { e.target.value = e.target.value.replace(/\D/g, ''); }}
+          />
+        </div>
+      </div>
+
+      {/* Condición de Ingreso */}
       <div>
-        <label htmlFor="serial" className="block text-sm font-medium text-slate-300 mb-1.5">
-          Serial / Código Proveedor
-          <span className="ml-1 text-xs text-slate-500">(opcional)</span>
+        <label htmlFor="ciclo_vida" className="block text-sm font-medium text-slate-300 mb-1.5">
+          Condición de Ingreso
         </label>
-        <input
-          id="serial"
-          name="serial"
-          type="text"
-          placeholder="Ej: MIC12345"
-          className={`${inputClasses} font-mono uppercase`}
-        />
-        <p className="mt-1 text-xs text-slate-500">
-          Si no se ingresa, se genera un correlativo automático del día.
-        </p>
+        <select
+          id="ciclo_vida"
+          name="ciclo_vida"
+          className={inputClasses}
+        >
+          <option value="nuevo">Nuevo</option>
+          <option value="recapado_1">Recapado 1</option>
+          <option value="recapado_2">Recapado 2</option>
+          <option value="recapado_3">Recapado 3</option>
+        </select>
       </div>
 
       {/* Factura y Proveedor (lado a lado) */}

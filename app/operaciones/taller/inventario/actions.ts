@@ -66,16 +66,24 @@ async function generarCodigoUnico(serial: string | null): Promise<string> {
  */
 export async function registrarNeumaticoInventario(formData: FormData) {
   const modeloId = formData.get("modelo_id") as string;
-  const serial = formData.get("serial") as string || null;
+  const numero_serie = formData.get("numero_serie") as string || null;
+  const codigo_dot = formData.get("codigo_dot") as string || null;
+  const ciclo_vida = formData.get("ciclo_vida") as string || "nuevo";
   const facturaNumero = (formData.get("factura_numero") as string || "").trim() || null;
   const proveedor = (formData.get("proveedor") as string || "").trim() || null;
 
   if (!modeloId) {
     return { error: "Debes seleccionar un modelo de neumático" };
   }
+  if (!numero_serie) {
+    return { error: "El número de serie es obligatorio" };
+  }
+  if (!codigo_dot || codigo_dot.length !== 4) {
+    return { error: "El código DOT debe tener 4 dígitos" };
+  }
 
-  // Generar código único
-  const codigoUnico = await generarCodigoUnico(serial);
+  // Generar código único basándonos en el serial
+  const codigoUnico = await generarCodigoUnico(numero_serie);
 
   const supabase = await createClient();
 
@@ -88,6 +96,9 @@ export async function registrarNeumaticoInventario(formData: FormData) {
       desgaste_acumulado_km: 0,
       factura_numero: facturaNumero,
       proveedor,
+      numero_serie,
+      codigo_dot,
+      ciclo_vida,
     });
 
   if (dbError) {

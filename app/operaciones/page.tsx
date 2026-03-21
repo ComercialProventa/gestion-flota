@@ -84,6 +84,22 @@ export default async function OperacionesDashboard() {
             <p className="text-sm text-slate-400">Rotar, intercambiar o dar de baja neumáticos</p>
           </div>
         </a>
+
+        {/* Sección: Inventario de Neumáticos */}
+        <a
+          href="/operaciones/taller/inventario"
+          className="flex items-center gap-4 rounded-2xl border border-slate-700/50 bg-slate-800/60 p-5 transition-all hover:border-amber-500/30 hover:bg-slate-800 group"
+        >
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-600/20 text-amber-400 transition-colors group-hover:bg-amber-600/30 shrink-0">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
+            </svg>
+          </div>
+          <div>
+            <h3 className="text-base font-semibold text-white">Ingreso de Neumáticos</h3>
+            <p className="text-sm text-slate-400">Registrar neumáticos nuevos al inventario</p>
+          </div>
+        </a>
       </main>
     </div>
   );

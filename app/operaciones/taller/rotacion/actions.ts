@@ -380,6 +380,7 @@ export async function ejecutarReemplazoNeumatico(params: {
   modeloId?: string | null;
   factura?: string | null;
   proveedor?: string | null;
+  precio?: number;
 }) {
   const supabase = await createClient();
 
@@ -472,6 +473,7 @@ export async function ejecutarReemplazoNeumatico(params: {
           desgaste_acumulado_km: 0,
           factura: params.factura || null,
           proveedor: params.proveedor || null,
+          precio: params.precio || 0,
         })
         .select("id")
         .single();

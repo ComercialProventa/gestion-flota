@@ -56,6 +56,7 @@ export default function ModalReemplazo({
   const [modeloId, setModeloId] = useState("");
   const [factura, setFactura] = useState("");
   const [proveedor, setProveedor] = useState("");
+  const [precio, setPrecio] = useState("");
 
   // Shared
   const [km, setKm] = useState("");
@@ -95,6 +96,7 @@ export default function ModalReemplazo({
       modeloId: tab === "compra_directa" ? modeloId : null,
       factura: tab === "compra_directa" ? factura : null,
       proveedor: tab === "compra_directa" ? proveedor : null,
+      precio: tab === "compra_directa" && precio ? parseInt(precio, 10) : 0,
     });
 
     setLoading(false);
@@ -249,6 +251,19 @@ export default function ModalReemplazo({
                   />
                 </div>
               </div>
+              <div>
+                <label className="block text-xs font-medium text-slate-400 mb-1.5">
+                  Precio Unitario ($)
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  value={precio}
+                  onChange={(e) => setPrecio(e.target.value)}
+                  placeholder="Ej: 250000"
+                  className={inputClasses}
+                />
+              </div>
             </div>
           )}
 
@@ -291,7 +306,7 @@ export default function ModalReemplazo({
           <button
             type="button"
             onClick={handleConfirmar}
-            disabled={loading || !km || (tab === "inventario" ? !neumaticoInvId : !modeloId)}
+            disabled={loading || !km || (tab === "inventario" ? !neumaticoInvId : (!modeloId || !precio))}
             className={`flex-1 rounded-xl px-4 py-3 text-sm font-semibold text-white shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer ${
               esReemplazo
                 ? "bg-amber-600 shadow-amber-600/25 hover:bg-amber-500"

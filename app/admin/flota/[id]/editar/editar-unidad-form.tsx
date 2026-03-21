@@ -16,6 +16,16 @@ export default function EditarUnidadForm({ unidad }: { unidad: any }) {
   const [chasis, setChasis] = useState<EjesTipo>(normChasis(unidad.chasis || ""));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fotoPreview, setFotoPreview] = useState<string | null>(unidad.foto_url || null);
+
+  const handleFotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setFotoPreview(URL.createObjectURL(file));
+    } else {
+      setFotoPreview(unidad.foto_url || null);
+    }
+  };
 
   async function handleSubmit(formData: FormData) {
     setLoading(true);
@@ -45,6 +55,31 @@ export default function EditarUnidadForm({ unidad }: { unidad: any }) {
           <div>
             <label htmlFor="patente" className={labelClasses}>Patente</label>
             <input id="patente" name="patente" type="text" required defaultValue={unidad.patente} className={`${inputClasses} uppercase font-mono tracking-wider`} />
+          </div>
+
+          <div>
+            <label htmlFor="foto" className={labelClasses}>Fotografía del Vehículo</label>
+            <div className="flex items-center gap-4">
+              {fotoPreview && (
+                <div className="h-16 w-16 overflow-hidden rounded-xl border border-slate-600 shrink-0 relative flex items-center justify-center bg-slate-800">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={fotoPreview} alt="Preview" className="h-full w-full object-cover" />
+                </div>
+              )}
+              <input 
+                id="foto" 
+                name="foto" 
+                type="file" 
+                accept="image/*" 
+                onChange={handleFotoChange}
+                className="block w-full text-sm text-slate-400 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-sky-600/20 file:text-sky-400 hover:file:bg-sky-600/30 cursor-pointer"
+              />
+            </div>
+            {unidad.foto_url && (
+              <p className="mt-2 text-xs text-slate-500">
+                Sube una nueva imagen sólo si deseas reemplazar la actual.
+              </p>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-3">

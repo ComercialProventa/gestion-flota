@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/utils/supabase/server";
+import { subirImagenVehiculo } from "@/utils/supabase/storage";
 
 const EJES_VALIDOS = ["2_ejes_6_ruedas", "3_ejes_10_ruedas"];
 
@@ -31,6 +32,15 @@ export async function registrarUnidad(formData: FormData) {
   const insertPayload: Record<string, unknown> = { patente, marca, modelo, ano, asientos, chasis };
   if (vencimientoRevision) insertPayload.vencimiento_revision_tecnica = vencimientoRevision;
   if (vencimientoSeguro) insertPayload.vencimiento_seguro = vencimientoSeguro;
+
+  const foto = formData.get("foto") as File | null;
+  if (foto && foto.size > 0) {
+    const upload = await subirImagenVehiculo(foto);
+    if ("error" in upload) {
+      return { error: upload.error };
+    }
+    insertPayload.foto_url = upload.url;
+  }
 
   const { error: dbError } = await supabase.from("buses").insert(insertPayload);
 
@@ -73,6 +83,15 @@ export async function actualizarUnidad(formData: FormData) {
     vencimiento_revision_tecnica: vencimientoRevision,
     vencimiento_seguro: vencimientoSeguro,
   };
+
+  const foto = formData.get("foto") as File | null;
+  if (foto && foto.size > 0) {
+    const upload = await subirImagenVehiculo(foto);
+    if ("error" in upload) {
+      return { error: upload.error };
+    }
+    updatePayload.foto_url = upload.url;
+  }
 
   const { error: dbError } = await supabase.from("buses").update(updatePayload).eq("id", id);
 

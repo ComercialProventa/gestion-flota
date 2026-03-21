@@ -119,13 +119,25 @@ export default function InteligenciaHub() {
         </div>
 
         {/* Resumen diario */}
-        <div className="mt-8 rounded-2xl border border-purple-500/20 bg-purple-500/5 p-5 flex items-center gap-4">
-          <div className="text-2xl">📧</div>
-          <div className="flex-1">
-            <h3 className="text-sm font-semibold text-purple-300">Resumen Diario por Correo</h3>
-            <p className="text-xs text-slate-400">A las 23:59, el administrador recibirá un correo con cargas del día, alertas y vigencias</p>
+        <div className="mt-8 rounded-2xl border border-purple-500/30 bg-purple-500/10 p-5 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-purple-500/20 text-purple-400 text-2xl">
+              📧
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-purple-300">Resumen Diario a Gerencia</h3>
+              <p className="text-xs text-slate-400 mt-1">
+                Envío automático configurable vía Cron Job a <code className="text-purple-300 bg-purple-900/50 px-1 py-0.5 rounded">/api/resumen-diario</code>
+              </p>
+            </div>
           </div>
-          <span className="rounded-full bg-purple-500/15 px-3 py-1 text-[10px] font-semibold text-purple-400 uppercase tracking-wider">Próximamente</span>
+          <span className="rounded-full bg-emerald-500/15 px-3 py-1 text-[10px] font-bold text-emerald-400 flex items-center gap-1.5 uppercase tracking-wider border border-emerald-500/20">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+            API Activa
+          </span>
         </div>
       </main>
     </div>

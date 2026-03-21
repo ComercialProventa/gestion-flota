@@ -49,22 +49,22 @@ export async function GET(request: Request) {
     // 2. Obtener Vigencias Críticas (Rojas o Amarillas)
     const { data: buses } = await supabase
       .from("buses")
-      .select("patente, vencimiento_rt, vencimiento_soap");
+      .select("patente, vencimiento_revision_tecnica, vencimiento_seguro");
 
     const vigenciasPorVencer: Array<{ patente: string, doc: string, dias: number, estado: string }> = [];
 
     if (buses) {
       for (const bus of buses) {
-        if (bus.vencimiento_rt) {
-          const vig = calcularVigencia(bus.vencimiento_rt);
-          if (vig.estado === "rojo" || vig.estado === "amarillo") {
-            vigenciasPorVencer.push({ patente: bus.patente, doc: "Revisión Técnica", dias: vig.diasRestantes, estado: vig.estado });
+        if (bus.vencimiento_revision_tecnica) {
+          const vig = calcularVigencia(bus.vencimiento_revision_tecnica);
+          if (vig && (vig.estadoColor === "rojo" || vig.estadoColor === "amarillo")) {
+            vigenciasPorVencer.push({ patente: bus.patente, doc: "Revisión Técnica", dias: vig.diasRestantes, estado: vig.estadoColor });
           }
         }
-        if (bus.vencimiento_soap) {
-          const vig = calcularVigencia(bus.vencimiento_soap);
-          if (vig.estado === "rojo" || vig.estado === "amarillo") {
-            vigenciasPorVencer.push({ patente: bus.patente, doc: "SOAP", dias: vig.diasRestantes, estado: vig.estado });
+        if (bus.vencimiento_seguro) {
+          const vig = calcularVigencia(bus.vencimiento_seguro);
+          if (vig && (vig.estadoColor === "rojo" || vig.estadoColor === "amarillo")) {
+            vigenciasPorVencer.push({ patente: bus.patente, doc: "SOAP", dias: vig.diasRestantes, estado: vig.estadoColor });
           }
         }
       }

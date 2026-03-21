@@ -5,7 +5,10 @@ import {
   obtenerNeumaticosBus,
   obtenerUltimoKmBus,
   registrarMovimientoNeumatico,
+  obtenerNeumaticosInventario,
+  instalarNeumaticoDesdeInventario,
   type Neumatico,
+  type NeumaticoInventario,
 } from "./actions";
 
 // ─── Constantes de posiciones del chasis ─────────────────────
@@ -58,7 +61,7 @@ export default function ChasisInteractivo({ buses }: { buses: Bus[] }) {
     posicion: string;
   } | null>(null);
 
-  // ─── Estado del modal ────────────────────────────────────
+  // ─── Estado del modal de rotación/reciclaje ──────────────
   const [modal, setModal] = useState<{
     visible: boolean;
     accion: "rotacion" | "reciclaje";
@@ -81,19 +84,37 @@ export default function ChasisInteractivo({ buses }: { buses: Bus[] }) {
   const [modalError, setModalError] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<{ tipo: "ok" | "error"; msg: string } | null>(null);
 
-  // ─── Cargar neumáticos al seleccionar un bus ─────────────
+  // ─── Estado del modal de INSTALACIÓN ─────────────────────
+  const [inventario, setInventario] = useState<NeumaticoInventario[]>([]);
+  const [modalInstalacion, setModalInstalacion] = useState<{
+    visible: boolean;
+    posicionDestino: string;
+  }>({ visible: false, posicionDestino: "" });
+  const [instalacionNeumaticoId, setInstalacionNeumaticoId] = useState("");
+  const [instalacionKm, setInstalacionKm] = useState("");
+  const [instalacionLoading, setInstalacionLoading] = useState(false);
+  const [instalacionError, setInstalacionError] = useState<string | null>(null);
+
+  // ─── Cargar neumáticos y inventario al seleccionar un bus ─
   const cargarNeumaticos = useCallback(async (id: string) => {
     setCargando(true);
     setSeleccionado(null);
     setFeedback(null);
-    const data = await obtenerNeumaticosBus(id);
-    setNeumaticos(data);
+    const [dataBus, dataInv] = await Promise.all([
+      obtenerNeumaticosBus(id),
+      obtenerNeumaticosInventario(),
+    ]);
+    setNeumaticos(dataBus);
+    setInventario(dataInv);
     setCargando(false);
   }, []);
 
   useEffect(() => {
     if (busId) cargarNeumaticos(busId);
-    else setNeumaticos([]);
+    else {
+      setNeumaticos([]);
+      setInventario([]);
+    }
   }, [busId, cargarNeumaticos]);
 
   // ─── Helper: obtener neumático en una posición ───────────
@@ -110,6 +131,9 @@ export default function ChasisInteractivo({ buses }: { buses: Bus[] }) {
       if (neumaticoEnSlot) {
         // Seleccionar este neumático como origen
         setSeleccionado({ neumatico: neumaticoEnSlot, posicion });
+      } else {
+        // Slot vacío sin selección → Abrir modal de INSTALACIÓN
+        abrirModalInstalacion(posicion);
       }
       return;
     }
@@ -197,6 +221,59 @@ export default function ChasisInteractivo({ buses }: { buses: Bus[] }) {
   function cerrarModal() {
     setModal({ ...modal, visible: false });
     setModalError(null);
+  }
+
+  // ─── Abrir modal de INSTALACIÓN ──────────────────────────
+  async function abrirModalInstalacion(posicion: string) {
+    const km = await obtenerUltimoKmBus(busId);
+    setUltimoKm(km);
+    setInstalacionKm("");
+    setInstalacionNeumaticoId("");
+    setInstalacionError(null);
+    setModalInstalacion({ visible: true, posicionDestino: posicion });
+  }
+
+  // ─── Confirmar instalación desde inventario ──────────────
+  async function confirmarInstalacion() {
+    if (!instalacionNeumaticoId) {
+      setInstalacionError("Selecciona un neumático del inventario");
+      return;
+    }
+    const km = parseInt(instalacionKm, 10);
+    if (isNaN(km) || km <= 0) {
+      setInstalacionError("Ingresa un kilometraje válido");
+      return;
+    }
+    if (km < ultimoKm) {
+      setInstalacionError(`El kilometraje no puede ser menor al último registrado (${ultimoKm.toLocaleString("es-CL")} km)`);
+      return;
+    }
+
+    setInstalacionLoading(true);
+    setInstalacionError(null);
+
+    const result = await instalarNeumaticoDesdeInventario({
+      neumaticoId: instalacionNeumaticoId,
+      busId,
+      posicion: modalInstalacion.posicionDestino,
+      kilometrajeBus: km,
+    });
+
+    setInstalacionLoading(false);
+
+    if (result.error) {
+      setInstalacionError(result.error);
+    } else {
+      setModalInstalacion({ visible: false, posicionDestino: "" });
+      setSeleccionado(null);
+      setFeedback({ tipo: "ok", msg: result.mensaje! });
+      await cargarNeumaticos(busId);
+    }
+  }
+
+  function cerrarModalInstalacion() {
+    setModalInstalacion({ visible: false, posicionDestino: "" });
+    setInstalacionError(null);
   }
 
   // ──────────────────────────────────────────────────────────
@@ -329,12 +406,19 @@ export default function ChasisInteractivo({ buses }: { buses: Bus[] }) {
                   <span className="h-3 w-3 rounded-full bg-amber-500/30 border border-amber-500/50" /> Instalado
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <span className="h-3 w-3 rounded-full bg-slate-700 border border-slate-600" /> Vacío
+                  <span className="h-3 w-3 rounded-full bg-emerald-500/30 border border-dashed border-emerald-500/50" /> Vacío (clic para instalar)
                 </span>
                 <span className="flex items-center gap-1.5">
                   <span className="h-3 w-3 rounded-full bg-sky-500/30 border-2 border-sky-400" /> Seleccionado
                 </span>
               </div>
+
+              {/* ─── Indicador de inventario ─── */}
+              {inventario.length > 0 && (
+                <p className="text-center text-xs text-emerald-400/70 pt-1">
+                  📦 {inventario.length} neumático{inventario.length !== 1 ? "s" : ""} en inventario disponible{inventario.length !== 1 ? "s" : ""}
+                </p>
+              )}
             </>
           )}
         </div>
@@ -464,6 +548,120 @@ export default function ChasisInteractivo({ buses }: { buses: Bus[] }) {
           </div>
         </div>
       )}
+
+      {/* ═══════════════════════════════════════════════════════
+          MODAL DE INSTALACIÓN DESDE INVENTARIO
+          ═══════════════════════════════════════════════════════ */}
+      {modalInstalacion.visible && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md rounded-2xl border border-slate-700/50 bg-slate-800 p-6 shadow-2xl space-y-4">
+            {/* Título */}
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-600/20 text-emerald-400">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-white">Instalar Neumático</h3>
+                <p className="text-xs text-slate-400">
+                  Posición: <span className="text-white font-medium">{LABEL_POSICION[modalInstalacion.posicionDestino]}</span>
+                </p>
+              </div>
+            </div>
+
+            {/* Select de neumático a instalar */}
+            <div>
+              <label htmlFor="neumatico-instalar" className="block text-sm font-medium text-slate-300 mb-1.5">
+                Neumático a instalar
+              </label>
+              <select
+                id="neumatico-instalar"
+                value={instalacionNeumaticoId}
+                onChange={(e) => setInstalacionNeumaticoId(e.target.value)}
+                className="w-full rounded-xl border border-slate-600 bg-slate-700/50 px-4 py-3.5 text-base text-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none transition-colors"
+              >
+                <option value="">Selecciona un neumático...</option>
+                {inventario.map((n) => (
+                  <option key={n.id} value={n.id}>
+                    {n.codigo_unico} — {n.modelo_marca} {n.modelo_medida}
+                  </option>
+                ))}
+              </select>
+              {inventario.length === 0 && (
+                <p className="mt-1 text-xs text-amber-400">
+                  No hay neumáticos en inventario. Registra uno en /operaciones/taller/inventario
+                </p>
+              )}
+            </div>
+
+            {/* Kilometraje actual del bus */}
+            <div>
+              <label htmlFor="km-instalacion" className="block text-sm font-medium text-slate-300 mb-1.5">
+                Kilometraje actual del bus
+              </label>
+              <input
+                id="km-instalacion"
+                type="number"
+                min={1}
+                value={instalacionKm}
+                onChange={(e) => setInstalacionKm(e.target.value)}
+                placeholder={`Mín: ${ultimoKm.toLocaleString("es-CL")} km`}
+                className={`w-full rounded-xl border px-4 py-3.5 text-base font-mono text-white placeholder-slate-400 focus:outline-none transition-colors ${
+                  instalacionError
+                    ? "border-red-500 bg-red-500/10 focus:ring-2 focus:ring-red-500/20"
+                    : "border-slate-600 bg-slate-700/50 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+                }`}
+              />
+              {ultimoKm > 0 && (
+                <p className="mt-1 text-xs text-slate-500">
+                  Último registro: {ultimoKm.toLocaleString("es-CL")} km · Este será el punto cero de desgaste
+                </p>
+              )}
+            </div>
+
+            {/* Error */}
+            {instalacionError && (
+              <p className="text-sm text-red-400 flex items-center gap-1.5">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                {instalacionError}
+              </p>
+            )}
+
+            {/* Botones */}
+            <div className="flex gap-3 pt-1">
+              <button
+                type="button"
+                onClick={cerrarModalInstalacion}
+                disabled={instalacionLoading}
+                className="flex-1 rounded-xl border border-slate-600 bg-slate-700/50 px-4 py-3 text-sm font-medium text-slate-300 hover:bg-slate-700 transition-colors cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={confirmarInstalacion}
+                disabled={instalacionLoading || !instalacionNeumaticoId || !instalacionKm}
+                className="flex-1 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-600/25 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all cursor-pointer"
+              >
+                {instalacionLoading ? (
+                  <span className="inline-flex items-center justify-center gap-2">
+                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                    Instalando...
+                  </span>
+                ) : (
+                  "Instalar"
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -507,7 +705,7 @@ function SlotNeumatico({
             ? "border-2 border-dashed border-amber-500/40 bg-slate-800/60 hover:border-amber-400 hover:bg-amber-500/10"
             : ocupado
               ? "border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20"
-              : "border border-slate-700 bg-slate-800/60 hover:bg-slate-700/60"
+              : "border border-dashed border-emerald-600/30 bg-slate-800/60 hover:border-emerald-400 hover:bg-emerald-500/10"
         }
       `}
     >

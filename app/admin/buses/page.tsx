@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { createClient } from "@/utils/supabase/server";
 import ChasisPreview from "@/components/buses/chasis-preview";
+import DocumentProgressBar from "@/components/ui/DocumentProgressBar";
 
 export const metadata: Metadata = {
   title: "Flota de Buses | Administración",
@@ -10,15 +11,8 @@ export const metadata: Metadata = {
 /**
  * Vista General de la Flota — Server Component.
  *
- * Consulta todos los buses de Supabase y los renderiza en cards modernas.
- * Cada card muestra:
- * - Patente destacada (monoespaciada)
- * - Marca y modelo
- * - Año y número de asientos
- * - Previsualización en miniatura del chasis (usando ChasisPreview compact)
- * - Estado de vencimientos (revisión técnica y seguro)
- *
- * Incluye un botón flotante para agregar un nuevo bus.
+ * Consulta todos los buses de Supabase y los renderiza en cards modernas
+ * con barras de progreso para vigencias legales (Revisión Técnica, Seguro).
  */
 export default async function FlotaBusesPage() {
   const supabase = await createClient();
@@ -29,29 +23,6 @@ export default async function FlotaBusesPage() {
     .order("patente", { ascending: true });
 
   const flota = buses || [];
-
-  /**
-   * Helper: calcula el estado visual de un vencimiento.
-   * - Rojo: ya venció
-   * - Amarillo: vence en los próximos 30 días
-   * - Verde: más de 30 días
-   */
-  function estadoVencimiento(fecha: string | null): "ok" | "pronto" | "vencido" | "sin" {
-    if (!fecha) return "sin";
-    const hoy = new Date();
-    const vence = new Date(fecha);
-    const diffDias = Math.ceil((vence.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24));
-    if (diffDias < 0) return "vencido";
-    if (diffDias <= 30) return "pronto";
-    return "ok";
-  }
-
-  const badgeClasses: Record<string, string> = {
-    ok: "bg-emerald-500/10 text-emerald-400 border-emerald-500/30",
-    pronto: "bg-amber-500/10 text-amber-400 border-amber-500/30",
-    vencido: "bg-red-500/10 text-red-400 border-red-500/30",
-    sin: "bg-slate-700/50 text-slate-500 border-slate-600/30",
-  };
 
   return (
     <div className="min-h-screen bg-slate-900">
@@ -104,61 +75,45 @@ export default async function FlotaBusesPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {flota.map((bus) => {
-              const revTecnica = estadoVencimiento(bus.vencimiento_revision_tecnica);
-              const seguro = estadoVencimiento(bus.vencimiento_seguro);
-
-              return (
-                <div
-                  key={bus.id}
-                  className="rounded-2xl border border-slate-700/50 bg-slate-800/60 p-5 transition-all hover:border-sky-500/30 hover:bg-slate-800"
-                >
-                  {/* Header de la card */}
-                  <div className="flex items-start justify-between mb-3">
-                    <div>
-                      <p className="font-mono text-lg font-bold text-white tracking-wider">
-                        {bus.patente}
-                      </p>
-                      <p className="text-sm text-slate-400">
-                        {bus.marca} {bus.modelo} · {bus.ano}
-                      </p>
-                    </div>
-                    <span className="rounded-full bg-slate-700/60 px-3 py-1 text-xs font-medium text-slate-300">
-                      {bus.asientos} asientos
-                    </span>
+            {flota.map((bus) => (
+              <a
+                key={bus.id}
+                href={`/admin/buses/${bus.id}`}
+                className="block rounded-2xl border border-slate-700/50 bg-slate-800/60 p-5 transition-all hover:border-sky-500/30 hover:bg-slate-800 group"
+              >
+                {/* Header de la card */}
+                <div className="flex items-start justify-between mb-3">
+                  <div>
+                    <p className="font-mono text-lg font-bold text-white tracking-wider group-hover:text-sky-400 transition-colors">
+                      {bus.patente}
+                    </p>
+                    <p className="text-sm text-slate-400">
+                      {bus.marca} {bus.modelo} · {bus.ano}
+                    </p>
                   </div>
-
-                  {/* Previsualización del chasis en miniatura */}
-                  <div className="rounded-xl bg-slate-900/50 p-3 mb-3 overflow-x-auto">
-                    <ChasisPreview tipo={bus.chasis || "estandar_6"} compact />
-                  </div>
-
-                  {/* Badges de vencimiento */}
-                  <div className="flex gap-2 text-xs">
-                    <span className={`rounded-full border px-2.5 py-1 font-medium ${badgeClasses[revTecnica]}`}>
-                      Rev. Técnica:{" "}
-                      {revTecnica === "sin"
-                        ? "N/A"
-                        : revTecnica === "vencido"
-                          ? "Vencida"
-                          : revTecnica === "pronto"
-                            ? "Próx. a vencer"
-                            : "Vigente"}
-                    </span>
-                    <span className={`rounded-full border px-2.5 py-1 font-medium ${badgeClasses[seguro]}`}>
-                      Seguro:{" "}
-                      {seguro === "sin"
-                        ? "N/A"
-                        : seguro === "vencido"
-                          ? "Vencido"
-                          : seguro === "pronto"
-                            ? "Próx. a vencer"
-                            : "Vigente"}
-                    </span>
-                  </div>
+                  <span className="rounded-full bg-slate-700/60 px-3 py-1 text-xs font-medium text-slate-300">
+                    {bus.asientos} asientos
+                  </span>
                 </div>
-              );
-            })}
+
+                {/* Previsualización del chasis en miniatura */}
+                <div className="rounded-xl bg-slate-900/50 p-3 mb-4 overflow-x-auto">
+                  <ChasisPreview tipo={bus.chasis || "estandar_6"} compact />
+                </div>
+
+                {/* Barras de progreso de vigencia */}
+                <div className="space-y-3">
+                  <DocumentProgressBar
+                    nombre="Revisión Técnica"
+                    fechaVencimiento={bus.vencimiento_revision_tecnica}
+                  />
+                  <DocumentProgressBar
+                    nombre="Seguro Obligatorio"
+                    fechaVencimiento={bus.vencimiento_seguro}
+                  />
+                </div>
+              </a>
+            ))}
           </div>
         )}
       </main>

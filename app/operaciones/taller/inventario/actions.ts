@@ -87,6 +87,11 @@ export async function registrarNeumaticoInventario(formData: FormData) {
 
   const supabase = await createClient();
 
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return { error: "Debe estar autenticado para registrar inventario" };
+  }
+
   const { error: dbError } = await supabase
     .from("neumaticos")
     .insert({
@@ -99,6 +104,7 @@ export async function registrarNeumaticoInventario(formData: FormData) {
       numero_serie,
       codigo_dot,
       ciclo_vida,
+      usuario_creador_id: user.id
     });
 
   if (dbError) {

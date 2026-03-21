@@ -75,6 +75,31 @@ export async function registrarCargaCombustible(formData: FormData) {
 
   // Validación del lado del servidor (Hard Block): km actual > último km
   const ultimoKm = await obtenerUltimoKilometraje(busId);
+  const { data: busData } = await supabase
+    .from("buses")
+    .select("patente, capacidad_estanque")
+    .eq("id", busId)
+    .single();
+
+  const estanque_max = busData?.capacidad_estanque;
+
+  // Alerta de "Estanque Fantasma"
+  if (estanque_max && litrosCargados > estanque_max) {
+    const excedentePct = Math.round(((litrosCargados - estanque_max) / estanque_max) * 100);
+    await supabase.from("alertas_sistema").insert({
+      bus_id: busId,
+      tipo: "estanque_fantasma",
+      severidad: "critica",
+      titulo: `Alerta: Estanque Fantasma (${busData.patente})`,
+      detalle: `Se intentó cargar ${litrosCargados} L, superando la capacidad máxima de ${estanque_max} L (+${excedentePct}%). Carga bloqueada.`,
+      usuario_id: user.id
+    });
+
+    return { 
+      error: `Carga bloqueada: Intentaste reportar ${litrosCargados} L, superando la capacidad máxima del bus (${estanque_max} L). Se ha notificado al administrador.` 
+    };
+  }
+
   if (kilometraje <= ultimoKm) {
     return {
       error: `El kilometraje (${kilometraje}) debe ser mayor al último registrado (${ultimoKm})`,

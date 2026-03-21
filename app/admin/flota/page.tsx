@@ -18,7 +18,7 @@ export default async function FlotaPage() {
 
   const { data: unidades } = await supabase
     .from("buses")
-    .select("*")
+    .select("id, patente, marca, modelo, ano, chasis, foto_url, vencimiento_revision_tecnica, vencimiento_seguro")
     .order("patente", { ascending: true });
 
   const flota = unidades || [];
@@ -26,7 +26,7 @@ export default async function FlotaPage() {
   return (
     <div className="min-h-screen bg-slate-900">
       <header className="sticky top-0 z-10 border-b border-slate-700/50 bg-slate-800/80 backdrop-blur-sm">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
           <div className="flex items-center gap-3">
             <a
               href="/admin"
@@ -53,7 +53,7 @@ export default async function FlotaPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-4 py-6">
+      <main className="mx-auto max-w-7xl px-4 py-6">
         {flota.length === 0 ? (
           <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-700 bg-slate-800/30 py-16 text-center">
             <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-sky-600/10 text-sky-400 mb-4">

@@ -6,10 +6,12 @@ import {
   obtenerUltimoKmBus,
   registrarMovimientoNeumatico,
   obtenerNeumaticosInventario,
-  instalarNeumaticoDesdeInventario,
+  obtenerModelosNeumaticos,
   type Neumatico,
   type NeumaticoInventario,
+  type ModeloNeumatico,
 } from "./actions";
+import ModalReemplazo from "./modal-reemplazo";
 
 // ─── Constantes de posiciones del chasis ─────────────────────
 const POSICIONES_DELANTERAS = [
@@ -23,8 +25,6 @@ const POSICIONES_TRASERAS = [
   "trasero_interior_derecho",
   "trasero_exterior_derecho",
 ] as const;
-
-const TODAS_LAS_POSICIONES = [...POSICIONES_DELANTERAS, ...POSICIONES_TRASERAS];
 
 /** Etiquetas legibles para cada posición */
 const LABEL_POSICION: Record<string, string> = {
@@ -47,7 +47,8 @@ type Bus = { id: string; patente: string };
  * - Ver los neumáticos instalados en cada posición
  * - Rotación: clic en un neumático (origen) → clic en otra posición (destino)
  * - Reciclaje: seleccionar un neumático → botón "Enviar a Reciclaje"
- * - Modal de confirmación pidiendo kilometraje actual
+ * - Reemplazo en 1 clic: botón 🔄 → Modal unificado (Inventario / Compra Directa)
+ * - Instalación en slot vacío: clic → Modal unificado
  */
 export default function ChasisInteractivo({ buses }: { buses: Bus[] }) {
   // ─── Estado de selección de bus ──────────────────────────
@@ -55,7 +56,7 @@ export default function ChasisInteractivo({ buses }: { buses: Bus[] }) {
   const [neumaticos, setNeumaticos] = useState<Neumatico[]>([]);
   const [cargando, setCargando] = useState(false);
 
-  // ─── Estado de interacción ───────────────────────────────
+  // ─── Estado de interacción (rotación) ────────────────────
   const [seleccionado, setSeleccionado] = useState<{
     neumatico: Neumatico;
     posicion: string;
@@ -84,28 +85,28 @@ export default function ChasisInteractivo({ buses }: { buses: Bus[] }) {
   const [modalError, setModalError] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<{ tipo: "ok" | "error"; msg: string } | null>(null);
 
-  // ─── Estado del modal de INSTALACIÓN ─────────────────────
+  // ─── Estado del modal UNIFICADO de Instalación/Reemplazo ──
   const [inventario, setInventario] = useState<NeumaticoInventario[]>([]);
-  const [modalInstalacion, setModalInstalacion] = useState<{
+  const [modelos, setModelos] = useState<ModeloNeumatico[]>([]);
+  const [modalUnificado, setModalUnificado] = useState<{
     visible: boolean;
-    posicionDestino: string;
-  }>({ visible: false, posicionDestino: "" });
-  const [instalacionNeumaticoId, setInstalacionNeumaticoId] = useState("");
-  const [instalacionKm, setInstalacionKm] = useState("");
-  const [instalacionLoading, setInstalacionLoading] = useState(false);
-  const [instalacionError, setInstalacionError] = useState<string | null>(null);
+    posicion: string;
+    neumaticoViejo: Neumatico | null;
+  }>({ visible: false, posicion: "", neumaticoViejo: null });
 
-  // ─── Cargar neumáticos y inventario al seleccionar un bus ─
+  // ─── Cargar datos al seleccionar un bus ───────────────────
   const cargarNeumaticos = useCallback(async (id: string) => {
     setCargando(true);
     setSeleccionado(null);
     setFeedback(null);
-    const [dataBus, dataInv] = await Promise.all([
+    const [dataBus, dataInv, dataMod] = await Promise.all([
       obtenerNeumaticosBus(id),
       obtenerNeumaticosInventario(),
+      obtenerModelosNeumaticos(),
     ]);
     setNeumaticos(dataBus);
     setInventario(dataInv);
+    setModelos(dataMod);
     setCargando(false);
   }, []);
 
@@ -114,6 +115,7 @@ export default function ChasisInteractivo({ buses }: { buses: Bus[] }) {
     else {
       setNeumaticos([]);
       setInventario([]);
+      setModelos([]);
     }
   }, [busId, cargarNeumaticos]);
 
@@ -126,36 +128,45 @@ export default function ChasisInteractivo({ buses }: { buses: Bus[] }) {
   function handleSlotClick(posicion: string) {
     const neumaticoEnSlot = getNeumaticoEnPosicion(posicion);
 
-    // Si no hay nada seleccionado
     if (!seleccionado) {
       if (neumaticoEnSlot) {
-        // Seleccionar este neumático como origen
         setSeleccionado({ neumatico: neumaticoEnSlot, posicion });
       } else {
-        // Slot vacío sin selección → Abrir modal de INSTALACIÓN
-        abrirModalInstalacion(posicion);
+        // Slot vacío → Abrir modal unificado para INSTALACIÓN
+        abrirModalUnificado(posicion, null);
       }
       return;
     }
 
-    // Si hace clic en el mismo slot que ya está seleccionado → deseleccionar
     if (seleccionado.posicion === posicion) {
       setSeleccionado(null);
       return;
     }
 
-    // ─── Definir movimiento de rotación ─────────────────
-    // Abrir modal para pedir kilometraje
+    // Definir movimiento de rotación
     abrirModal("rotacion", seleccionado.neumatico, seleccionado.posicion, posicion, neumaticoEnSlot);
   }
 
-  // ─── Abrir modal de reciclaje ────────────────────────────
+  // ─── Reemplazo rápido: 🔄 overlay button ─────────────────
+  function handleReemplazarRapido(posicion: string, neumatico: Neumatico) {
+    setSeleccionado(null);
+    abrirModalUnificado(posicion, neumatico);
+  }
+
+  // ─── Abrir modal unificado (instalación o reemplazo) ──────
+  async function abrirModalUnificado(posicion: string, neumaticoViejo: Neumatico | null) {
+    const km = await obtenerUltimoKmBus(busId);
+    setUltimoKm(km);
+    setModalUnificado({ visible: true, posicion, neumaticoViejo });
+  }
+
+  // ─── Reciclaje ────────────────────────────────────────────
   function handleReciclaje() {
     if (!seleccionado) return;
     abrirModal("reciclaje", seleccionado.neumatico, seleccionado.posicion, null, null);
   }
 
-  // ─── Abrir el modal ──────────────────────────────────────
+  // ─── Abrir modal de rotación/reciclaje ────────────────────
   async function abrirModal(
     accion: "rotacion" | "reciclaje",
     neumaticoOrigen: Neumatico,
@@ -163,12 +174,10 @@ export default function ChasisInteractivo({ buses }: { buses: Bus[] }) {
     posDestino: string | null,
     neumaticoDestino: Neumatico | null
   ) {
-    // Obtener último km para validación
     const km = await obtenerUltimoKmBus(busId);
     setUltimoKm(km);
     setKmInput("");
     setModalError(null);
-
     setModal({
       visible: true,
       accion,
@@ -179,7 +188,7 @@ export default function ChasisInteractivo({ buses }: { buses: Bus[] }) {
     });
   }
 
-  // ─── Confirmar acción desde el modal ─────────────────────
+  // ─── Confirmar rotación/reciclaje ─────────────────────────
   async function confirmarAccion() {
     const km = parseInt(kmInput, 10);
     if (isNaN(km) || km <= 0) {
@@ -212,68 +221,13 @@ export default function ChasisInteractivo({ buses }: { buses: Bus[] }) {
       setModal({ ...modal, visible: false });
       setSeleccionado(null);
       setFeedback({ tipo: "ok", msg: result.mensaje! });
-      // Recargar neumáticos
       await cargarNeumaticos(busId);
     }
   }
 
-  // ─── Cerrar modal ────────────────────────────────────────
   function cerrarModal() {
     setModal({ ...modal, visible: false });
     setModalError(null);
-  }
-
-  // ─── Abrir modal de INSTALACIÓN ──────────────────────────
-  async function abrirModalInstalacion(posicion: string) {
-    const km = await obtenerUltimoKmBus(busId);
-    setUltimoKm(km);
-    setInstalacionKm("");
-    setInstalacionNeumaticoId("");
-    setInstalacionError(null);
-    setModalInstalacion({ visible: true, posicionDestino: posicion });
-  }
-
-  // ─── Confirmar instalación desde inventario ──────────────
-  async function confirmarInstalacion() {
-    if (!instalacionNeumaticoId) {
-      setInstalacionError("Selecciona un neumático del inventario");
-      return;
-    }
-    const km = parseInt(instalacionKm, 10);
-    if (isNaN(km) || km <= 0) {
-      setInstalacionError("Ingresa un kilometraje válido");
-      return;
-    }
-    if (km < ultimoKm) {
-      setInstalacionError(`El kilometraje no puede ser menor al último registrado (${ultimoKm.toLocaleString("es-CL")} km)`);
-      return;
-    }
-
-    setInstalacionLoading(true);
-    setInstalacionError(null);
-
-    const result = await instalarNeumaticoDesdeInventario({
-      neumaticoId: instalacionNeumaticoId,
-      busId,
-      posicion: modalInstalacion.posicionDestino,
-      kilometrajeBus: km,
-    });
-
-    setInstalacionLoading(false);
-
-    if (result.error) {
-      setInstalacionError(result.error);
-    } else {
-      setModalInstalacion({ visible: false, posicionDestino: "" });
-      setSeleccionado(null);
-      setFeedback({ tipo: "ok", msg: result.mensaje! });
-      await cargarNeumaticos(busId);
-    }
-  }
-
-  function cerrarModalInstalacion() {
-    setModalInstalacion({ visible: false, posicionDestino: "" });
-    setInstalacionError(null);
   }
 
   // ──────────────────────────────────────────────────────────
@@ -282,10 +236,10 @@ export default function ChasisInteractivo({ buses }: { buses: Bus[] }) {
 
   return (
     <div className="space-y-5">
-      {/* ─── Selector de Bus ─── */}
+      {/* ─── Selector de Unidad ─── */}
       <div>
         <label htmlFor="bus-selector" className="block text-sm font-medium text-slate-300 mb-1.5">
-          Selecciona un bus
+          Selecciona una Unidad
         </label>
         <select
           id="bus-selector"
@@ -293,7 +247,7 @@ export default function ChasisInteractivo({ buses }: { buses: Bus[] }) {
           onChange={(e) => setBusId(e.target.value)}
           className="w-full rounded-xl border border-slate-600 bg-slate-700/50 px-4 py-3.5 text-base text-white focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:outline-none transition-colors"
         >
-          <option value="">Elige un bus...</option>
+          <option value="">Elige una unidad...</option>
           {buses.map((b) => (
             <option key={b.id} value={b.id}>{b.patente}</option>
           ))}
@@ -328,21 +282,19 @@ export default function ChasisInteractivo({ buses }: { buses: Bus[] }) {
               <p className="text-xs text-slate-500 text-center">
                 {seleccionado
                   ? "Haz clic en otra posición para rotar, o usa el botón de reciclaje abajo."
-                  : "Haz clic en un neumático para seleccionarlo."}
+                  : "Haz clic en un neumático para seleccionarlo. Usa 🔄 para reemplazo rápido."}
               </p>
 
               {/* ═══ Chasis del bus ═══ */}
               <div className="relative mx-auto w-full max-w-xs">
-                {/* Borde del bus */}
                 <div className="rounded-3xl border-2 border-slate-600/60 bg-slate-800/40 p-4 space-y-3">
-                  {/* Frente del bus (indicador) */}
                   <div className="flex justify-center mb-1">
                     <span className="px-3 py-1 rounded-full bg-slate-700/60 text-[10px] uppercase tracking-widest text-slate-400 font-semibold">
                       Frente
                     </span>
                   </div>
 
-                  {/* ─── Eje Delantero (2 posiciones) ─── */}
+                  {/* Eje Delantero */}
                   <div className="flex justify-between gap-3">
                     {POSICIONES_DELANTERAS.map((pos) => (
                       <SlotNeumatico
@@ -352,6 +304,7 @@ export default function ChasisInteractivo({ buses }: { buses: Bus[] }) {
                         seleccionado={seleccionado?.posicion === pos}
                         esDestinoValido={seleccionado !== null && seleccionado.posicion !== pos}
                         onClick={() => handleSlotClick(pos)}
+                        onReemplazar={(n) => handleReemplazarRapido(pos, n)}
                       />
                     ))}
                   </div>
@@ -361,7 +314,7 @@ export default function ChasisInteractivo({ buses }: { buses: Bus[] }) {
                     <span className="text-[10px] text-slate-600 uppercase tracking-wider">Chasis</span>
                   </div>
 
-                  {/* ─── Eje Trasero (4 posiciones) ─── */}
+                  {/* Eje Trasero */}
                   <div className="flex justify-between gap-2">
                     {POSICIONES_TRASERAS.map((pos) => (
                       <SlotNeumatico
@@ -371,11 +324,11 @@ export default function ChasisInteractivo({ buses }: { buses: Bus[] }) {
                         seleccionado={seleccionado?.posicion === pos}
                         esDestinoValido={seleccionado !== null && seleccionado.posicion !== pos}
                         onClick={() => handleSlotClick(pos)}
+                        onReemplazar={(n) => handleReemplazarRapido(pos, n)}
                       />
                     ))}
                   </div>
 
-                  {/* Parte trasera del bus */}
                   <div className="flex justify-center mt-1">
                     <span className="px-3 py-1 rounded-full bg-slate-700/60 text-[10px] uppercase tracking-widest text-slate-400 font-semibold">
                       Trasera
@@ -384,7 +337,7 @@ export default function ChasisInteractivo({ buses }: { buses: Bus[] }) {
                 </div>
               </div>
 
-              {/* ─── Botón flotante de reciclaje ─── */}
+              {/* Botón flotante de reciclaje */}
               {seleccionado && (
                 <div className="flex justify-center">
                   <button
@@ -400,20 +353,23 @@ export default function ChasisInteractivo({ buses }: { buses: Bus[] }) {
                 </div>
               )}
 
-              {/* ─── Leyenda ─── */}
+              {/* Leyenda */}
               <div className="flex flex-wrap justify-center gap-4 text-xs text-slate-500 pt-2">
                 <span className="flex items-center gap-1.5">
                   <span className="h-3 w-3 rounded-full bg-amber-500/30 border border-amber-500/50" /> Instalado
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <span className="h-3 w-3 rounded-full bg-emerald-500/30 border border-dashed border-emerald-500/50" /> Vacío (clic para instalar)
+                  <span className="h-3 w-3 rounded-full bg-emerald-500/30 border border-dashed border-emerald-500/50" /> Vacío
                 </span>
                 <span className="flex items-center gap-1.5">
                   <span className="h-3 w-3 rounded-full bg-sky-500/30 border-2 border-sky-400" /> Seleccionado
                 </span>
+                <span className="flex items-center gap-1.5">
+                  🔄 Reemplazo rápido
+                </span>
               </div>
 
-              {/* ─── Indicador de inventario ─── */}
+              {/* Indicador de inventario */}
               {inventario.length > 0 && (
                 <p className="text-center text-xs text-emerald-400/70 pt-1">
                   📦 {inventario.length} neumático{inventario.length !== 1 ? "s" : ""} en inventario disponible{inventario.length !== 1 ? "s" : ""}
@@ -424,13 +380,10 @@ export default function ChasisInteractivo({ buses }: { buses: Bus[] }) {
         </div>
       )}
 
-      {/* ═══════════════════════════════════════════════════════
-          MODAL DE CONFIRMACIÓN
-          ═══════════════════════════════════════════════════════ */}
+      {/* ═══ MODAL DE ROTACIÓN/RECICLAJE ═══ */}
       {modal.visible && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="w-full max-w-md rounded-2xl border border-slate-700/50 bg-slate-800 p-6 shadow-2xl space-y-4 animate-in">
-            {/* Título */}
             <div className="flex items-center gap-3">
               <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${
                 modal.accion === "reciclaje"
@@ -457,7 +410,6 @@ export default function ChasisInteractivo({ buses }: { buses: Bus[] }) {
               </div>
             </div>
 
-            {/* Detalle del movimiento */}
             <div className="rounded-xl bg-slate-900/50 p-3 text-sm space-y-1">
               <div className="flex justify-between">
                 <span className="text-slate-400">Origen:</span>
@@ -477,10 +429,9 @@ export default function ChasisInteractivo({ buses }: { buses: Bus[] }) {
               )}
             </div>
 
-            {/* Input de kilometraje */}
             <div>
               <label htmlFor="km-modal" className="block text-sm font-medium text-slate-300 mb-1.5">
-                Kilometraje actual del bus
+                Kilometraje actual de la Unidad
               </label>
               <input
                 id="km-modal"
@@ -502,7 +453,6 @@ export default function ChasisInteractivo({ buses }: { buses: Bus[] }) {
               )}
             </div>
 
-            {/* Error */}
             {modalError && (
               <p className="text-sm text-red-400 flex items-center gap-1.5">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -512,7 +462,6 @@ export default function ChasisInteractivo({ buses }: { buses: Bus[] }) {
               </p>
             )}
 
-            {/* Botones */}
             <div className="flex gap-3 pt-1">
               <button
                 type="button"
@@ -549,192 +498,106 @@ export default function ChasisInteractivo({ buses }: { buses: Bus[] }) {
         </div>
       )}
 
-      {/* ═══════════════════════════════════════════════════════
-          MODAL DE INSTALACIÓN DESDE INVENTARIO
-          ═══════════════════════════════════════════════════════ */}
-      {modalInstalacion.visible && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="w-full max-w-md rounded-2xl border border-slate-700/50 bg-slate-800 p-6 shadow-2xl space-y-4">
-            {/* Título */}
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-600/20 text-emerald-400">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                </svg>
-              </div>
-              <div>
-                <h3 className="text-lg font-bold text-white">Instalar Neumático</h3>
-                <p className="text-xs text-slate-400">
-                  Posición: <span className="text-white font-medium">{LABEL_POSICION[modalInstalacion.posicionDestino]}</span>
-                </p>
-              </div>
-            </div>
-
-            {/* Select de neumático a instalar */}
-            <div>
-              <label htmlFor="neumatico-instalar" className="block text-sm font-medium text-slate-300 mb-1.5">
-                Neumático a instalar
-              </label>
-              <select
-                id="neumatico-instalar"
-                value={instalacionNeumaticoId}
-                onChange={(e) => setInstalacionNeumaticoId(e.target.value)}
-                className="w-full rounded-xl border border-slate-600 bg-slate-700/50 px-4 py-3.5 text-base text-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 focus:outline-none transition-colors"
-              >
-                <option value="">Selecciona un neumático...</option>
-                {inventario.map((n) => (
-                  <option key={n.id} value={n.id}>
-                    {n.codigo_unico} — {n.modelo_marca} {n.modelo_medida}
-                  </option>
-                ))}
-              </select>
-              {inventario.length === 0 && (
-                <p className="mt-1 text-xs text-amber-400">
-                  No hay neumáticos en inventario. Registra uno en /operaciones/taller/inventario
-                </p>
-              )}
-            </div>
-
-            {/* Kilometraje actual del bus */}
-            <div>
-              <label htmlFor="km-instalacion" className="block text-sm font-medium text-slate-300 mb-1.5">
-                Kilometraje actual del bus
-              </label>
-              <input
-                id="km-instalacion"
-                type="number"
-                min={1}
-                value={instalacionKm}
-                onChange={(e) => setInstalacionKm(e.target.value)}
-                placeholder={`Mín: ${ultimoKm.toLocaleString("es-CL")} km`}
-                className={`w-full rounded-xl border px-4 py-3.5 text-base font-mono text-white placeholder-slate-400 focus:outline-none transition-colors ${
-                  instalacionError
-                    ? "border-red-500 bg-red-500/10 focus:ring-2 focus:ring-red-500/20"
-                    : "border-slate-600 bg-slate-700/50 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
-                }`}
-              />
-              {ultimoKm > 0 && (
-                <p className="mt-1 text-xs text-slate-500">
-                  Último registro: {ultimoKm.toLocaleString("es-CL")} km · Este será el punto cero de desgaste
-                </p>
-              )}
-            </div>
-
-            {/* Error */}
-            {instalacionError && (
-              <p className="text-sm text-red-400 flex items-center gap-1.5">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                {instalacionError}
-              </p>
-            )}
-
-            {/* Botones */}
-            <div className="flex gap-3 pt-1">
-              <button
-                type="button"
-                onClick={cerrarModalInstalacion}
-                disabled={instalacionLoading}
-                className="flex-1 rounded-xl border border-slate-600 bg-slate-700/50 px-4 py-3 text-sm font-medium text-slate-300 hover:bg-slate-700 transition-colors cursor-pointer"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={confirmarInstalacion}
-                disabled={instalacionLoading || !instalacionNeumaticoId || !instalacionKm}
-                className="flex-1 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-600/25 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all cursor-pointer"
-              >
-                {instalacionLoading ? (
-                  <span className="inline-flex items-center justify-center gap-2">
-                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                    </svg>
-                    Instalando...
-                  </span>
-                ) : (
-                  "Instalar"
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
+      {/* ═══ MODAL UNIFICADO DE INSTALACIÓN / REEMPLAZO ═══ */}
+      {modalUnificado.visible && (
+        <ModalReemplazo
+          busId={busId}
+          posicion={modalUnificado.posicion}
+          neumaticoViejo={modalUnificado.neumaticoViejo}
+          inventario={inventario}
+          modelos={modelos}
+          ultimoKm={ultimoKm}
+          onCerrar={() => setModalUnificado({ visible: false, posicion: "", neumaticoViejo: null })}
+          onExito={async (msg) => {
+            setModalUnificado({ visible: false, posicion: "", neumaticoViejo: null });
+            setSeleccionado(null);
+            setFeedback({ tipo: "ok", msg });
+            await cargarNeumaticos(busId);
+          }}
+        />
       )}
     </div>
   );
 }
 
 // ═══════════════════════════════════════════════════════════════
-// COMPONENTE: SlotNeumatico (tarjeta individual)
+// COMPONENTE: SlotNeumatico (tarjeta individual con overlay 🔄)
 // ═══════════════════════════════════════════════════════════════
 
-/**
- * Representa una posición en el chasis del bus.
- *
- * - Si tiene un neumático instalado: muestra código + desgaste + fondo amber
- * - Si está vacío: muestra "Vacío" con fondo gris
- * - Si está seleccionado: borde sky brillante
- * - Si es un destino válido (hay algo seleccionado): borde punteado
- */
 function SlotNeumatico({
   posicion,
   neumatico,
   seleccionado,
   esDestinoValido,
   onClick,
+  onReemplazar,
 }: {
   posicion: string;
   neumatico: Neumatico | null;
   seleccionado: boolean;
   esDestinoValido: boolean;
   onClick: () => void;
+  onReemplazar: (n: Neumatico) => void;
 }) {
   const ocupado = neumatico !== null;
 
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`
-        flex-1 min-w-0 rounded-xl p-2.5 text-center transition-all duration-200 cursor-pointer
-        ${seleccionado
-          ? "border-2 border-sky-400 bg-sky-500/15 ring-2 ring-sky-400/30 scale-105"
-          : esDestinoValido
-            ? "border-2 border-dashed border-amber-500/40 bg-slate-800/60 hover:border-amber-400 hover:bg-amber-500/10"
-            : ocupado
-              ? "border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20"
-              : "border border-dashed border-emerald-600/30 bg-slate-800/60 hover:border-emerald-400 hover:bg-emerald-500/10"
-        }
-      `}
-    >
-      {/* Etiqueta de posición */}
-      <p className="text-[9px] uppercase tracking-wider text-slate-500 mb-1 truncate">
-        {LABEL_POSICION[posicion]}
-      </p>
+    <div className="relative flex-1 min-w-0 group/slot">
+      <button
+        type="button"
+        onClick={onClick}
+        className={`
+          w-full rounded-xl p-2.5 text-center transition-all duration-200 cursor-pointer
+          ${seleccionado
+            ? "border-2 border-sky-400 bg-sky-500/15 ring-2 ring-sky-400/30 scale-105"
+            : esDestinoValido
+              ? "border-2 border-dashed border-amber-500/40 bg-slate-800/60 hover:border-amber-400 hover:bg-amber-500/10"
+              : ocupado
+                ? "border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20"
+                : "border border-dashed border-emerald-600/30 bg-slate-800/60 hover:border-emerald-400 hover:bg-emerald-500/10"
+          }
+        `}
+      >
+        <p className="text-[9px] uppercase tracking-wider text-slate-500 mb-1 truncate">
+          {LABEL_POSICION[posicion]}
+        </p>
 
-      {ocupado ? (
-        <>
-          {/* Ícono de rueda */}
-          <div className="mx-auto mb-1 flex h-8 w-8 items-center justify-center rounded-full bg-slate-900/60 border border-amber-500/30">
-            <div className="h-5 w-5 rounded-full border-2 border-amber-400/60 flex items-center justify-center">
-              <div className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+        {ocupado ? (
+          <>
+            <div className="mx-auto mb-1 flex h-8 w-8 items-center justify-center rounded-full bg-slate-900/60 border border-amber-500/30">
+              <div className="h-5 w-5 rounded-full border-2 border-amber-400/60 flex items-center justify-center">
+                <div className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+              </div>
             </div>
-          </div>
-          <p className="font-mono text-[10px] font-bold text-white truncate">{neumatico.codigo_unico}</p>
-          <p className="text-[9px] text-slate-400">
-            {(neumatico.desgaste_acumulado_km || 0).toLocaleString("es-CL")} km
-          </p>
-        </>
-      ) : (
-        <>
-          <div className="mx-auto mb-1 flex h-8 w-8 items-center justify-center rounded-full bg-slate-800 border border-slate-700">
-            <div className="h-5 w-5 rounded-full border-2 border-dashed border-slate-600" />
-          </div>
-          <p className="text-[10px] text-slate-600">Vacío</p>
-        </>
+            <p className="font-mono text-[10px] font-bold text-white truncate">{neumatico.codigo_unico}</p>
+            <p className="text-[9px] text-slate-400">
+              {(neumatico.desgaste_acumulado_km || 0).toLocaleString("es-CL")} km
+            </p>
+          </>
+        ) : (
+          <>
+            <div className="mx-auto mb-1 flex h-8 w-8 items-center justify-center rounded-full bg-slate-800 border border-slate-700">
+              <div className="h-5 w-5 rounded-full border-2 border-dashed border-slate-600" />
+            </div>
+            <p className="text-[10px] text-slate-600">Vacío</p>
+          </>
+        )}
+      </button>
+
+      {/* ─── Overlay: Botón 🔄 Reemplazar (solo si ocupado y no seleccionado) ─── */}
+      {ocupado && !seleccionado && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onReemplazar(neumatico);
+          }}
+          className="absolute -top-1.5 -right-1.5 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-amber-600 text-white text-xs shadow-lg shadow-amber-600/30 opacity-0 group-hover/slot:opacity-100 transition-all duration-200 hover:bg-amber-500 hover:scale-110 cursor-pointer"
+          title="Reemplazar neumático"
+        >
+          🔄
+        </button>
       )}
-    </button>
+    </div>
   );
 }

@@ -196,3 +196,136 @@ export async function registrarMovimientoNeumatico(params: {
         : "Rotación de neumáticos realizada exitosamente",
   };
 }
+
+/**
+ * Tipo de neumático disponible en inventario, incluye info del modelo.
+ */
+export type NeumaticoInventario = {
+  id: string;
+  codigo_unico: string;
+  modelo_marca: string;
+  modelo_medida: string;
+};
+
+/**
+ * Obtiene todos los neumáticos con estado 'inventario' (disponibles para instalar).
+ *
+ * Hace un join con modelos_neumaticos para traer marca y medida
+ * que se mostrarán en el select del modal de instalación.
+ */
+export async function obtenerNeumaticosInventario(): Promise<NeumaticoInventario[]> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("neumaticos")
+    .select("id, codigo_unico, modelos_neumaticos(marca, medida)")
+    .eq("estado", "inventario")
+    .order("codigo_unico", { ascending: true });
+
+  if (error) {
+    console.error("Error al obtener inventario:", error.message);
+    return [];
+  }
+
+  // Transformar la respuesta para aplanar los datos del modelo
+  return (data || []).map((n: any) => ({
+    id: n.id,
+    codigo_unico: n.codigo_unico,
+    modelo_marca: n.modelos_neumaticos?.marca || "Sin marca",
+    modelo_medida: n.modelos_neumaticos?.medida || "Sin medida",
+  }));
+}
+
+/**
+ * Server Action — Instalar un neumático desde inventario a un slot vacío del bus.
+ *
+ * Flujo:
+ * 1. Valida que el neumático exista y esté en estado 'inventario'
+ * 2. Valida el kilometraje contra el último registrado
+ * 3. UPDATE neumaticos: estado→instalado, bus_actual_id, posicion_actual
+ * 4. INSERT movimientos_neumaticos: acción 'instalacion'
+ * 5. revalidatePath para actualizar la UI
+ */
+export async function instalarNeumaticoDesdeInventario(params: {
+  neumaticoId: string;
+  busId: string;
+  posicion: string;
+  kilometrajeBus: number;
+}) {
+  const supabase = await createClient();
+
+  // Autenticación
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "No estás autenticado" };
+  }
+
+  // Validar kilometraje
+  const ultimoKm = await obtenerUltimoKmBus(params.busId);
+  if (params.kilometrajeBus < ultimoKm) {
+    return {
+      error: `El kilometraje (${params.kilometrajeBus}) no puede ser menor al último registrado (${ultimoKm})`,
+    };
+  }
+
+  try {
+    // 1. Verificar que el neumático está disponible en inventario
+    const { data: neumatico, error: fetchError } = await supabase
+      .from("neumaticos")
+      .select("id, estado")
+      .eq("id", params.neumaticoId)
+      .single();
+
+    if (fetchError || !neumatico) {
+      return { error: "Neumático no encontrado" };
+    }
+
+    if (neumatico.estado !== "inventario") {
+      return { error: "Este neumático ya no está disponible en inventario" };
+    }
+
+    // 2. UPDATE: Cambiar estado a instalado y asignar bus + posición
+    const { error: updateError } = await supabase
+      .from("neumaticos")
+      .update({
+        estado: "instalado",
+        bus_actual_id: params.busId,
+        posicion_actual: params.posicion,
+        desgaste_acumulado_km: 0, // Punto cero de desgaste en este bus
+      })
+      .eq("id", params.neumaticoId);
+
+    if (updateError) {
+      return { error: `Error al instalar: ${updateError.message}` };
+    }
+
+    // 3. INSERT: Registrar movimiento histórico
+    const { error: histError } = await supabase
+      .from("movimientos_neumaticos")
+      .insert({
+        neumatico_id: params.neumaticoId,
+        bus_id: params.busId,
+        usuario_id: user.id,
+        accion: "instalacion",
+        posicion_origen: null, // Venía del inventario, sin posición previa
+        posicion_destino: params.posicion,
+        kilometraje_bus_momento: params.kilometrajeBus,
+      });
+
+    if (histError) {
+      return { error: `Error al registrar historial: ${histError.message}` };
+    }
+  } catch (err) {
+    return { error: `Error inesperado: ${String(err)}` };
+  }
+
+  revalidatePath("/operaciones/taller/rotacion");
+
+  return {
+    success: true,
+    mensaje: "Neumático instalado exitosamente",
+  };
+}

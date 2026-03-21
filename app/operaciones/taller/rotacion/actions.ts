@@ -396,6 +396,32 @@ export async function ejecutarReemplazoNeumatico(params: {
     return { error: `El kilometraje (${params.kilometrajeMomento}) no puede ser menor al último registrado (${ultimoKm})` };
   }
 
+  // ═══ VALIDACIÓN DE SEGURIDAD (HARD BLOCK) ═══
+  // No instalar TRACCIÓN en EJE DELANTERO
+  const ejeDelantero = ["delantero_izquierdo", "delantero_derecho"].includes(params.posicion);
+  let aplicacionEje = "mixto";
+
+  if (params.modo === "inventario" && params.neumaticoInventarioId) {
+    const { data: neumInv } = await supabase
+      .from("neumaticos")
+      .select("modelos_neumaticos(aplicacion_eje)")
+      .eq("id", params.neumaticoInventarioId)
+      .single();
+    // @ts-ignore
+    if (neumInv && neumInv.modelos_neumaticos) aplicacionEje = neumInv.modelos_neumaticos.aplicacion_eje;
+  } else if (params.modo === "compra_directa" && params.modeloId) {
+    const { data: mod } = await supabase
+      .from("modelos_neumaticos")
+      .select("aplicacion_eje")
+      .eq("id", params.modeloId)
+      .single();
+    if (mod) aplicacionEje = mod.aplicacion_eje;
+  }
+
+  if (ejeDelantero && aplicacionEje === "traccion") {
+    return { error: "¡Bloqueo de Seguridad! No puedes instalar un neumático de TRACCIÓN en un eje direccional delantero." };
+  }
+
   try {
     // ═══ PASO 1: Enviar neumático viejo a reciclaje (si existía) ═══
     if (params.neumaticoViejoId) {

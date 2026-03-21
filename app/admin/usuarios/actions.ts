@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/utils/supabase/admin";
 
 /**
@@ -81,6 +82,8 @@ export async function crearUsuario(formData: FormData) {
     return { error: `Error al guardar datos: ${dbError.message}` };
   }
 
+  revalidatePath("/admin/usuarios");
+
   // Éxito: retornar la contraseña generada
   return {
     success: true,
@@ -88,3 +91,69 @@ export async function crearUsuario(formData: FormData) {
     mensaje: `Usuario ${nombreCompleto} creado exitosamente`,
   };
 }
+
+/**
+ * Server Action para actualizar el perfil público de un usuario.
+ *
+ * Actualiza nombre_completo, rut y rol en la tabla public.usuarios.
+ * Usa el cliente admin para omitir RLS.
+ */
+export async function actualizarPerfilUsuario(formData: FormData) {
+  const usuarioId = formData.get("usuario_id") as string;
+  const nombreCompleto = (formData.get("nombre_completo") as string || "").trim();
+  const rut = (formData.get("rut") as string || "").trim();
+  const rol = formData.get("rol") as string;
+
+  if (!usuarioId) return { error: "ID de usuario requerido" };
+  if (!nombreCompleto) return { error: "El nombre es obligatorio" };
+  if (!rut) return { error: "El RUT es obligatorio" };
+
+  const rolesValidos = ["administrador", "administrativo", "taller_conductor"];
+  if (!rolesValidos.includes(rol)) {
+    return { error: "Rol no válido" };
+  }
+
+  const supabaseAdmin = createAdminClient();
+
+  const { error } = await supabaseAdmin
+    .from("usuarios")
+    .update({ nombre_completo: nombreCompleto, rut, rol })
+    .eq("id", usuarioId);
+
+  if (error) {
+    return { error: `Error al actualizar: ${error.message}` };
+  }
+
+  revalidatePath("/admin/usuarios");
+  return { success: true, mensaje: "Perfil actualizado exitosamente" };
+}
+
+/**
+ * Server Action para cambiar la contraseña de un usuario.
+ *
+ * Crucial: Usa el cliente admin con service_role_key para llamar a
+ * supabase.auth.admin.updateUserById() y forzar el cambio de contraseña
+ * en el sistema de autenticación, sin necesidad de la contraseña anterior.
+ */
+export async function cambiarContrasenaUsuario(
+  userId: string,
+  nuevaContrasena: string
+) {
+  if (!userId) return { error: "ID de usuario requerido" };
+  if (!nuevaContrasena || nuevaContrasena.length < 8) {
+    return { error: "La contraseña debe tener al menos 8 caracteres" };
+  }
+
+  const supabaseAdmin = createAdminClient();
+
+  const { error } = await supabaseAdmin.auth.admin.updateUserById(userId, {
+    password: nuevaContrasena,
+  });
+
+  if (error) {
+    return { error: `Error al cambiar contraseña: ${error.message}` };
+  }
+
+  return { success: true, mensaje: "Contraseña actualizada exitosamente" };
+}
+

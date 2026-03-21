@@ -1,20 +1,19 @@
 import type { Metadata } from "next";
 import { createClient } from "@/utils/supabase/server";
-import UsuariosAdmin from "./usuarios-admin";
+import UsuariosTable from "@/components/usuarios/usuarios-table";
 
 export const metadata: Metadata = {
-  title: "Gestión de Usuarios | Panel Admin",
-  description: "Listado completo de usuarios con edición y cambio de contraseñas",
+  title: "Personal | Administrativo",
+  description: "Vista de solo lectura del listado de personal",
 };
 
 /**
- * Página de Gestión de Usuarios (Admin) — Server Component.
+ * Página de Listado de Usuarios (Administrativo) — Server Component.
  *
- * Consulta todos los usuarios de la tabla pública y los pasa al
- * Client Component que maneja la tabla con modales de edición.
- * Incluye botón para crear nuevos usuarios.
+ * Vista de solo lectura. El componente UsuariosTable recibe esAdmin=false
+ * por lo que NO muestra botones de edición ni la columna de acciones.
  */
-export default async function UsuariosAdminPage() {
+export default async function UsuariosAdministrativoPage() {
   const supabase = await createClient();
 
   const { data: usuarios } = await supabase
@@ -29,7 +28,7 @@ export default async function UsuariosAdminPage() {
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
           <div className="flex items-center gap-3">
             <a
-              href="/admin"
+              href="/administrativo"
               className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-700/50 text-slate-400 hover:bg-slate-700 hover:text-white transition-colors"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -37,25 +36,19 @@ export default async function UsuariosAdminPage() {
               </svg>
             </a>
             <div>
-              <h1 className="text-lg font-semibold text-white">Gestión de Usuarios</h1>
-              <p className="text-xs text-slate-400">{(usuarios || []).length} usuarios registrados</p>
+              <h1 className="text-lg font-semibold text-white">Personal</h1>
+              <p className="text-xs text-slate-400">{(usuarios || []).length} empleados registrados</p>
             </div>
           </div>
-          <a
-            href="/admin/usuarios/nuevo"
-            className="flex items-center gap-2 rounded-xl bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-sky-600/25 hover:bg-sky-500 transition-all"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-            </svg>
-            Nuevo Usuario
-          </a>
+          <span className="rounded-full bg-emerald-600/10 px-3 py-1 text-xs font-medium text-emerald-400">
+            Solo Lectura
+          </span>
         </div>
       </header>
 
       {/* Contenido */}
       <main className="mx-auto max-w-5xl px-4 py-6">
-        <UsuariosAdmin usuarios={usuarios || []} />
+        <UsuariosTable usuarios={usuarios || []} esAdmin={false} />
       </main>
     </div>
   );

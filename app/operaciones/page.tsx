@@ -100,6 +100,23 @@ export default async function OperacionesDashboard() {
             <p className="text-sm text-slate-400">Registrar neumáticos nuevos al inventario</p>
           </div>
         </a>
+
+        {/* Sección: Mantenimiento y Repuestos */}
+        <a
+          href="/operaciones/mantenimiento"
+          className="mt-6 flex items-center gap-4 rounded-2xl border border-slate-700/50 bg-slate-800/60 p-5 transition-all hover:border-sky-500/30 hover:bg-slate-800 group"
+        >
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-600/20 text-sky-400 transition-colors group-hover:bg-sky-600/30 shrink-0">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.83-5.83M15.17 11.42L21 5.58A2.652 2.652 0 0017.25 1.83l-5.83 5.83" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 11l-3 3-5-5-3 3a1.414 1.414 0 002 2l3-3 5 5 3-3z" />
+            </svg>
+          </div>
+          <div>
+            <h3 className="text-base font-semibold text-white">Registro de Mantenimiento</h3>
+            <p className="text-sm text-slate-400">Ingresar repuestos y servicios por unidad</p>
+          </div>
+        </a>
       </main>
     </div>
   );

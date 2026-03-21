@@ -51,14 +51,35 @@ export default function ModeloForm() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
         <div>
           <label htmlFor="marca" className="block text-xs font-medium text-slate-400 mb-1">Marca</label>
           <input id="marca" name="marca" type="text" required placeholder="Ej: Michelin" className={inputClasses} />
         </div>
         <div>
           <label htmlFor="medida" className="block text-xs font-medium text-slate-400 mb-1">Medida</label>
-          <input id="medida" name="medida" type="text" required placeholder="Ej: 295/80 R22.5" className={inputClasses} />
+          <input id="medida" name="medida" type="text" required list="medidas-comunes" placeholder="Ej: 295/80 R22.5" className={inputClasses} />
+          <datalist id="medidas-comunes">
+            <option value="295/80 R22.5" />
+            <option value="315/80 R22.5" />
+            <option value="275/70 R22.5" />
+            <option value="11 R22.5" />
+            <option value="12 R22.5" />
+            <option value="385/65 R22.5" />
+          </datalist>
+        </div>
+        <div>
+          <label htmlFor="aplicacion_eje" className="block text-xs font-medium text-slate-400 mb-1">Aplicación (Diseño)</label>
+          <select id="aplicacion_eje" name="aplicacion_eje" required className={inputClasses}>
+            <option value="direccional">Direccional (Eje Delantero)</option>
+            <option value="traccion">Tracción (Eje Motriz)</option>
+            <option value="arrastre">Arrastre (Eje Libre/Remolque)</option>
+            <option value="mixto">Mixto (Cualquier Eje)</option>
+          </select>
+        </div>
+        <div>
+          <label htmlFor="profundidad_estria_nueva_mm" className="block text-xs font-medium text-slate-400 mb-1">Estría Nueva (mm)</label>
+          <input id="profundidad_estria_nueva_mm" name="profundidad_estria_nueva_mm" type="number" required min={5} max={30} step={1} placeholder="Ej: 20" defaultValue={20} className={inputClasses} />
         </div>
         <div>
           <label htmlFor="vida_util_km" className="block text-xs font-medium text-slate-400 mb-1">Vida Útil (km)</label>

@@ -109,8 +109,8 @@ export default function AdminSidebar() {
                                         <Link
                                             href={link.href}
                                             className={`flex items-center gap-2.5 rounded px-2.5 py-2 text-[13px] font-medium transition-colors ${isActive
-                                                    ? "bg-white/10 text-white"
-                                                    : "text-slate-400 hover:bg-white/5 hover:text-slate-200"
+                                                ? "bg-white/10 text-white"
+                                                : "text-slate-400 hover:bg-white/5 hover:text-slate-200"
                                                 }`}
                                         >
                                             <span className={isActive ? "text-sky-400" : "text-slate-500"}>
@@ -122,17 +122,16 @@ export default function AdminSidebar() {
                                         {/* Sub-Items (solo se muestran si aplican y si el grupo está activo) */}
                                         {hasSubItems && isActive && link.subItems && (
                                             <div className="ml-5 mt-1 space-y-1 border-l-2 border-white/5 pl-2 mb-2">
-
+                                                {link.subItems.map((sub) => {
                                                     const isSubActive = pathname === sub.href;
                                                     return (
                                                         <Link
                                                             key={sub.name}
                                                             href={sub.href}
-                                                            className={`flex items-center gap-2 rounded px-2.5 py-1.5 text-[11px] font-medium transition-colors ${
-                                                                isSubActive
+                                                            className={`flex items-center gap-2 rounded px-2.5 py-1.5 text-[11px] font-medium transition-colors ${isSubActive
                                                                     ? "bg-white/10 text-white"
                                                                     : "text-slate-500 hover:text-slate-300 hover:bg-white/5"
-                                                            }`}
+                                                                }`}
                                                         >
                                                             {sub.name}
                                                         </Link>

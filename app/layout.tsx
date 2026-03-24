@@ -2,15 +2,22 @@ import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 
-// 1. Inicializamos la tipografía corporativa
 const inter = Inter({
   subsets: ["latin"],
-  display: "swap", // Asegura que el texto se muestre rápido
+  display: "swap",
 });
 
 export const metadata: Metadata = {
   title: "Gestión de Flota | Comercial Proventa",
   description: "Sistema de gestión de flota de buses — Comercial Proventa",
+  // 1. Enlazamos el manifest de la PWA
+  manifest: "/manifest.json",
+  // 2. Configuramos la experiencia nativa para iOS (iPhone/iPad)
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent", // Funde la hora/batería del iPhone con tu fondo oscuro
+    title: "Proventa", // Nombre corto que aparecerá debajo del ícono en iOS
+  },
 };
 
 export const viewport: Viewport = {
@@ -18,6 +25,8 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
+  // 3. Recomendado para PWA: color de la barra del navegador en Android
+  themeColor: "#0a0a0a",
 };
 
 export default function RootLayout({
@@ -26,9 +35,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    // 2. Mantenemos antialiased para que los textos oscuros se vean ultra nítidos
     <html lang="es" className="h-full antialiased">
-      {/* 3. Inyectamos inter.className directamente en el body */}
       <body className={`${inter.className} min-h-full flex flex-col bg-[#0a0a0a] text-slate-200`}>
         {children}
       </body>

@@ -2,30 +2,17 @@ import { type NextRequest, NextResponse } from "next/server";
 import { updateSession } from "@/utils/supabase/middleware";
 
 /**
- * Middleware de Next.js — Se ejecuta ANTES de cada request.
- *
- * Responsabilidades:
- * 1. Refrescar la sesión Supabase (mantener tokens actualizados)
- * 2. Proteger rutas privadas: si no hay sesión → /login
- * 3. Control de acceso por roles: cada rol solo accede a su sección
- * 4. Si un usuario autenticado visita /login → redirigir a su panel
- *
- * Mapeo de roles a rutas:
- * - administrador   → /admin/*
- * - administrativo   → /administrativo/*
- * - taller_conductor → /operaciones/*
+ * Mapeo de roles a su ruta base (panel principal)
  */
-
-// Rutas que NO requieren autenticación
-const PUBLIC_ROUTES = ["/login"];
-
-// Mapeo de roles a su ruta base (panel principal)
 const ROLE_ROUTES: Record<string, string> = {
   administrador: "/admin",
   administrativo: "/administrativo",
   taller_conductor: "/operaciones",
   conductor: "/operaciones",
 };
+
+// Rutas que NO requieren autenticación (Añadimos el manifest y los iconos por seguridad extra)
+const PUBLIC_ROUTES = ["/login", "/manifest.json", "/icon-192x192.png", "/icon-512x512.png"];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -38,20 +25,20 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // 3. Si es una ruta pública (como /login)
-  if (PUBLIC_ROUTES.some((route) => pathname.startsWith(route))) {
+  // 3. Si es una ruta pública (como /login, manifest, etc.)
+  if (PUBLIC_ROUTES.some((route) => pathname === route || pathname.startsWith(route))) {
     // Si ya está autenticado y visita /login → redirigir a su panel
-    if (user) {
+    if (user && pathname === "/login") {
       const { data: usuario } = await supabase
         .from("usuarios")
         .select("rol")
         .eq("id", user.id)
         .single();
 
-      const destino = ROLE_ROUTES[usuario?.rol] || "/login";
+      const destino = ROLE_ROUTES[usuario?.rol as string] || "/login";
       return NextResponse.redirect(new URL(destino, request.url));
     }
-    // Si no está autenticado, permitir acceso a /login
+    // Permitir acceso a rutas públicas
     return response;
   }
 
@@ -78,14 +65,13 @@ export async function middleware(request: NextRequest) {
   // 6. Control de acceso: verificar que la ruta corresponde al rol
   const rutaPermitida = ROLE_ROUTES[rol];
 
-  // El administrador tiene acceso a todo (admin, administrativo, operaciones)
+  // El administrador tiene acceso a todo
   if (rol === "administrador") {
     return response;
   }
 
   // Para otros roles, verificar que la ruta sea la correcta
   if (!pathname.startsWith(rutaPermitida)) {
-    // Redirigir al panel que le corresponde
     return NextResponse.redirect(new URL(rutaPermitida, request.url));
   }
 
@@ -93,11 +79,20 @@ export async function middleware(request: NextRequest) {
 }
 
 /**
- * Configuración del matcher: define en qué rutas se ejecuta el middleware.
- * Excluimos archivos estáticos, imágenes y la API interna de Next.js.
+ * CONFIGURACIÓN DEL MATCHER (CRÍTICO PARA PWA)
+ * Excluimos explícitamente el manifest y los iconos para que el navegador los lea sin sesión.
  */
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    /*
+     * Match all request paths except for the ones starting with:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - manifest.json (PWA manifest)
+     * - icon-192x192.png / icon-512x512.png (PWA icons)
+     * - apple-icon.png (iOS icons)
+     */
+    '/((?!_next/static|_next/image|favicon.ico|manifest.json|icon-192x192.png|icon-512x512.png|apple-icon.png|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 };

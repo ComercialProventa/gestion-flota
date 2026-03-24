@@ -122,7 +122,7 @@ export default function AdminSidebar() {
                                         {/* Sub-Items (solo se muestran si aplican y si el grupo está activo) */}
                                         {hasSubItems && isActive && link.subItems && (
                                             <div className="ml-5 mt-1 space-y-1 border-l-2 border-white/5 pl-2 mb-2">
-                                                {link.subItems.map((sub: SubItemType) => {
+
                                                     const isSubActive = pathname === sub.href;
                                                     return (
                                                         <Link

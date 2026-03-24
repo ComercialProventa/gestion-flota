@@ -6,7 +6,7 @@ import { calcularVigencia } from "@/utils/fechas";
 // Route Handler Config (for cron job or external trigger)
 export const dynamic = "force-dynamic"; 
 
-const resend = new Resend(process.env.RESEND_API_KEY!);
+const resend = new Resend(process.env.RESEND_API_KEY || "re_dummy_key_for_build");
 const destinatarios = (process.env.EMAIL_GERENCIA || "gerencia@ejemplo.com").split(",");
 
 export async function GET(request: Request) {

@@ -4,58 +4,40 @@ import UsuariosAdmin from "./usuarios-admin";
 
 export const metadata: Metadata = {
   title: "Gestión de Usuarios | Panel Admin",
-  description: "Listado completo de usuarios con edición y cambio de contraseñas",
 };
 
-/**
- * Página de Gestión de Usuarios (Admin) — Server Component.
- *
- * Consulta todos los usuarios de la tabla pública y los pasa al
- * Client Component que maneja la tabla con modales de edición.
- * Incluye botón para crear nuevos usuarios.
- */
 export default async function UsuariosAdminPage() {
   const supabase = await createClient();
 
+  // Optimizamos la consulta: solo los campos necesarios
   const { data: usuarios } = await supabase
     .from("usuarios")
     .select("id, nombre_completo, rut, correo, rol, creado_en")
     .order("nombre_completo", { ascending: true });
 
+  const lista = usuarios || [];
+
   return (
-    <div className="min-h-screen bg-slate-900">
-      {/* Header */}
-      <header className="sticky top-0 z-10 border-b border-slate-700/50 bg-slate-800/80 backdrop-blur-sm">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-3">
-            <a
-              href="/admin"
-              className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-700/50 text-slate-400 hover:bg-slate-700 hover:text-white transition-colors"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
-              </svg>
-            </a>
-            <div>
-              <h1 className="text-lg font-semibold text-white">Gestión de Usuarios</h1>
-              <p className="text-xs text-slate-400">{(usuarios || []).length} usuarios registrados</p>
-            </div>
-          </div>
-          <a
-            href="/admin/usuarios/nuevo"
-            className="flex items-center gap-2 rounded-xl bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-sky-600/25 hover:bg-sky-500 transition-all"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-            </svg>
-            Nuevo Usuario
-          </a>
+    <div className="flex flex-col h-full space-y-6 p-4 md:p-6 lg:p-8 antialiased">
+      <header className="flex items-center justify-between border-b border-white/5 pb-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-white mb-1">Gestión de Usuarios</h1>
+          <p className="text-sm text-slate-400">{lista.length} cuentas registradas en el sistema.</p>
         </div>
+
+        <a
+          href="/admin/usuarios/nuevo"
+          className="flex items-center justify-center gap-2 rounded bg-sky-600 px-4 py-2 text-[13px] font-semibold text-white hover:bg-sky-500 transition-colors shadow-sm"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+          </svg>
+          Nuevo Usuario
+        </a>
       </header>
 
-      {/* Contenido */}
-      <main className="mx-auto max-w-5xl px-4 py-6">
-        <UsuariosAdmin usuarios={usuarios || []} />
+      <main className="flex-1 w-full mx-auto max-w-6xl mt-2">
+        <UsuariosAdmin usuarios={lista} />
       </main>
     </div>
   );

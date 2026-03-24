@@ -116,6 +116,7 @@ export async function registrarNeumaticoInventario(formData: FormData) {
   }
 
   revalidatePath("/operaciones/taller/inventario");
+  revalidatePath("/admin/neumaticos/inventario");
   return {
     success: true,
     mensaje: `Neumático registrado con código: ${codigoUnico}`,

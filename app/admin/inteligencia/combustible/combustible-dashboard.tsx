@@ -29,12 +29,12 @@ export default function CombustibleDashboard({
       {/* ═══ SECCIÓN 1: TENDENCIA DE RENDIMIENTO ═══ */}
       <section>
         <h2 className="text-base font-bold text-white mb-4 flex items-center gap-2">
-          📈 Tendencia de Rendimiento (Km/L)
+          Tendencia de Rendimiento (Km/L)
           <span className="text-xs font-normal text-slate-500">— caída &gt;30% = alerta roja</span>
         </h2>
 
         {rendimiento.length === 0 ? (
-          <div className="rounded-2xl border border-slate-700/30 bg-slate-800/40 p-8 text-center text-sm text-slate-500">
+          <div className="rounded border border-white/5 bg-[#121214] p-8 text-center text-sm text-slate-500">
             No hay datos suficientes. Se necesitan al menos 2 registros de combustible por unidad.
           </div>
         ) : (
@@ -46,18 +46,18 @@ export default function CombustibleDashboard({
                   key={u.busId}
                   type="button"
                   onClick={() => setUnidadSeleccionada(u.busId)}
-                  className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all cursor-pointer ${
+                  className={`rounded px-3 py-1.5 text-xs font-medium transition-all cursor-pointer ${
                     u.busId === unidadSeleccionada
                       ? u.enAlerta
                         ? "bg-red-600 text-white shadow-lg shadow-red-600/30"
                         : "bg-sky-600 text-white shadow-lg shadow-sky-600/30"
                       : u.enAlerta
                         ? "bg-red-500/15 text-red-400 border border-red-500/30 hover:bg-red-500/25"
-                        : "bg-slate-700/50 text-slate-400 border border-slate-600/50 hover:bg-slate-700"
+                        : "bg-slate-700/50 text-slate-400 border border-white/10 hover:bg-white/5"
                   }`}
                 >
                   {u.patente}
-                  {u.enAlerta && " ⚠️"}
+                  {u.enAlerta && " (Riesgo)"}
                 </button>
               ))}
             </div>
@@ -83,14 +83,14 @@ export default function CombustibleDashboard({
                     color={unidadActual.variacionPct < -30 ? "red" : unidadActual.variacionPct < 0 ? "amber" : "emerald"}
                   />
                   {unidadActual.enAlerta && (
-                    <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-400 font-medium animate-pulse">
-                      ⚠️ ALERTA: Rendimiento anormalmente bajo. Posible extracción de combustible.
+                    <div className="rounded border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-400 font-medium animate-pulse">
+                      ALERTA CRÍTICA: Rendimiento anormalmente bajo. Posible extracción de combustible.
                     </div>
                   )}
                 </div>
 
                 {/* Gráfico SVG */}
-                <div className="lg:col-span-3 rounded-2xl border border-slate-700/30 bg-slate-800/40 p-4">
+                <div className="lg:col-span-3 rounded border border-white/5 bg-[#121214] p-4">
                   <RendimientoChart
                     semanas={unidadActual.semanas}
                     promedio={unidadActual.promedioHistorico}
@@ -105,12 +105,12 @@ export default function CombustibleDashboard({
       {/* ═══ SECCIÓN 2: COMPARATIVA DE GEMELAS ═══ */}
       <section>
         <h2 className="text-base font-bold text-white mb-4 flex items-center gap-2">
-          👯 Comparativa de Unidades Gemelas
+          Comparativa de Unidades Gemelas
           <span className="text-xs font-normal text-slate-500">— diferencia &gt;30% = alerta</span>
         </h2>
 
         {gemelas.length === 0 ? (
-          <div className="rounded-2xl border border-slate-700/30 bg-slate-800/40 p-8 text-center text-sm text-slate-500">
+          <div className="rounded border border-white/5 bg-[#121214] p-8 text-center text-sm text-slate-500">
             No hay unidades gemelas (misma marca, modelo y año) para comparar.
           </div>
         ) : (
@@ -118,10 +118,10 @@ export default function CombustibleDashboard({
             {gemelas.map((g) => (
               <div
                 key={g.grupo}
-                className={`rounded-2xl border p-5 ${
+                className={`rounded border p-5 ${
                   g.enAlerta
                     ? "border-red-500/30 bg-red-500/5"
-                    : "border-slate-700/30 bg-slate-800/40"
+                    : "border-white/5 bg-[#121214]"
                 }`}
               >
                 <div className="flex items-center justify-between mb-3">
@@ -170,7 +170,7 @@ export default function CombustibleDashboard({
 
                 {g.enAlerta && (
                   <p className="mt-3 text-xs text-red-400 font-medium">
-                    ⚠️ Diferencia de rendimiento &gt;30%. Investigar conductor o fuga.
+                    ATENCIÓN: Diferencia de rendimiento &gt;30%. Investigar conductor o fuga.
                   </p>
                 )}
               </div>
@@ -182,12 +182,12 @@ export default function CombustibleDashboard({
       {/* ═══ SECCIÓN 3: ALERTAS ESTANQUE FANTASMA ═══ */}
       <section>
         <h2 className="text-base font-bold text-white mb-4 flex items-center gap-2">
-          👻 Alertas de Estanque Fantasma
+          Alertas de Estanque Fantasma
           <span className="text-xs font-normal text-slate-500">— intentos de carga &gt; capacidad del estanque</span>
         </h2>
 
         {alertas.length === 0 ? (
-          <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-6 text-center text-sm text-emerald-400 flex items-center justify-center gap-2">
+          <div className="rounded border border-emerald-500/20 bg-emerald-500/5 p-6 text-center text-sm text-emerald-400 flex items-center justify-center gap-2">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
             </svg>
@@ -196,9 +196,9 @@ export default function CombustibleDashboard({
         ) : (
           <div className="space-y-2">
             {alertas.map((a) => (
-              <div key={a.id} className="rounded-xl border border-red-500/20 bg-red-500/5 p-4 flex items-center gap-4">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-600/20 text-red-400 text-lg shrink-0">
-                  👻
+              <div key={a.id} className="rounded border border-red-500/20 bg-red-500/5 p-4 flex items-center gap-4">
+                <div className="flex h-10 w-10 items-center justify-center rounded bg-red-600/20 text-red-400 text-lg shrink-0">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
                 </div>
                 <div className="flex-1">
                   <p className="text-sm font-semibold text-white">{a.titulo}</p>
@@ -226,7 +226,7 @@ function StatCard({ label, value, color }: { label: string; value: string; color
   };
 
   return (
-    <div className={`rounded-xl border p-3 ${colorMap[color] || colorMap.sky}`}>
+    <div className={`rounded border p-3 ${colorMap[color] || colorMap.sky}`}>
       <p className="text-[10px] uppercase tracking-wider text-slate-500">{label}</p>
       <p className="text-lg font-bold">{value}</p>
     </div>

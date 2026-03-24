@@ -101,8 +101,7 @@ export default function NuevoBusForm() {
                     : "border-slate-600 bg-slate-700/50 text-slate-400 hover:border-slate-500"
                 }`}
               >
-                <span className="block text-base mb-0.5">🚌</span>
-                Estándar (6 ruedas)
+                <span className="block text-xs font-bold mb-0.5 uppercase tracking-wider">6R</span>
               </button>
               <button
                 type="button"
@@ -113,8 +112,7 @@ export default function NuevoBusForm() {
                     : "border-slate-600 bg-slate-700/50 text-slate-400 hover:border-slate-500"
                 }`}
               >
-                <span className="block text-base mb-0.5">🚍</span>
-                Doble Piso (10 ruedas)
+                <span className="block text-xs font-bold mb-0.5 uppercase tracking-wider">10R</span>
               </button>
             </div>
           </div>

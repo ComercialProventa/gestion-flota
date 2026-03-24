@@ -12,6 +12,8 @@ import {
   type ModeloNeumatico,
 } from "./actions";
 import ModalReemplazo from "./modal-reemplazo";
+import Image from "next/image";
+import ChasisPreview from "@/components/buses/chasis-preview";
 
 // ─── Constantes de posiciones del chasis ─────────────────────
 const POSICIONES_DELANTERAS = [
@@ -26,6 +28,13 @@ const POSICIONES_TRASERAS = [
   "trasero_exterior_derecho",
 ] as const;
 
+const POSICIONES_TRASERAS_M2 = [
+  "trasero2_exterior_izquierdo",
+  "trasero2_interior_izquierdo",
+  "trasero2_interior_derecho",
+  "trasero2_exterior_derecho",
+] as const;
+
 /** Etiquetas legibles para cada posición */
 const LABEL_POSICION: Record<string, string> = {
   delantero_izquierdo: "Del. Izq.",
@@ -34,9 +43,19 @@ const LABEL_POSICION: Record<string, string> = {
   trasero_interior_izquierdo: "Tras. Int. Izq.",
   trasero_interior_derecho: "Tras. Int. Der.",
   trasero_exterior_derecho: "Tras. Ext. Der.",
+  trasero2_exterior_izquierdo: "T2 Ext. Izq.",
+  trasero2_interior_izquierdo: "T2 Int. Izq.",
+  trasero2_interior_derecho: "T2 Int. Der.",
+  trasero2_exterior_derecho: "T2 Ext. Der.",
 };
 
-type Bus = { id: string; patente: string };
+type Bus = {
+  id: string;
+  patente: string;
+  foto_url?: string | null;
+  chasis?: string;
+  neumaticos?: { posicion_actual: string }[];
+};
 
 /**
  * ChasisInteractivo — Client Component principal.
@@ -93,6 +112,9 @@ export default function ChasisInteractivo({ buses }: { buses: Bus[] }) {
     posicion: string;
     neumaticoViejo: Neumatico | null;
   }>({ visible: false, posicion: "", neumaticoViejo: null });
+
+  // ─── Modal de selección de Bus ───
+  const [modalBusesVisible, setModalBusesVisible] = useState(true);
 
   // ─── Cargar datos al seleccionar un bus ───────────────────
   const cargarNeumaticos = useCallback(async (id: string) => {
@@ -234,34 +256,158 @@ export default function ChasisInteractivo({ buses }: { buses: Bus[] }) {
   // RENDER
   // ──────────────────────────────────────────────────────────
 
+  const busSeleccionado = buses.find((b) => b.id === busId);
+  const is3Ejes = busSeleccionado?.chasis === "3_ejes_10_ruedas" || busSeleccionado?.chasis === "doble_piso_10";
+
   return (
-    <div className="space-y-5">
-      {/* ─── Selector de Unidad ─── */}
-      <div>
-        <label htmlFor="bus-selector" className="block text-sm font-medium text-slate-300 mb-1.5">
-          Selecciona una Unidad
-        </label>
-        <select
-          id="bus-selector"
-          value={busId}
-          onChange={(e) => setBusId(e.target.value)}
-          className="w-full rounded-xl border border-slate-600 bg-slate-700/50 px-4 py-3.5 text-base text-white focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 focus:outline-none transition-colors"
+    <div className="space-y-4">
+      {/* ─── Cabecera de Selección de Bus ─── */}
+      {!busSeleccionado ? (
+        <button
+          type="button"
+          onClick={() => setModalBusesVisible(true)}
+          className="w-full flex flex-col items-center justify-center p-8 border-2 border-dashed border-white/20 rounded-2xl bg-white/[0.02] hover:bg-white/[0.05] hover:border-amber-500/50 transition-all cursor-pointer group"
         >
-          <option value="">Elige una unidad...</option>
-          {buses.map((b) => (
-            <option key={b.id} value={b.id}>{b.patente}</option>
-          ))}
-        </select>
-      </div>
+          <div className="h-12 w-12 rounded-full bg-amber-500/10 text-amber-500 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0" />
+            </svg>
+          </div>
+          <span className="text-white font-medium text-[15px]">Seleccionar Vehículo</span>
+          <span className="text-white/40 text-[12px] mt-1">Toca para elegir de la flota</span>
+        </button>
+      ) : (
+        <div 
+          onClick={() => setModalBusesVisible(true)}
+          className="flex items-center gap-3 p-3 border border-white/10 bg-white/[0.04] rounded-2xl cursor-pointer hover:bg-white/[0.08] transition-colors"
+        >
+          <div className="relative h-12 w-12 overflow-hidden rounded-xl bg-black/40 border border-white/10 shrink-0">
+            {busSeleccionado.foto_url ? (
+               <Image src={busSeleccionado.foto_url} alt={busSeleccionado.patente} fill className="object-cover" />
+            ) : (
+               <div className="flex justify-center items-center w-full h-full text-xl">🚌</div>
+            )}
+          </div>
+          <div className="flex flex-col flex-1">
+            <span className="text-[10px] text-white/40 font-semibold uppercase tracking-wider mb-0.5">Vehículo Seleccionado</span>
+            <span className="font-mono text-base font-bold text-white leading-tight">{busSeleccionado.patente}</span>
+          </div>
+          <div className="shrink-0 h-8 w-8 rounded-full bg-white/5 flex items-center justify-center text-white/50 border border-white/10">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+            </svg>
+          </div>
+        </div>
+      )}
+
+      {/* ─── Modal Selector de Vehículos ─── */}
+      {modalBusesVisible && (
+        <div className="fixed inset-0 z-[100] flex flex-col bg-black/95 backdrop-blur-xl animate-in fade-in slide-in-from-bottom-4 duration-300">
+          <div className="flex items-center justify-between p-4 border-b border-white/10 bg-black/50">
+            <h3 className="text-lg font-semibold text-white">Seleccionar Vehículo</h3>
+            {busSeleccionado && (
+              <button
+                type="button"
+                onClick={() => setModalBusesVisible(false)}
+                className="h-8 w-8 flex items-center justify-center rounded-full bg-white/10 text-white cursor-pointer hover:bg-white/20"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
+          </div>
+          <div className="flex-1 overflow-y-auto p-4 space-y-3">
+            {buses.map((b) => {
+              const is3EjesList = b.chasis === "3_ejes_10_ruedas" || b.chasis === "doble_piso_10";
+              const missing = (is3EjesList 
+                ? [
+                    "delantero_izquierdo", "delantero_derecho",
+                    "trasero_exterior_izquierdo", "trasero_interior_izquierdo",
+                    "trasero_interior_derecho", "trasero_exterior_derecho",
+                    "trasero2_exterior_izquierdo", "trasero2_interior_izquierdo",
+                    "trasero2_interior_derecho", "trasero2_exterior_derecho"
+                  ]
+                : [
+                    "delantero_izquierdo", "delantero_derecho",
+                    "trasero_exterior_izquierdo", "trasero_interior_izquierdo",
+                    "trasero_interior_derecho", "trasero_exterior_derecho"
+                  ]
+              ).filter(
+                (p) => !b.neumaticos?.some((n) => n.posicion_actual === p)
+              );
+
+              const isSelected = busId === b.id;
+
+              return (
+                <div
+                  key={b.id}
+                  onClick={() => {
+                    setBusId(b.id);
+                    setModalBusesVisible(false);
+                  }}
+                  className={`group relative flex cursor-pointer overflow-hidden rounded-xl border transition-all active:scale-[0.99] ${
+                    isSelected 
+                      ? "border-amber-500/50 bg-amber-500/[0.05]" 
+                      : "border-white/[0.06] bg-white/[0.03] hover:bg-white/[0.08]"
+                  }`}
+                >
+                  {/* 1. Info */}
+                  <div className="flex items-center gap-3 p-3 flex-1">
+                    <div className="relative h-12 w-12 overflow-hidden rounded-lg bg-black/40 border border-white/10 shrink-0">
+                      {b.foto_url ? (
+                        <Image 
+                          src={b.foto_url} 
+                          alt={b.patente} 
+                          fill 
+                          className="object-cover" 
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center text-xl">🚌</div>
+                      )}
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="font-mono text-base font-bold text-white tracking-wider">{b.patente}</span>
+                      <span className="text-[11px] text-white/40 font-medium tracking-wider">
+                        {isSelected ? "Seleccionado" : "Tocar para seleccionar"}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* 2. Mini Esquema Vertical */}
+                  <div className="bg-black/20 px-4 border-l border-white/[0.06] flex items-center justify-center w-28 shrink-0 relative overflow-hidden">
+                    <div className="scale-[0.5] origin-center absolute pointer-events-none">
+                      <ChasisPreview 
+                        tipo={(b.chasis as any) || "2_ejes_6_ruedas"} 
+                        compact 
+                        missingPositions={missing}
+                        vertical={true}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Badge */}
+                  {missing.length > 0 && (
+                    <div className="absolute top-2 left-2 rounded-full bg-red-500 text-[10px] font-bold text-white px-2 py-0.5 shadow-md border border-red-400">
+                      {missing.length} Faltan
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* ─── Feedback ─── */}
       {feedback && (
-        <div className={`rounded-xl border p-4 flex items-center gap-3 text-sm font-medium ${
+        <div className={`rounded-lg border px-3 py-2.5 text-[13px] font-medium ${
           feedback.tipo === "ok"
-            ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
-            : "border-red-500/30 bg-red-500/10 text-red-400"
+            ? "border-emerald-500/20 bg-emerald-500/[0.06] text-emerald-400"
+            : "border-red-500/20 bg-red-500/[0.06] text-red-400"
         }`}>
-          {feedback.tipo === "ok" ? "✅" : "❌"} {feedback.msg}
+          {feedback.tipo === "ok" ? "✓" : "✕"} {feedback.msg}
         </div>
       )}
 
@@ -314,7 +460,7 @@ export default function ChasisInteractivo({ buses }: { buses: Bus[] }) {
                     <span className="text-[10px] text-slate-600 uppercase tracking-wider">Chasis</span>
                   </div>
 
-                  {/* Eje Trasero */}
+                  {/* Eje Trasero M1 */}
                   <div className="flex justify-between gap-2">
                     {POSICIONES_TRASERAS.map((pos) => (
                       <SlotNeumatico
@@ -328,6 +474,30 @@ export default function ChasisInteractivo({ buses }: { buses: Bus[] }) {
                       />
                     ))}
                   </div>
+
+                  {is3Ejes && (
+                    <>
+                      {/* Cuerpo visual intermedio M2 */}
+                      <div className="h-6 rounded-xl border border-dashed border-slate-700/40 flex items-center justify-center">
+                        <span className="text-[10px] text-slate-600 uppercase tracking-wider">M2</span>
+                      </div>
+
+                      {/* Eje Trasero M2 */}
+                      <div className="flex justify-between gap-2">
+                        {POSICIONES_TRASERAS_M2.map((pos) => (
+                          <SlotNeumatico
+                            key={pos}
+                            posicion={pos}
+                            neumatico={getNeumaticoEnPosicion(pos)}
+                            seleccionado={seleccionado?.posicion === pos}
+                            esDestinoValido={seleccionado !== null && seleccionado.posicion !== pos}
+                            onClick={() => handleSlotClick(pos)}
+                            onReemplazar={(n) => handleReemplazarRapido(pos, n)}
+                          />
+                        ))}
+                      </div>
+                    </>
+                  )}
 
                   <div className="flex justify-center mt-1">
                     <span className="px-3 py-1 rounded-full bg-slate-700/60 text-[10px] uppercase tracking-widest text-slate-400 font-semibold">

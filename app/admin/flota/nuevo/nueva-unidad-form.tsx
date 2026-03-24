@@ -40,7 +40,7 @@ export default function NuevaUnidadForm() {
         <form action={handleSubmit} className="space-y-5">
           {error && (
             <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm font-medium text-red-400">
-              ❌ {error}
+              ! {error}
             </div>
           )}
 
@@ -80,14 +80,18 @@ export default function NuevaUnidadForm() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-3 gap-3">
             <div>
               <label htmlFor="ano" className={labelClasses}>Año</label>
               <input id="ano" name="ano" type="number" required min={1990} max={new Date().getFullYear() + 1} placeholder="Ej: 2022" className={inputClasses} />
             </div>
             <div>
-              <label htmlFor="asientos" className={labelClasses}>Asientos / Capacidad</label>
+              <label htmlFor="asientos" className={labelClasses}>Asientos</label>
               <input id="asientos" name="asientos" type="number" required min={1} max={100} placeholder="Ej: 44" className={inputClasses} />
+            </div>
+            <div>
+              <label htmlFor="capacidad_estanque" className={labelClasses}>Estanque (Lt)</label>
+              <input id="capacidad_estanque" name="capacidad_estanque" type="number" required min={1} max={2000} placeholder="Ej: 400" className={inputClasses} />
             </div>
           </div>
 
@@ -104,8 +108,7 @@ export default function NuevaUnidadForm() {
                     : "border-slate-600 bg-slate-700/50 text-slate-400 hover:border-slate-500"
                 }`}
               >
-                <span className="block text-base mb-0.5">🚛</span>
-                2 Ejes · 6 Ruedas
+                <span className="block text-xs font-bold mb-0.5 tracking-wider uppercase">2C</span>
               </button>
               <button
                 type="button"
@@ -116,8 +119,7 @@ export default function NuevaUnidadForm() {
                     : "border-slate-600 bg-slate-700/50 text-slate-400 hover:border-slate-500"
                 }`}
               >
-                <span className="block text-base mb-0.5">🚍</span>
-                3 Ejes · 10 Ruedas
+                <span className="block text-xs font-bold mb-0.5 tracking-wider uppercase">3C</span>
               </button>
             </div>
           </div>

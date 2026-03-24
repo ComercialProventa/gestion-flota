@@ -20,7 +20,7 @@ export default function NeumaticosDashboard({
       <section>
         <div className="mb-4">
           <h2 className="text-base font-bold text-white flex items-center gap-2">
-            🏆 Ranking de Rentabilidad (Costo por Kilómetro)
+            Ranking de Rentabilidad (Costo por Kilómetro)
           </h2>
           <p className="text-xs text-slate-400 mt-1">
             Basado en el precio de compra y los kilómetros reales recorridos antes del reciclaje.
@@ -28,14 +28,14 @@ export default function NeumaticosDashboard({
         </div>
 
         {ranking.length === 0 ? (
-          <div className="rounded-2xl border border-slate-700/30 bg-slate-800/40 p-8 text-center text-sm text-slate-500">
+          <div className="rounded border border-white/5 bg-[#121214] p-8 text-center text-sm text-slate-500">
             No hay neumáticos reciclados con precio registrado para calcular el CPK.
           </div>
         ) : (
-          <div className="rounded-2xl border border-slate-700/50 bg-slate-800/50 overflow-hidden">
+          <div className="rounded border border-white/5 bg-[#121214] overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-sm">
-                <thead className="border-b border-slate-700/50 bg-slate-800/80 text-xs uppercase text-slate-400">
+                <thead className="border-b border-white/5 bg-black/40 text-xs uppercase text-slate-400">
                   <tr>
                     <th className="px-5 py-4 font-semibold">Modelo</th>
                     <th className="px-5 py-4 font-semibold text-right">Rend. Medio</th>
@@ -46,7 +46,7 @@ export default function NeumaticosDashboard({
                 </thead>
                 <tbody className="divide-y divide-slate-700/50">
                   {ranking.map((r, i) => (
-                    <tr key={r.modeloId} className="transition-colors hover:bg-slate-700/20">
+                    <tr key={r.modeloId} className="transition-colors hover:bg-white/5/20">
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-3">
                           <span className={`flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-bold ${
@@ -96,7 +96,7 @@ export default function NeumaticosDashboard({
       <section>
         <div className="mb-4">
           <h2 className="text-base font-bold text-white flex items-center gap-2">
-            🚨 Auditoría: "El Cambiazo"
+            Auditoría: "El Cambiazo"
           </h2>
           <p className="text-xs text-slate-400 mt-1">
             Neumáticos enviados a reciclaje con <span className="text-red-400 font-bold">menos del 20%</span> de su vida útil esperada. Posible venta en ruta.
@@ -104,7 +104,7 @@ export default function NeumaticosDashboard({
         </div>
 
         {alertas.length === 0 ? (
-          <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-6 text-center text-sm text-emerald-400 flex items-center justify-center gap-2">
+          <div className="rounded border border-emerald-500/20 bg-emerald-500/5 p-6 text-center text-sm text-emerald-400 flex items-center justify-center gap-2">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
             </svg>
@@ -113,7 +113,7 @@ export default function NeumaticosDashboard({
         ) : (
           <div className="space-y-3">
             {alertas.map((a) => (
-              <div key={a.id} className="rounded-xl border border-red-500/30 bg-red-500/5 p-5 relative overflow-hidden">
+              <div key={a.id} className="rounded border border-red-500/30 bg-red-500/5 p-5 relative overflow-hidden">
                 {/* Decorative alert bg */}
                 <div className="absolute top-0 right-0 p-4 opacity-5">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-24 w-24 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -149,7 +149,7 @@ export default function NeumaticosDashboard({
                 </div>
 
                 {/* Progress bar visual */}
-                <div className="relative mt-4 h-2 w-full rounded-full bg-slate-800 border border-slate-700">
+                <div className="relative mt-4 h-2 w-full rounded-full bg-slate-800 border border-white/10">
                   <div
                     className="h-full rounded-full bg-red-500"
                     style={{ width: `${Math.max(a.porcentajeUso, 2)}%` }}

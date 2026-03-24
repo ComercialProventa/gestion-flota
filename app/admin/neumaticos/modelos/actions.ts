@@ -13,15 +13,11 @@ export async function crearModelo(formData: FormData) {
   const marca = (formData.get("marca") as string || "").trim();
   const medida = (formData.get("medida") as string || "").trim();
   const aplicacion_eje = formData.get("aplicacion_eje") as string;
-  const profundidad_estria_nueva_mm = parseInt(formData.get("profundidad_estria_nueva_mm") as string, 10);
   const vidaUtilKm = parseInt(formData.get("vida_util_km") as string, 10);
 
   if (!marca) return { error: "La marca es obligatoria" };
   if (!medida) return { error: "La medida es obligatoria" };
   if (!aplicacion_eje) return { error: "La aplicación es obligatoria" };
-  if (isNaN(profundidad_estria_nueva_mm) || profundidad_estria_nueva_mm < 5) {
-    return { error: "La profundidad de estría debe ser mayor a 5mm" };
-  }
   if (isNaN(vidaUtilKm) || vidaUtilKm < 1000) {
     return { error: "La vida útil debe ser al menos 1.000 km" };
   }
@@ -34,7 +30,7 @@ export async function crearModelo(formData: FormData) {
       marca, 
       medida, 
       aplicacion_eje,
-      profundidad_estria_nueva_mm,
+      profundidad_estria_nueva_mm: 20, // Default value to satisfy database
       vida_util_km: vidaUtilKm 
     });
 

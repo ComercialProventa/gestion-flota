@@ -44,7 +44,7 @@ export async function crearUsuario(formData: FormData) {
   }
 
   // Validar que el rol sea válido
-  const rolesValidos = ["administrador", "administrativo", "taller_conductor"];
+  const rolesValidos = ["administrador", "administrativo", "taller_conductor", "conductor"];
   if (!rolesValidos.includes(rol)) {
     return { error: "Rol no válido" };
   }
@@ -108,7 +108,7 @@ export async function actualizarPerfilUsuario(formData: FormData) {
   if (!nombreCompleto) return { error: "El nombre es obligatorio" };
   if (!rut) return { error: "El RUT es obligatorio" };
 
-  const rolesValidos = ["administrador", "administrativo", "taller_conductor"];
+  const rolesValidos = ["administrador", "administrativo", "taller_conductor", "conductor"];
   if (!rolesValidos.includes(rol)) {
     return { error: "Rol no válido" };
   }

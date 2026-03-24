@@ -17,24 +17,15 @@ export default async function NeumaticosPage() {
   ]);
 
   return (
-    <div className="min-h-screen bg-slate-900">
-      <header className="border-b border-slate-700/50 bg-slate-800/80 backdrop-blur-sm">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-3">
-            <a href="/admin/inteligencia" className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-700/50 text-slate-400 hover:bg-slate-700 hover:text-white transition-colors">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
-              </svg>
-            </a>
-            <div>
-              <h1 className="text-lg font-semibold text-white">🛞 Auditoría de Neumáticos</h1>
-              <p className="text-xs text-slate-400">Rentabilidad CPK y Alertas Antirrobo</p>
-            </div>
-          </div>
+    <div className="flex flex-col h-full space-y-6 p-4 md:p-6 lg:p-8 antialiased">
+      <header className="flex items-center justify-between border-b border-white/5 pb-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-white mb-1">Auditoría de Neumáticos</h1>
+          <p className="text-sm text-slate-400">Rentabilidad CPK y Alertas Antirrobo</p>
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-6 py-8">
+      <main className="flex-1 w-full mx-auto max-w-6xl mt-6">
         <NeumaticosDashboard ranking={ranking} alertas={alertas} />
       </main>
     </div>

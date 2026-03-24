@@ -1,0 +1,20 @@
+{
+  "logs": [
+    {
+      "id": "27fc2fe0-c889-410b-be2d-d10f1c0102c5",
+      "codigo_unico": "20260321-MIC12345",
+      "modelo_id": "6a56a3cb-7c3e-46c1-9020-35d72f03e385",
+      "bus_actual_id": "4e20ee6d-4f8c-4a33-9f4f-61fc6bdf030b",
+      "posicion_actual": "delantero_izquierdo",
+      "estado": "instalado",
+      "desgaste_acumulado_km": 19200,
+      "factura_numero": null,
+      "proveedor": null,
+      "creado_en": "2026-03-21T14:52:53.675184+00:00",
+      "numero_serie": null,
+      "codigo_dot": null,
+      "ciclo_vida": "nuevo",
+      "usuario_creador_id": null
+    }
+  ]
+}

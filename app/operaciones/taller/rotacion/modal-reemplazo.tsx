@@ -15,6 +15,10 @@ const LABEL_POSICION: Record<string, string> = {
   trasero_interior_izquierdo: "Tras. Int. Izq.",
   trasero_interior_derecho: "Tras. Int. Der.",
   trasero_exterior_derecho: "Tras. Ext. Der.",
+  trasero2_exterior_izquierdo: "T2 Ext. Izq.",
+  trasero2_interior_izquierdo: "T2 Int. Izq.",
+  trasero2_interior_derecho: "T2 Int. Der.",
+  trasero2_exterior_derecho: "T2 Ext. Der.",
 };
 
 type TabActivo = "inventario" | "compra_directa";
@@ -114,15 +118,15 @@ export default function ModalReemplazo({
     }
   }
 
-  const inputClasses = "w-full rounded-xl border border-slate-600 bg-slate-700/50 px-4 py-3 text-sm text-white placeholder-slate-400 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 focus:outline-none transition-colors";
+  const inputClasses = "w-full rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-2.5 text-[14px] text-white placeholder-white/20 focus:border-sky-500/50 focus:ring-1 focus:ring-sky-500/20 focus:outline-none transition-colors";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-      <div className="w-full max-w-md rounded-2xl border border-slate-700/50 bg-slate-800 shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+      <div className="w-full max-w-md rounded-2xl border border-white/[0.08] bg-[#1c1c1e] shadow-2xl overflow-hidden">
         {/* Header */}
-        <div className="px-6 pt-5 pb-3">
-          <div className="flex items-center gap-3">
-            <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${esReemplazo ? "bg-amber-600/20 text-amber-400" : "bg-emerald-600/20 text-emerald-400"}`}>
+        <div className="px-5 pt-4 pb-2">
+          <div className="flex items-center gap-2.5">
+            <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${esReemplazo ? "bg-amber-500/10 text-amber-400" : "bg-emerald-500/10 text-emerald-400"}`}>
               {esReemplazo ? (
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182M2.985 19.644" />
@@ -134,14 +138,14 @@ export default function ModalReemplazo({
               )}
             </div>
             <div className="flex-1">
-              <h3 className="text-lg font-bold text-white">
-                {esReemplazo ? "Reemplazar Neumático" : "Instalar Neumático"}
+              <h3 className="text-[15px] font-semibold text-white">
+                {esReemplazo ? "Reemplazar" : "Instalar"}
               </h3>
-              <p className="text-xs text-slate-400">
-                Posición: <span className="text-white font-medium">{LABEL_POSICION[posicion]}</span>
+              <p className="text-[11px] text-white/40">
+                Posición: <span className="text-white/70 font-medium">{LABEL_POSICION[posicion]}</span>
               </p>
             </div>
-            <button type="button" onClick={onCerrar} className="text-slate-500 hover:text-white transition-colors cursor-pointer p-1">
+            <button type="button" onClick={onCerrar} className="text-white/30 hover:text-white transition-colors cursor-pointer p-1">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
               </svg>
@@ -150,47 +154,44 @@ export default function ModalReemplazo({
 
           {/* Info del neumático viejo (si es reemplazo) */}
           {esReemplazo && (
-            <div className="mt-3 rounded-lg bg-red-500/10 border border-red-500/20 px-3 py-2 text-xs">
+            <div className="mt-2.5 rounded-lg bg-red-500/[0.08] border border-red-500/15 px-2.5 py-2 text-[12px]">
               <span className="text-red-400 font-semibold">Sale:</span>
-              <span className="text-slate-300 ml-1.5 font-mono">{neumaticoViejo!.codigo_unico}</span>
-              <span className="text-slate-500 ml-1.5">({(neumaticoViejo!.desgaste_acumulado_km || 0).toLocaleString("es-CL")} km)</span>
-              <span className="text-red-400/70 ml-1.5">→ reciclaje</span>
+              <span className="text-white/60 ml-1.5 font-mono text-[11px]">{neumaticoViejo!.codigo_unico}</span>
+              <span className="text-white/30 ml-1.5">({(neumaticoViejo!.desgaste_acumulado_km || 0).toLocaleString("es-CL")} km)</span>
             </div>
           )}
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b border-slate-700/50">
+        <div className="flex border-b border-white/[0.06]">
           <button
             type="button"
             onClick={() => { setTab("inventario"); setError(null); }}
-            className={`flex-1 px-4 py-2.5 text-sm font-semibold transition-all cursor-pointer ${
-              tab === "inventario"
-                ? "text-sky-400 border-b-2 border-sky-400 bg-sky-500/5"
-                : "text-slate-500 hover:text-slate-300"
-            }`}
+            className={`flex-1 px-3 py-2 text-[13px] font-medium transition-all cursor-pointer ${tab === "inventario"
+              ? "text-sky-400 border-b-2 border-sky-400 bg-sky-500/[0.04]"
+              : "text-white/30 hover:text-white/50"
+              }`}
           >
-            📦 Desde Inventario
+            📦 Inventario
           </button>
           <button
             type="button"
             onClick={() => { setTab("compra_directa"); setError(null); }}
-            className={`flex-1 px-4 py-2.5 text-sm font-semibold transition-all cursor-pointer ${
-              tab === "compra_directa"
-                ? "text-sky-400 border-b-2 border-sky-400 bg-sky-500/5"
-                : "text-slate-500 hover:text-slate-300"
-            }`}
+            className={`flex-1 px-3 py-2 text-[13px] font-medium transition-all cursor-pointer ${tab === "compra_directa"
+              ? "text-sky-400 border-b-2 border-sky-400 bg-sky-500/[0.04]"
+              : "text-white/30 hover:text-white/50"
+              }`}
           >
             🛒 Compra Directa
           </button>
         </div>
 
         {/* Content */}
-        <div className="px-6 py-4 space-y-4">
+        <div className="px-5 py-3.5 space-y-3">
           {tab === "inventario" ? (
             /* ─── TAB 1: Desde Inventario ─── */
             <div>
-              <label className="block text-xs font-medium text-slate-400 mb-1.5">
+              <label className="block text-[12px] font-medium text-white/40 mb-1.5 uppercase tracking-wider">
                 Neumático disponible en bodega
               </label>
               <select
@@ -198,9 +199,9 @@ export default function ModalReemplazo({
                 onChange={(e) => setNeumaticoInvId(e.target.value)}
                 className={inputClasses}
               >
-                <option value="">Selecciona un neumático...</option>
+                <option value="" className="bg-slate-900 text-white">Selecciona un neumático...</option>
                 {inventario.map((n) => (
-                  <option key={n.id} value={n.id}>
+                  <option key={n.id} value={n.id} className="bg-slate-900 text-white">
                     {n.codigo_unico} — {n.modelo_marca} {n.modelo_medida}
                   </option>
                 ))}
@@ -223,9 +224,9 @@ export default function ModalReemplazo({
                   onChange={(e) => setModeloId(e.target.value)}
                   className={inputClasses}
                 >
-                  <option value="">Selecciona un modelo...</option>
+                  <option value="" className="bg-slate-900 text-white">Selecciona un modelo...</option>
                   {modelos.map((m) => (
-                    <option key={m.id} value={m.id}>
+                    <option key={m.id} value={m.id} className="bg-slate-900 text-white">
                       {m.marca} — {m.medida} (vida útil: {m.vida_util_km.toLocaleString("es-CL")} km)
                     </option>
                   ))}
@@ -318,9 +319,9 @@ export default function ModalReemplazo({
           )}
 
           {/* ─── Campo compartido: Kilometraje ─── */}
-          <div className="pt-2 border-t border-slate-700/30">
-            <label className="block text-xs font-medium text-slate-400 mb-1.5">
-              Kilometraje actual de la Unidad *
+          <div className="pt-2 border-t border-white/[0.06]">
+            <label className="block text-[12px] font-medium text-white/40 mb-1.5 uppercase tracking-wider">
+              KM Actual *
             </label>
             <input
               type="number"
@@ -331,38 +332,35 @@ export default function ModalReemplazo({
               className={`${inputClasses} font-mono`}
             />
             {ultimoKm > 0 && (
-              <p className="mt-1 text-[10px] text-slate-500">
-                Último registro: {ultimoKm.toLocaleString("es-CL")} km
+              <p className="mt-1 text-[10px] text-white/20">
+                Último: {ultimoKm.toLocaleString("es-CL")} km
               </p>
             )}
           </div>
 
           {/* Error */}
           {error && (
-            <p className="text-sm text-red-400 bg-red-500/10 rounded-lg px-3 py-2">❌ {error}</p>
+            <p className="text-[13px] text-red-400 bg-red-500/[0.06] rounded-lg px-3 py-2">✕ {error}</p>
           )}
         </div>
 
         {/* Footer */}
-        <div className="px-6 pb-5 flex gap-3">
+        <div className="px-5 pb-4 flex gap-2.5">
           <button
             type="button"
             onClick={onCerrar}
             disabled={loading}
-            className="flex-1 rounded-xl border border-slate-600 bg-slate-700/50 px-4 py-3 text-sm font-medium text-slate-300 hover:bg-slate-700 transition-colors cursor-pointer"
-          >
+            className="flex-1 rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-2.5 text-[14px] font-medium text-white/60 hover:bg-white/[0.08] transition-colors cursor-pointer">
             Cancelar
           </button>
           <button
             type="button"
             onClick={handleConfirmar}
             disabled={loading || !km || (tab === "inventario" ? !neumaticoInvId : (!modeloId || !precio || !numeroSerie || dot.length !== 4))}
-            className={`flex-1 rounded-xl px-4 py-3 text-sm font-semibold text-white shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer ${
-              esReemplazo
-                ? "bg-amber-600 shadow-amber-600/25 hover:bg-amber-500"
-                : "bg-emerald-600 shadow-emerald-600/25 hover:bg-emerald-500"
-            }`}
-          >
+            className={`flex-1 rounded-lg px-3 py-2.5 text-[14px] font-semibold text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer ${esReemplazo
+              ? "bg-amber-500 hover:bg-amber-400"
+              : "bg-emerald-500 hover:bg-emerald-400"
+              }`}>
             {loading ? (
               <span className="inline-flex items-center justify-center gap-2">
                 <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">

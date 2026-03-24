@@ -17,13 +17,15 @@ export type Usuario = {
 const ROLES_LABEL: Record<string, string> = {
   administrador: "Administrador",
   administrativo: "Administrativo",
-  taller_conductor: "Taller / Conductor",
+  taller_conductor: "Taller",
+  conductor: "Conductor",
 };
 
 const ROLES_COLOR: Record<string, string> = {
   administrador: "bg-sky-500/10 text-sky-400 border-sky-500/30",
   administrativo: "bg-emerald-500/10 text-emerald-400 border-emerald-500/30",
   taller_conductor: "bg-amber-500/10 text-amber-400 border-amber-500/30",
+  conductor: "bg-indigo-500/10 text-indigo-400 border-indigo-500/30",
 };
 
 /**
@@ -40,11 +42,13 @@ export default function UsuariosTable({
   esAdmin = false,
   onEditarPerfil,
   onCambiarContrasena,
+  onAsignar,
 }: {
   usuarios: Usuario[];
   esAdmin?: boolean;
   onEditarPerfil?: (usuario: Usuario) => void;
   onCambiarContrasena?: (usuario: Usuario) => void;
+  onAsignar?: (usuario: Usuario) => void;
 }) {
   const [busqueda, setBusqueda] = useState("");
 
@@ -78,16 +82,16 @@ export default function UsuariosTable({
           value={busqueda}
           onChange={(e) => setBusqueda(e.target.value)}
           placeholder="Buscar por nombre, RUT o correo..."
-          className="w-full rounded-xl border border-slate-600 bg-slate-700/50 pl-10 pr-4 py-2.5 text-sm text-white placeholder-slate-400 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 focus:outline-none transition-colors"
+          className="w-full rounded border border-white/10 bg-black/40 pl-10 pr-4 py-2 text-[13px] text-white placeholder-slate-500 focus:border-sky-500 focus:ring-1 focus:ring-sky-500/30 focus:outline-none transition-colors"
         />
       </div>
 
       {/* Tabla */}
-      <div className="rounded-2xl border border-slate-700/50 bg-slate-800/60 overflow-hidden">
+      <div className="rounded border border-white/10 bg-[#121214] overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-slate-700/50 text-left">
+              <tr className="border-b border-white/5 text-left">
                 <th className="px-5 py-3 font-medium text-slate-400">Nombre</th>
                 <th className="px-5 py-3 font-medium text-slate-400">RUT</th>
                 <th className="px-5 py-3 font-medium text-slate-400 hidden md:table-cell">Correo</th>
@@ -112,7 +116,7 @@ export default function UsuariosTable({
                 filtrados.map((u) => (
                   <tr
                     key={u.id}
-                    className="border-b border-slate-700/30 hover:bg-slate-700/20 transition-colors"
+                    className="border-b border-white/5 hover:bg-white/5 transition-colors"
                   >
                     <td className="px-5 py-3">
                       <p className="font-semibold text-white">{u.nombre_completo}</p>
@@ -140,20 +144,29 @@ export default function UsuariosTable({
                     </td>
                     {esAdmin && (
                       <td className="px-5 py-3 text-right">
-                        <div className="flex justify-end gap-2">
+                        <div className="flex justify-end gap-1.5 flex-wrap">
+                          {(u.rol === "conductor" || u.rol === "taller_conductor") && (
+                            <button
+                              type="button"
+                              onClick={() => onAsignar?.(u)}
+                              className="rounded bg-indigo-600/20 px-2.5 py-1 text-[11px] font-medium text-indigo-400 hover:bg-indigo-600/30 transition-colors cursor-pointer"
+                            >
+                              Flota
+                            </button>
+                          )}
                           <button
                             type="button"
                             onClick={() => onEditarPerfil?.(u)}
-                            className="rounded-lg bg-sky-600/20 px-2.5 py-1.5 text-xs font-medium text-sky-400 hover:bg-sky-600/30 transition-colors cursor-pointer"
+                            className="rounded bg-sky-600/20 px-2.5 py-1 text-[11px] font-medium text-sky-400 hover:bg-sky-600/30 transition-colors cursor-pointer"
                           >
                             Editar
                           </button>
                           <button
                             type="button"
                             onClick={() => onCambiarContrasena?.(u)}
-                            className="rounded-lg bg-amber-600/20 px-2.5 py-1.5 text-xs font-medium text-amber-400 hover:bg-amber-600/30 transition-colors cursor-pointer"
+                            className="rounded bg-amber-600/20 px-2.5 py-1 text-[11px] font-medium text-amber-400 hover:bg-amber-600/30 transition-colors cursor-pointer"
                           >
-                            Contraseña
+                            Password
                           </button>
                         </div>
                       </td>

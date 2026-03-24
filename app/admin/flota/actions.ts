@@ -16,6 +16,7 @@ export async function registrarUnidad(formData: FormData) {
   const modelo = (formData.get("modelo") as string || "").trim();
   const ano = parseInt(formData.get("ano") as string, 10);
   const asientos = parseInt(formData.get("asientos") as string, 10);
+  const capacidad_estanque = parseInt(formData.get("capacidad_estanque") as string, 10);
   const chasis = (formData.get("chasis") as string) || "2_ejes_6_ruedas";
   const vencimientoRevision = formData.get("vencimiento_revision_tecnica") as string || null;
   const vencimientoSeguro = formData.get("vencimiento_seguro") as string || null;
@@ -25,11 +26,12 @@ export async function registrarUnidad(formData: FormData) {
   if (!modelo) return { error: "El modelo es obligatorio" };
   if (isNaN(ano) || ano < 1990 || ano > new Date().getFullYear() + 1) return { error: "Año no válido" };
   if (isNaN(asientos) || asientos < 1 || asientos > 100) return { error: "Asientos entre 1 y 100" };
+  if (isNaN(capacidad_estanque) || capacidad_estanque < 1 || capacidad_estanque > 2000) return { error: "Capacidad de estanque entre 1 y 2000 litros" };
   if (!EJES_VALIDOS.includes(chasis)) return { error: "Tipo de ejes no válido" };
 
   const supabase = await createClient();
 
-  const insertPayload: Record<string, unknown> = { patente, marca, modelo, ano, asientos, chasis };
+  const insertPayload: Record<string, unknown> = { patente, marca, modelo, ano, asientos, chasis, capacidad_estanque };
   if (vencimientoRevision) insertPayload.vencimiento_revision_tecnica = vencimientoRevision;
   if (vencimientoSeguro) insertPayload.vencimiento_seguro = vencimientoSeguro;
 
@@ -65,6 +67,7 @@ export async function actualizarUnidad(formData: FormData) {
   const modelo = (formData.get("modelo") as string || "").trim();
   const ano = parseInt(formData.get("ano") as string, 10);
   const asientos = parseInt(formData.get("asientos") as string, 10);
+  const capacidad_estanque = parseInt(formData.get("capacidad_estanque") as string, 10);
   const chasis = (formData.get("chasis") as string) || "2_ejes_6_ruedas";
   const vencimientoRevision = formData.get("vencimiento_revision_tecnica") as string || null;
   const vencimientoSeguro = formData.get("vencimiento_seguro") as string || null;
@@ -74,12 +77,13 @@ export async function actualizarUnidad(formData: FormData) {
   if (!modelo) return { error: "El modelo es obligatorio" };
   if (isNaN(ano) || ano < 1990 || ano > new Date().getFullYear() + 1) return { error: "Año no válido" };
   if (isNaN(asientos) || asientos < 1 || asientos > 100) return { error: "Asientos entre 1 y 100" };
+  if (isNaN(capacidad_estanque) || capacidad_estanque < 1 || capacidad_estanque > 2000) return { error: "Capacidad de estanque entre 1 y 2000 litros" };
   if (!EJES_VALIDOS.includes(chasis)) return { error: "Tipo de ejes no válido" };
 
   const supabase = await createClient();
 
   const updatePayload: Record<string, unknown> = {
-    patente, marca, modelo, ano, asientos, chasis,
+    patente, marca, modelo, ano, asientos, chasis, capacidad_estanque,
     vencimiento_revision_tecnica: vencimientoRevision,
     vencimiento_seguro: vencimientoSeguro,
   };

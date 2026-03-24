@@ -57,7 +57,7 @@ export default function CrearUsuarioForm() {
               {resultado.contrasena}
             </p>
             <p className="mt-2 text-xs text-slate-500">
-              ⚠️ Anota esta contraseña. No se podrá visualizar nuevamente.
+              ! Anota esta contraseña. No se podrá visualizar nuevamente.
             </p>
           </div>
         </div>
@@ -134,7 +134,8 @@ export default function CrearUsuarioForm() {
             </option>
             <option value="administrador">Administrador</option>
             <option value="administrativo">Administrativo</option>
-            <option value="taller_conductor">Taller / Conductor</option>
+            <option value="taller_conductor">Taller</option>
+            <option value="conductor">Conductor</option>
           </select>
         </div>
 

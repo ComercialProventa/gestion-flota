@@ -24,6 +24,7 @@ const ROLE_ROUTES: Record<string, string> = {
   administrador: "/admin",
   administrativo: "/administrativo",
   taller_conductor: "/operaciones",
+  conductor: "/operaciones",
 };
 
 export async function middleware(request: NextRequest) {

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Centro de Inteligencia | Gestión de Flota",
@@ -8,7 +9,6 @@ export const metadata: Metadata = {
 const MODULOS = [
   {
     href: "/admin/inteligencia/combustible",
-    emoji: "⛽",
     titulo: "Antirrobo de Combustible",
     descripcion: "Tendencias de rendimiento Km/L, comparativa de unidades gemelas y alertas de estanque fantasma",
     color: "amber",
@@ -16,7 +16,6 @@ const MODULOS = [
   },
   {
     href: "/admin/inteligencia/neumaticos",
-    emoji: "🛞",
     titulo: "Auditoría de Neumáticos",
     descripcion: "Ranking de rentabilidad CPK (Costo por Km) y detección de cambiazo prematuro",
     color: "emerald",
@@ -24,7 +23,6 @@ const MODULOS = [
   },
   {
     href: "/admin/inteligencia/mantenimiento",
-    emoji: "🔧",
     titulo: "Mantenimiento y Repuestos",
     descripcion: "Frecuencia de cambios, detección de anomalías y gasto mensual por unidad",
     color: "sky",
@@ -32,52 +30,40 @@ const MODULOS = [
   },
 ];
 
-const COLOR_MAP: Record<string, { bg: string; border: string; text: string; badge: string; glow: string }> = {
+const COLOR_MAP: Record<string, { bg: string; border: string; text: string; badge: string; }> = {
   amber: {
-    bg: "bg-amber-600/10",
-    border: "border-amber-500/20 hover:border-amber-500/40",
-    text: "text-amber-400",
-    badge: "bg-amber-500/15 text-amber-400/80",
-    glow: "shadow-amber-500/10",
+    bg: "bg-[#121214]",
+    border: "border-white/5",
+    text: "text-slate-300",
+    badge: "bg-white/5 text-slate-400",
   },
   emerald: {
-    bg: "bg-emerald-600/10",
-    border: "border-emerald-500/20 hover:border-emerald-500/40",
-    text: "text-emerald-400",
-    badge: "bg-emerald-500/15 text-emerald-400/80",
-    glow: "shadow-emerald-500/10",
+    bg: "bg-[#121214]",
+    border: "border-white/5",
+    text: "text-slate-300",
+    badge: "bg-white/5 text-slate-400",
   },
   sky: {
-    bg: "bg-sky-600/10",
-    border: "border-sky-500/20 hover:border-sky-500/40",
-    text: "text-sky-400",
-    badge: "bg-sky-500/15 text-sky-400/80",
-    glow: "shadow-sky-500/10",
+    bg: "bg-[#121214]",
+    border: "border-white/5",
+    text: "text-slate-300",
+    badge: "bg-white/5 text-slate-400",
   },
 };
 
 export default function InteligenciaHub() {
   return (
-    <div className="min-h-screen bg-slate-900">
-      <header className="border-b border-slate-700/50 bg-slate-800/80 backdrop-blur-sm">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-3">
-            <a href="/admin" className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-700/50 text-slate-400 hover:bg-slate-700 hover:text-white transition-colors">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
-              </svg>
-            </a>
-            <div>
-              <h1 className="text-lg font-semibold text-white">🧠 Centro de Inteligencia</h1>
-              <p className="text-xs text-slate-400">Auditoría, antirrobo y análisis de eficiencia</p>
-            </div>
-          </div>
+    <div className="flex flex-col h-full space-y-6 p-4 md:p-6 lg:p-8 antialiased">
+      <header className="flex items-center justify-between border-b border-white/5 pb-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-white mb-1">Centro de Inteligencia</h1>
+          <p className="text-sm text-slate-400">Auditoría, antirrobo y análisis de eficiencia</p>
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-6 py-8">
+      <main className="flex-1 w-full mx-auto max-w-5xl mt-6">
         {/* Banner de contexto */}
-        <div className="mb-8 rounded-2xl border border-slate-700/30 bg-gradient-to-r from-slate-800/80 to-slate-800/40 p-6">
+        <div className="mb-6 rounded border border-white/5 bg-[#121214] p-5">
           <p className="text-sm text-slate-300 leading-relaxed">
             Estos módulos cruzan automáticamente los datos operacionales para detectar{" "}
             <span className="text-amber-400 font-semibold">robos de combustible</span>,{" "}
@@ -92,14 +78,13 @@ export default function InteligenciaHub() {
           {MODULOS.map((mod) => {
             const c = COLOR_MAP[mod.color];
             return (
-              <a
+              <Link
                 key={mod.href}
                 href={mod.href}
-                className={`group relative rounded-2xl border ${c.border} bg-slate-800/60 p-6 transition-all duration-300 hover:shadow-xl ${c.glow} hover:-translate-y-0.5`}
+                className={`group relative rounded border border-white/5 bg-[#121214] p-5 transition-colors hover:bg-white/[0.02]`}
               >
-                <div className="text-3xl mb-3">{mod.emoji}</div>
-                <h2 className={`text-base font-bold ${c.text} mb-2`}>{mod.titulo}</h2>
-                <p className="text-xs text-slate-400 leading-relaxed mb-4">{mod.descripcion}</p>
+                <h2 className={`text-[13px] font-bold text-white mb-1.5`}>{mod.titulo}</h2>
+                <p className="text-[11px] text-slate-400 leading-relaxed mb-4">{mod.descripcion}</p>
                 <div className="flex flex-wrap gap-1.5">
                   {mod.badges.map((b) => (
                     <span key={b} className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${c.badge}`}>
@@ -113,16 +98,18 @@ export default function InteligenciaHub() {
                     <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
                   </svg>
                 </div>
-              </a>
+              </Link>
             );
           })}
         </div>
 
         {/* Resumen diario */}
-        <div className="mt-8 rounded-2xl border border-purple-500/30 bg-purple-500/10 p-5 flex items-center justify-between gap-4">
+        <div className="mt-6 rounded border border-white/5 bg-[#121214] p-4 flex items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-purple-500/20 text-purple-400 text-2xl">
-              📧
+            <div className="flex h-12 w-12 items-center justify-center rounded bg-white/5 text-slate-400">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+              </svg>
             </div>
             <div>
               <h3 className="text-sm font-bold text-purple-300">Resumen Diario a Gerencia</h3>

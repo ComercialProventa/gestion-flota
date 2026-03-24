@@ -1,0 +1,188 @@
+import type { Metadata } from "next";
+import Image from "next/image";
+import Link from "next/link";
+import { createClient } from "@/utils/supabase/server";
+import { notFound } from "next/navigation";
+import ChasisPreview from "@/components/buses/chasis-preview";
+import { EJES_LABEL } from "@/components/buses/chasis-preview";
+import DocumentProgressBar from "@/components/ui/DocumentProgressBar";
+
+export const metadata: Metadata = {
+  title: "Detalle de Unidad | Maestro de Flota",
+};
+
+export default async function UnidadDetallePage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const supabase = await createClient();
+
+  const { data: unidad, error } = await supabase
+    .from("buses")
+    .select("*")
+    .eq("id", id)
+    .single();
+
+  if (error || !unidad) notFound();
+
+  // Clases del sistema técnico
+  const cardClasses = "rounded-lg border border-white/10 bg-[#151517] p-5 shadow-sm";
+  const innerBoxClasses = "rounded border border-white/5 bg-black/20 p-4";
+  const labelClasses = "text-[11px] font-semibold text-slate-500 uppercase tracking-widest mb-1";
+
+  return (
+    <main className="mx-auto max-w-5xl px-4 py-8 space-y-6 antialiased">
+
+      {/* ─── Cabecera de Navegación y Título ─── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/5 pb-6">
+        <div className="flex items-center gap-4">
+          <Link
+            href="/admin/flota"
+            prefetch={true}
+            className="flex h-8 w-8 items-center justify-center rounded border border-white/10 bg-white/5 text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+            </svg>
+          </Link>
+          <div>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-bold text-white font-mono tracking-tighter uppercase">{unidad.patente}</h1>
+              <span className="rounded bg-sky-500/10 px-2 py-0.5 text-[10px] font-bold text-sky-400 border border-sky-500/20 uppercase">
+                Activa
+              </span>
+            </div>
+            <p className="text-sm text-slate-400 mt-0.5">{unidad.marca} {unidad.modelo} · {unidad.ano}</p>
+          </div>
+        </div>
+
+        <Link
+          href={`/admin/flota/${unidad.id}/editar`}
+          className="flex items-center justify-center gap-2 rounded bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-500 transition-colors shadow-sm"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
+          </svg>
+          Editar Ficha
+        </Link>
+      </div>
+
+      {/* ─── Hero Foto Unidad ─── */}
+      {unidad.foto_url && (
+        <div className="relative h-64 sm:h-96 w-full overflow-hidden rounded-lg border border-white/10 shadow-sm bg-black/40">
+          <Image
+            src={unidad.foto_url}
+            alt={`Foto de unidad ${unidad.patente}`}
+            fill
+            className="object-cover opacity-90"
+            sizes="(max-width: 1024px) 100vw, 1024px"
+            priority
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-transparent to-transparent opacity-60" />
+        </div>
+      )}
+
+      {/* ─── Grid de Información Técnicas ─── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        {/* Info General */}
+        <div className={`${cardClasses} lg:col-span-2`}>
+          <h2 className="text-[12px] font-bold text-white uppercase tracking-widest mb-5 flex items-center gap-2">
+            <span className="h-1 w-1 bg-sky-500 rounded-full" />
+            Especificaciones Técnicas
+          </h2>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-6">
+            <InfoItem label="Marca" value={unidad.marca} />
+            <InfoItem label="Modelo" value={unidad.modelo} />
+            <InfoItem label="Año Fabricación" value={String(unidad.ano)} mono />
+            <InfoItem label="Capacidad Asientos" value={String(unidad.asientos || '—')} mono />
+            <InfoItem label="Capacidad Estanque" value={`${unidad.capacidad_estanque || 400} Lts`} mono />
+            <InfoItem label="Configuración Chasis" value={EJES_LABEL[unidad.chasis] || unidad.chasis} />
+          </div>
+        </div>
+
+        {/* Visualización Ejes */}
+        <div className={cardClasses}>
+          <h2 className="text-[12px] font-bold text-white uppercase tracking-widest mb-5 flex items-center gap-2">
+            <span className="h-1 w-1 bg-sky-500 rounded-full" />
+            Esquema de Ejes
+          </h2>
+          <div className={innerBoxClasses}>
+            <div className="opacity-80 grayscale-[0.5] hover:grayscale-0 transition-all">
+              <ChasisPreview tipo={unidad.chasis || "2_ejes_6_ruedas"} />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ─── Vigencias Legales ─── */}
+      <div className={cardClasses}>
+        <h2 className="text-[12px] font-bold text-white uppercase tracking-widest mb-5 flex items-center gap-2">
+          <span className="h-1 w-1 bg-emerald-500 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.4)]" />
+          Estado de Documentación
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <div className={innerBoxClasses}>
+            <DocumentProgressBar nombre="Revisión Técnica" fechaVencimiento={unidad.vencimiento_revision_tecnica} />
+            {unidad.vencimiento_revision_tecnica && (
+              <p className="mt-3 text-[11px] font-mono text-slate-500 flex justify-between">
+                <span>VENCIMIENTO:</span>
+                <span className="text-slate-300">{new Date(unidad.vencimiento_revision_tecnica.replace(' ', 'T')).toLocaleDateString("es-CL")}</span>
+              </p>
+            )}
+          </div>
+          <div className={innerBoxClasses}>
+            <DocumentProgressBar nombre="Seguro Obligatorio" fechaVencimiento={unidad.vencimiento_seguro} />
+            {unidad.vencimiento_seguro && (
+              <p className="mt-3 text-[11px] font-mono text-slate-500 flex justify-between">
+                <span>VENCIMIENTO:</span>
+                <span className="text-slate-300">{new Date(unidad.vencimiento_seguro.replace(' ', 'T')).toLocaleDateString("es-CL")}</span>
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Leyenda de Vigencias */}
+        <div className="flex flex-wrap justify-center gap-x-8 gap-y-2 pt-6 mt-4 border-t border-white/5">
+          <LegendItem color="bg-emerald-500" label="Vigente (> 30 días)" />
+          <LegendItem color="bg-amber-400" label="Próximo a vencer" />
+          <LegendItem color="bg-red-500" label="Crítico / Vencido" />
+        </div>
+      </div>
+
+      {/* Footer Meta info */}
+      <div className="flex flex-col items-center gap-1 pt-4">
+        <p className="text-[10px] text-slate-600 uppercase tracking-widest">
+          Sistema Maestro de Flota · Comercial Proventa
+        </p>
+        <p className="text-[10px] text-slate-700 font-mono">
+          ID Registro: {unidad.id} · Creado el {unidad.creado_en ? new Date(unidad.creado_en.replace(' ', 'T')).toLocaleDateString("es-CL") : "—"}
+        </p>
+      </div>
+    </main>
+  );
+}
+
+// ─── Componentes Auxiliares Locales ───
+
+function InfoItem({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+  return (
+    <div className="space-y-0.5">
+      <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">{label}</p>
+      <p className={`text-[13px] font-medium text-slate-200 ${mono ? "font-mono tracking-tight" : ""}`}>
+        {value || 'No especificado'}
+      </p>
+    </div>
+  );
+}
+
+function LegendItem({ color, label }: { color: string; label: string }) {
+  return (
+    <div className="flex items-center gap-2">
+      <span className={`h-1.5 w-1.5 rounded-full ${color}`} />
+      <span className="text-[10px] font-medium text-slate-500 uppercase tracking-wide">{label}</span>
+    </div>
+  );
+}

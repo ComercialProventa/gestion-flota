@@ -1,0 +1,103 @@
+{
+  "users": null,
+  "logs": [
+    {
+      "id": "f255216f-e134-4b20-b1e2-4435edce6687",
+      "fecha": "2026-03-23T19:11:16.181962+00:00",
+      "usuario_id": "cb1bfae8-212e-4e10-9820-c3a919f331c8",
+      "accion": "INSERT",
+      "tabla_afectada": "modelos_neumaticos",
+      "registro_id": "997e052b-2a49-43aa-898a-b2edf9dc4c26",
+      "valores_anteriores": null,
+      "valores_nuevos": {
+        "id": "997e052b-2a49-43aa-898a-b2edf9dc4c26",
+        "marca": "MercedezBenz",
+        "medida": "295/80 R22.5",
+        "creado_en": "2026-03-23T19:11:16.181962+00:00",
+        "vida_util_km": 120000,
+        "aplicacion_eje": "direccional",
+        "profundidad_estria_nueva_mm": 20
+      }
+    },
+    {
+      "id": "d9c1b9ca-182c-4c29-b4fb-9af705baca7a",
+      "fecha": "2026-03-23T19:12:53.965149+00:00",
+      "usuario_id": "1c675e80-fbe6-4ccc-b9f4-9f37d796fb61",
+      "accion": "UPDATE",
+      "tabla_afectada": "neumaticos",
+      "registro_id": "27fc2fe0-c889-410b-be2d-d10f1c0102c5",
+      "valores_anteriores": {
+        "id": "27fc2fe0-c889-410b-be2d-d10f1c0102c5",
+        "estado": "instalado",
+        "creado_en": "2026-03-21T14:52:53.675184+00:00",
+        "modelo_id": "6a56a3cb-7c3e-46c1-9020-35d72f03e385",
+        "proveedor": null,
+        "ciclo_vida": "nuevo",
+        "codigo_dot": null,
+        "codigo_unico": "20260321-MIC12345",
+        "numero_serie": null,
+        "bus_actual_id": "4e20ee6d-4f8c-4a33-9f4f-61fc6bdf030b",
+        "factura_numero": null,
+        "posicion_actual": "delantero_izquierdo",
+        "usuario_creador_id": null,
+        "desgaste_acumulado_km": 0
+      },
+      "valores_nuevos": {
+        "id": "27fc2fe0-c889-410b-be2d-d10f1c0102c5",
+        "estado": "instalado",
+        "creado_en": "2026-03-21T14:52:53.675184+00:00",
+        "modelo_id": "6a56a3cb-7c3e-46c1-9020-35d72f03e385",
+        "proveedor": null,
+        "ciclo_vida": "nuevo",
+        "codigo_dot": null,
+        "codigo_unico": "20260321-MIC12345",
+        "numero_serie": null,
+        "bus_actual_id": "4e20ee6d-4f8c-4a33-9f4f-61fc6bdf030b",
+        "factura_numero": null,
+        "posicion_actual": "delantero_izquierdo",
+        "usuario_creador_id": null,
+        "desgaste_acumulado_km": 3000
+      }
+    },
+    {
+      "id": "ab2b9e94-e94d-444e-a67c-a471ebe57551",
+      "fecha": "2026-03-23T19:12:53.965149+00:00",
+      "usuario_id": "1c675e80-fbe6-4ccc-b9f4-9f37d796fb61",
+      "accion": "UPDATE",
+      "tabla_afectada": "neumaticos",
+      "registro_id": "a81866be-0b5b-441b-bc96-2ed2cd081a5b",
+      "valores_anteriores": {
+        "id": "a81866be-0b5b-441b-bc96-2ed2cd081a5b",
+        "estado": "instalado",
+        "creado_en": "2026-03-23T17:34:56.750664+00:00",
+        "modelo_id": "6a56a3cb-7c3e-46c1-9020-35d72f03e385",
+        "proveedor": "Michelin",
+        "ciclo_vida": "nuevo",
+        "codigo_dot": "4223",
+        "codigo_unico": "20260323-200ABCD1",
+        "numero_serie": "200abcd1",
+        "bus_actual_id": "4e20ee6d-4f8c-4a33-9f4f-61fc6bdf030b",
+        "factura_numero": "F-0013",
+        "posicion_actual": "trasero_exterior_izquierdo",
+        "usuario_creador_id": "cb1bfae8-212e-4e10-9820-c3a919f331c8",
+        "desgaste_acumulado_km": 0
+      },
+      "valores_nuevos": {
+        "id": "a81866be-0b5b-441b-bc96-2ed2cd081a5b",
+        "estado": "instalado",
+        "creado_en": "2026-03-23T17:34:56.750664+00:00",
+        "modelo_id": "6a56a3cb-7c3e-46c1-9020-35d72f03e385",
+        "proveedor": "Michelin",
+        "ciclo_vida": "nuevo",
+        "codigo_dot": "4223",
+        "codigo_unico": "20260323-200ABCD1",
+        "numero_serie": "200abcd1",
+        "bus_actual_id": "4e20ee6d-4f8c-4a33-9f4f-61fc6bdf030b",
+        "factura_numero": "F-0013",
+        "posicion_actual": "trasero_exterior_izquierdo",
+        "usuario_creador_id": "cb1bfae8-212e-4e10-9820-c3a919f331c8",
+        "desgaste_acumulado_km": 3000
+      }
+    }
+  ]
+}

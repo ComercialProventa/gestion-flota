@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import LoginForm from "./login-form";
+import BotonInstalar from "@/components/BotonInstalar"; // Verifica que esta ruta sea correcta
 
 export const metadata: Metadata = {
   title: "Iniciar Sesión | ProVenta Dev",
@@ -52,6 +53,9 @@ export default function LoginPage() {
 
           {/* Formulario interactivo */}
           <LoginForm />
+
+          {/* === BOTÓN INTELIGENTE DE INSTALACIÓN PWA === */}
+          <BotonInstalar />
 
           <p className="mt-12 text-center text-[10px] uppercase tracking-widest text-slate-500 md:text-left">
             Comercial Proventa © {new Date().getFullYear()}

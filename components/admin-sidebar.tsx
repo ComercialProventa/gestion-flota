@@ -4,7 +4,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 // Limpiamos los emojis y usamos nombres ultra técnicos y directos
-const MENU_ITEMS = [
+
+type SubItemType = { name: string; href: string };
+type LinkType = { name: string; href: string; icon: React.ReactNode; subItems?: SubItemType[] };
+type MenuGroupType = { grupo: string; links: LinkType[] };
+
+const MENU_ITEMS: MenuGroupType[] = [
     {
         grupo: "Gestión Principal",
         links: [
@@ -115,9 +120,9 @@ export default function AdminSidebar() {
                                         </Link>
 
                                         {/* Sub-Items (solo se muestran si aplican y si el grupo está activo) */}
-                                        {hasSubItems && isActive && (
+                                        {hasSubItems && isActive && link.subItems && (
                                             <div className="ml-5 mt-1 space-y-1 border-l-2 border-white/5 pl-2 mb-2">
-                                                {link.subItems?.map((sub: any) => {
+                                                {link.subItems.map((sub: SubItemType) => {
                                                     const isSubActive = pathname === sub.href;
                                                     return (
                                                         <Link

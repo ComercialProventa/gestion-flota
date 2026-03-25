@@ -5,7 +5,7 @@ import { obtenerUltimoKilometraje, registrarCargaCombustible } from "./actions";
 
 type Bus = { id: string; patente: string; foto_url?: string | null; capacidad_estanque?: number | null };
 
-export default function CombustibleForm({ buses }: { buses: Bus[] }) {
+export default function CombustibleForm({ buses, userId }: { buses: Bus[]; userId?: string }) {
   const [busId, setBusId] = useState("");
   const [selectorAbierto, setSelectorAbierto] = useState(false);
   const [fecha, setFecha] = useState("");

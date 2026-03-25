@@ -55,7 +55,7 @@ export default async function CombustiblePage() {
       <div className="pb-10">
         <CombustibleCliente
           buses={displayBuses}
-          historial={historial || []}
+          historial={(historial as any) || []}
           userId={authUser.id} // VITAL: Para que el formulario guarde bien
           rol={rol}
         />

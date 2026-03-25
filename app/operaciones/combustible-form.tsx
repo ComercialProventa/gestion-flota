@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Image from "next/image";
 import { obtenerUltimoKilometraje, registrarCargaCombustible } from "./actions";
 
 type Bus = { id: string; patente: string; foto_url?: string | null; capacidad_estanque?: number | null };
@@ -36,11 +35,13 @@ export default function CombustibleForm({ buses }: { buses: Bus[] }) {
 
   const kmActual = parseInt(kilometraje, 10);
   const hardBlockActivo = ultimoKm !== null && !isNaN(kmActual) && kmActual > 0 && kmActual <= ultimoKm;
-  const formularioValido = busId !== "" && fecha !== "" && hora !== "" && !isNaN(kmActual) && kmActual > 0 && !isNaN(parseFloat(litros)) && parseFloat(litros) > 0 && !hardBlockActivo;
+
+  // Validación estricta: si hay error de KM, el botón se apaga
+  const formularioValido = busId !== "" && !isNaN(kmActual) && kmActual > (ultimoKm || 0) && !isNaN(parseFloat(litros)) && parseFloat(litros) > 0;
 
   async function handleSubmit(formData: FormData) {
     if (!busId) return;
-    formData.set("bus_id", busId); // Ensure busId is appended
+    formData.set("bus_id", busId);
 
     setLoading(true); setError(null); setExito(null);
     const result = await registrarCargaCombustible(formData);
@@ -48,192 +49,135 @@ export default function CombustibleForm({ buses }: { buses: Bus[] }) {
     else if (result.success) {
       setExito(result.mensaje!);
       setBusId(""); setKilometraje(""); setLitros(""); setUltimoKm(null);
-      const ahora = new Date();
-      setFecha(ahora.toLocaleDateString("en-CA"));
-      setHora(ahora.toLocaleTimeString("es-CL", { hour: "2-digit", minute: "2-digit", hour12: false }));
     }
     setLoading(false);
   }
 
-  const inputCls = "w-full rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-2.5 text-[14px] text-white placeholder-white/20 focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/20 focus:outline-none transition-colors";
-
   const selectedBus = buses.find(b => b.id === busId);
 
   return (
-    <>
-      <form action={handleSubmit} className="space-y-4">
+    <div className="animate-in fade-in duration-300">
+      <form action={handleSubmit} className="space-y-7">
+
+        {/* Notificaciones: Mensajes grandes y claros */}
         {exito && (
-          <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/[0.06] px-3 py-2.5 text-[13px] font-medium text-emerald-400">
+          <div className="rounded-sm border-2 border-emerald-500 bg-emerald-500/10 p-4 text-[14px] font-black text-emerald-400 uppercase tracking-widest text-center">
             ✓ {exito}
           </div>
         )}
         {error && (
-          <div className="rounded-lg border border-red-500/20 bg-red-500/[0.06] px-3 py-2.5 text-[13px] font-medium text-red-400">
+          <div className="rounded-sm border-2 border-red-500 bg-red-500/10 p-4 text-[14px] font-black text-red-400 uppercase tracking-widest text-center">
             ✕ {error}
           </div>
         )}
 
-        {/* ─── Selector de Bus (Botón en vez de Select) ─── */}
-        <div>
-          <label className="block text-[12px] font-medium text-white/40 mb-1.5 uppercase tracking-wider">Bus</label>
+        {/* 01. SELECCIÓN DE UNIDAD */}
+        <div className="space-y-2">
+          <label className="text-[12px] font-black uppercase tracking-[0.2em] text-slate-500 ml-1">
+            01. Seleccionar Unidad
+          </label>
           <button
             type="button"
             onClick={() => setSelectorAbierto(true)}
-            className="w-full flex items-center justify-between rounded-xl border border-white/[0.08] bg-white/[0.03] p-3 hover:bg-white/[0.06] active:scale-[0.98] transition-all"
+            className={`w-full flex items-center justify-between rounded-sm border-2 p-5 transition-all active:scale-[0.98] ${selectedBus ? "border-amber-500 bg-amber-500/5" : "border-white/20 bg-white/5"
+              }`}
           >
-            {selectedBus ? (
-              <div className="flex items-center gap-3">
-                {selectedBus.foto_url ? (
-                  <div className="h-10 w-10 relative rounded-lg overflow-hidden shrink-0 border border-white/10">
-                    <Image src={selectedBus.foto_url} alt={selectedBus.patente} fill className="object-cover" />
-                  </div>
-                ) : (
-                  <div className="h-10 w-10 shrink-0 rounded-lg flex items-center justify-center bg-white/5 border border-white/10">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white/40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                    </svg>
-                  </div>
-                )}
-                <div className="flex flex-col items-start gap-0.5">
-                  <span className="text-[15px] font-semibold tracking-wider text-white">
-                    {selectedBus.patente}
-                  </span>
-                </div>
-              </div>
-            ) : (
-              <span className="text-[14px] text-white/40 font-medium px-1">Tocar para buscar bus...</span>
-            )}
-            <div className="flex items-center justify-center h-8 w-8 rounded-full bg-white/[0.05] text-white/40">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-              </svg>
-            </div>
+            <span className={`font-mono text-2xl font-black tracking-tighter uppercase ${selectedBus ? "text-white" : "text-slate-600"}`}>
+              {selectedBus ? selectedBus.patente : "BUSCAR PATENTE..."}
+            </span>
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
           </button>
         </div>
 
-        {/* ─── Resto del Formulario (Fecha, Hora, etc) ─── */}
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label htmlFor="fecha" className="block text-[12px] font-medium text-white/40 mb-1.5 uppercase tracking-wider">Fecha</label>
-            <input id="fecha" name="fecha" type="date" required value={fecha} onChange={(e) => setFecha(e.target.value)} className={inputCls} />
-          </div>
-          <div>
-            <label htmlFor="hora" className="block text-[12px] font-medium text-white/40 mb-1.5 uppercase tracking-wider">Hora</label>
-            <input id="hora" name="hora" type="time" required value={hora} onChange={(e) => setHora(e.target.value)} className={inputCls} />
-          </div>
-        </div>
-
-        {busId && (
-          <div>
-            <label className="block text-[12px] font-medium text-white/40 mb-1.5 uppercase tracking-wider">Último KM</label>
-            <div className="w-full rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 py-2.5 text-[14px] font-mono text-white/50">
-              {cargandoKm ? "Cargando..." : ultimoKm === 0 ? "Sin registros" : `${ultimoKm?.toLocaleString("es-CL")} km`}
-            </div>
-          </div>
-        )}
-
-        <div>
-          <label htmlFor="kilometraje" className="block text-[12px] font-medium text-white/40 mb-1.5 uppercase tracking-wider">KM Actual</label>
-          <input
-            id="kilometraje" name="kilometraje" type="number" required min={1} placeholder="125400"
-            value={kilometraje} onChange={(e) => setKilometraje(e.target.value)}
-            className={`${inputCls} font-mono ${hardBlockActivo ? "!border-red-500/50 !bg-red-500/[0.06]" : ""}`}
-          />
-          {hardBlockActivo && (
-            <p className="mt-1.5 text-[12px] text-red-400/80">
-              ⚠ Debe ser mayor a {ultimoKm?.toLocaleString("es-CL")} km
-            </p>
-          )}
-        </div>
-
-        <div>
-          <div className="flex items-center justify-between mb-1.5">
-            <label htmlFor="litros_cargados" className="block text-[12px] font-medium text-white/40 uppercase tracking-wider">Litros</label>
-            {selectedBus?.capacidad_estanque && (
-              <span className="text-[11px] font-semibold text-emerald-500/80 tracking-wide">
-                Tanque: <span className="text-white/60">{selectedBus.capacidad_estanque} L</span>
+        {/* 02. KILOMETRAJE */}
+        <div className="space-y-2">
+          <div className="flex justify-between items-end px-1">
+            <label className="text-[12px] font-black uppercase tracking-[0.2em] text-slate-500">
+              02. KM Actual
+            </label>
+            {busId && (
+              <span className={`text-[11px] font-mono font-bold uppercase ${cargandoKm ? "text-slate-600" : "text-amber-500/80"}`}>
+                Anterior: {cargandoKm ? "Cargando..." : `${ultimoKm?.toLocaleString("es-CL")} KM`}
               </span>
             )}
           </div>
           <input
-            id="litros_cargados" name="litros_cargados" type="number" required min={0.1} step={0.1} placeholder="45.5"
-            value={litros} onChange={(e) => setLitros(e.target.value)}
-            className={`${inputCls} font-mono`}
+            name="kilometraje"
+            type="number"
+            inputMode="numeric"
+            required
+            placeholder="000.000"
+            value={kilometraje}
+            onChange={(e) => setKilometraje(e.target.value)}
+            className={`w-full h-20 rounded-sm border-2 bg-transparent px-4 font-mono text-3xl font-black text-white focus:outline-none transition-colors ${hardBlockActivo ? "border-red-600 bg-red-600/20 text-red-500" : "border-white/20 focus:border-amber-500"
+              }`}
+          />
+          {hardBlockActivo && (
+            <div className="bg-red-600 p-2 rounded-sm mt-1">
+              <p className="text-[10px] font-black text-white uppercase tracking-tighter text-center">
+                ⚠ El kilometraje debe ser mayor al anterior
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* 03. LITROS */}
+        <div className="space-y-2">
+          <label className="text-[12px] font-black uppercase tracking-[0.2em] text-slate-500 ml-1">
+            03. Litros Cargados
+          </label>
+          <input
+            name="litros_cargados"
+            type="number"
+            inputMode="decimal"
+            required
+            step="0.1"
+            placeholder="0.0"
+            value={litros}
+            onChange={(e) => setLitros(e.target.value)}
+            className="w-full h-20 rounded-sm border-2 border-white/20 bg-transparent px-4 font-mono text-3xl font-black text-amber-500 focus:border-amber-500 focus:outline-none placeholder:text-amber-900/30"
           />
         </div>
 
+        {/* BOTÓN FINAL DE IMPACTO */}
         <button
           type="submit"
           disabled={loading || !formularioValido}
-          className="w-full rounded-xl bg-amber-500 px-4 py-3.5 mt-2 text-[15px] font-semibold text-black shadow-lg shadow-amber-500/20 hover:bg-amber-400 disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-[0.98] cursor-pointer"
+          className="w-full h-24 rounded-sm bg-amber-500 text-black text-[18px] font-black uppercase tracking-[0.3em] shadow-[0_10px_40px_rgba(245,158,11,0.3)] active:scale-[0.95] disabled:opacity-10 disabled:grayscale transition-all mt-6"
         >
-          {loading ? "Registrando..." : "Registrar Carga"}
+          {loading ? "PROCESANDO..." : "REGISTRAR CARGA"}
         </button>
+
+        <input type="hidden" name="fecha" value={fecha} />
+        <input type="hidden" name="hora" value={hora} />
       </form>
 
-      {/* ═══════════════════════════════════════════════════════
-          MODAL: SELECCIONAR BUS
-          ═══════════════════════════════════════════════════════ */}
+      {/* SELECTOR DE UNIDADES TÉCNICO */}
       {selectorAbierto && (
-        <div className="fixed inset-0 z-50 flex flex-col bg-black/80 backdrop-blur-xl">
-          <div className="flex items-center justify-between p-4 border-b border-white/[0.06] bg-[#1c1c1e]/60">
-            <div>
-              <h3 className="text-[17px] font-bold text-white tracking-tight">Seleccionar Bus</h3>
-              <p className="text-[12px] text-white/40">Buses asignados a ti</p>
-            </div>
-            <button
-              onClick={() => setSelectorAbierto(false)}
-              className="flex items-center justify-center p-2 rounded-full bg-white/10 text-white/60 active:bg-white/20 transition-colors"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
+        <div className="fixed inset-0 z-50 flex flex-col bg-black animate-in slide-in-from-bottom duration-300">
+          <div className="p-6 border-b border-white/10 flex justify-between items-center bg-[#050505]">
+            <h3 className="text-2xl font-black text-white uppercase tracking-tighter">Unidades</h3>
+            <button onClick={() => setSelectorAbierto(false)} className="h-14 w-14 flex items-center justify-center border-2 border-white/20 text-white font-bold">
+              X
             </button>
           </div>
-
           <div className="flex-1 overflow-y-auto p-4 space-y-3">
-            {buses.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-40 text-center">
-                <p className="text-white/40 text-sm">No tienes buses asignados.</p>
-                <p className="text-white/20 text-xs mt-1">Pídale al administrador que le asigne uno.</p>
-              </div>
-            ) : (
-              buses.map((b) => (
-                <button
-                  key={b.id}
-                  type="button"
-                  onClick={() => {
-                    setBusId(b.id);
-                    setSelectorAbierto(false);
-                  }}
-                  className="w-full flex items-center gap-3 rounded-xl bg-[#1c1c1e] border border-white/[0.06] p-2.5 text-left active:scale-[0.97] transition-all"
-                >
-                  {b.foto_url ? (
-                    <div className="h-10 w-10 shrink-0 relative rounded-lg overflow-hidden border border-white/10 bg-black/50">
-                      <Image src={b.foto_url} alt={b.patente} fill className="object-cover" />
-                    </div>
-                  ) : (
-                    <div className="h-10 w-10 shrink-0 rounded-lg flex items-center justify-center border border-white/10 bg-white/5">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white/20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                      </svg>
-                    </div>
-                  )}
-                  <div className="flex-1">
-                    <p className="text-[15px] font-bold tracking-widest text-white">{b.patente}</p>
-                    <p className="text-[10px] text-amber-500/80 uppercase font-semibold tracking-wider">Flota Activa</p>
-                  </div>
-                  <div className="text-white/20 px-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                    </svg>
-                  </div>
-                </button>
-              ))
-            )}
+            {buses.map((b) => (
+              <button
+                key={b.id}
+                type="button"
+                onClick={() => { setBusId(b.id); setSelectorAbierto(false); }}
+                className="w-full flex items-center justify-between border-2 border-white/5 bg-[#101010] p-6 active:bg-amber-500 active:text-black transition-colors group"
+              >
+                <span className="font-mono text-3xl font-black tracking-tighter uppercase group-active:text-black">{b.patente}</span>
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 opacity-20 group-active:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+              </button>
+            ))}
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 }

@@ -1,92 +1,72 @@
+// app/operaciones/combustible/page.tsx
 import type { Metadata } from "next";
 import { createClient } from "@/utils/supabase/server";
 import OperacionesShell from "../operaciones-shell";
 import CombustibleCliente from "./combustible-cliente";
 
 export const metadata: Metadata = {
-  title: "Registro de Combustible | Operaciones",
-  description: "Registro de cargas de combustible para buses",
+  title: "Combustible | ProVenta Ops",
 };
 
 export default async function CombustiblePage() {
   const supabase = await createClient();
+  const { data: { user: authUser } } = await supabase.auth.getUser();
 
-  const { data: authData } = await supabase.auth.getUser();
-  const userId = authData.user?.id;
-  
-  // Obtener rol del usuario
-  let rol = "taller_conductor";
-  let nombreCorto = "Conductor";
-  if (userId) {
-    const { data: userRoleData } = await supabase
-      .from("usuarios")
-      .select("rol, nombre_completo")
-      .eq("id", userId)
-      .single();
-    if (userRoleData) {
-      rol = userRoleData.rol;
-      if (userRoleData.nombre_completo) {
-        nombreCorto = userRoleData.nombre_completo.split(" ")[0];
-      }
-    }
-  }
+  if (!authUser) return null;
 
-  // Cargar todos los buses, incluyendo foto_url
-  const { data: allBuses } = await supabase
-    .from("buses")
-    .select("id, patente, foto_url, capacidad_estanque")
-    .order("patente", { ascending: true });
+  // Consultas en paralelo: velocidad pura para que el viejo no espere con la pantalla en blanco
+  const [profileRes, busesRes] = await Promise.all([
+    supabase.from("usuarios").select("rol, nombre_completo").eq("id", authUser.id).single(),
+    supabase.from("buses").select("id, patente, foto_url").order("patente", { ascending: true })
+  ]);
 
-  let displayBuses = allBuses || [];
+  const rol = profileRes.data?.rol || "conductor";
+  const nombreCorto = profileRes.data?.nombre_completo?.split(" ")[0] || "Operario";
+  let displayBuses = busesRes.data || [];
 
-  // Si es estrictamente 'conductor', filtrar solo los buses que tiene asignados
-  if (rol === "conductor" && userId) {
+  // Filtro de seguridad: El conductor no debe elegir buses que no son suyos para no "embarrarla"
+  if (rol === "conductor") {
     const { data: asignaciones } = await supabase
       .from("asignacion_flota")
-      .select("bus_id")
-      .eq("usuario_id", userId);
-    
+      .select("bus_id").eq("usuario_id", authUser.id);
     const asignadosIds = new Set(asignaciones?.map((a) => a.bus_id) || []);
     displayBuses = displayBuses.filter((b) => asignadosIds.has(b.id));
   }
 
-  // Cargar las cargas de los últimos 2 días registradas por este usuario
-  let historialCargas: any[] = [];
-  if (userId) {
-    const dosDiasAtras = new Date();
-    dosDiasAtras.setDate(dosDiasAtras.getDate() - 2);
-    const fechaLimite = dosDiasAtras.toISOString().split("T")[0];
-
-    const { data: historial } = await supabase
-      .from("registros_combustible")
-      .select(`
-        id,
-        fecha,
-        hora,
-        kilometraje,
-        litros_cargados,
-        buses ( patente )
-      `)
-      .eq("usuario_id", userId)
-      .gte("fecha", fechaLimite)
-      .order("fecha", { ascending: false })
-      .order("hora", { ascending: false })
-      .limit(50);
-      
-    historialCargas = historial || [];
-  }
+  // Historial: Solo 5 para que la lista no sea un "testamento" infinito
+  const { data: historial } = await supabase
+    .from("registros_combustible")
+    .select(`id, fecha, hora, kilometraje, litros_cargados, buses(patente)`)
+    .eq("usuario_id", authUser.id)
+    .order("fecha", { ascending: false })
+    .order("hora", { ascending: false })
+    .limit(5);
 
   return (
-    <OperacionesShell title="Combustible" backHref="/operaciones" rol={rol}>
-      <div className="pt-2 pb-4 px-1">
-        <h1 className="text-xl font-bold text-white tracking-tight">Hola, {nombreCorto}</h1>
-        <p className="text-[12px] text-white/50 mt-1">
-          {rol === "conductor" ? "Registra tu nueva carga de combustible" : "Gestiona las cargas de flota"}
-        </p>
+    <OperacionesShell
+      backHref="/operaciones"
+      rol={rol}
+      title="COMBUSTIBLE"
+      // Subtítulo claro y en mayúsculas para que lo vean bien
+      subtitle={rol === "conductor" ? `OPERADOR: ${nombreCorto}` : "TERMINAL DE CARGA"}
+    >
+
+      {/* Contenido pegado arriba para aprovechar el scroll */}
+      <div className="pb-10">
+        <CombustibleCliente
+          buses={displayBuses}
+          historial={historial || []}
+          userId={authUser.id} // VITAL: Para que el formulario guarde bien
+          rol={rol}
+        />
       </div>
 
-      <div className="pb-8">
-        <CombustibleCliente buses={displayBuses} historial={historialCargas} rol={rol} />
+      {/* Identificador de terminal: sutil para que parezca software de radio-control */}
+      <div className="mt-auto border-t border-white/5 pt-6 opacity-20">
+        <p className="text-[9px] font-mono text-center uppercase tracking-[0.2em] text-slate-500 leading-relaxed">
+          SISTEMA DE CONTROL DE ENERGÍA <br />
+          ZONA MAGALLANES · PUNTA ARENAS
+        </p>
       </div>
     </OperacionesShell>
   );

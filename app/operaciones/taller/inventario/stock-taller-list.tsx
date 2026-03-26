@@ -36,96 +36,108 @@ export default function StockTallerList({ stock }: { stock: NeumaticoStock[] }) 
 
   return (
     <>
+      {/* ─── BOTÓN DISPARADOR (COMPACTO PERO AGRESIVO: h-16) ─── */}
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        className="flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-[11px] font-semibold text-emerald-400 hover:bg-emerald-500/20 transition-all active:scale-[0.98]"
+        className="w-full flex items-center justify-between h-16 border-2 border-dashed border-emerald-500/50 bg-emerald-500/10 rounded-sm px-4 active:bg-emerald-500/20 transition-all shrink-0"
       >
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
-        </svg>
-        Bodega ({stock.length})
+        <div className="flex items-center gap-3">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
+          </svg>
+          <span className="text-[18px] sm:text-xl font-black uppercase text-emerald-400 tracking-tighter">BODEGA TALLER</span>
+        </div>
+
+        {/* Marcador de Stock */}
+        <div className="flex items-end gap-1.5 bg-black border border-white/10 rounded-sm px-3 py-1">
+          <span className="font-mono text-2xl font-black text-white leading-none">{stock.length}</span>
+          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest pb-0.5">UDS</span>
+        </div>
       </button>
 
-      {/* Drawer Fullscreen */}
+      {/* ─── MODAL PANTALLA COMPLETA ─── */}
       {isOpen && (
-        <div className="fixed inset-0 z-[100] flex flex-col bg-black/95 backdrop-blur-xl animate-in fade-in slide-in-from-bottom-8 duration-300">
-          <div className="flex items-center justify-between p-4 border-b border-white/10 bg-black/50 sticky top-0 z-10">
+        <div className="fixed inset-0 z-[150] flex flex-col bg-[#050505] animate-in slide-in-from-bottom-4 duration-200">
+
+          {/* Cabecera Fija (Espacio optimizado) */}
+          <div className="flex items-center justify-between p-4 border-b-2 border-white/10 bg-black shrink-0">
             <div>
-              <h2 className="text-lg font-bold text-white tracking-tight">Stock en Bodega</h2>
-              <p className="text-[12px] text-emerald-400 font-medium">{stock.length} listos para instalar</p>
+              <h2 className="text-2xl font-black text-white uppercase tracking-tighter leading-none">STOCK DISPONIBLE</h2>
+              <p className="text-[11px] text-emerald-400 font-black uppercase tracking-widest mt-1.5">{stock.length} LISTOS PARA INSTALAR</p>
             </div>
             <button
               type="button"
               onClick={() => setIsOpen(false)}
-              className="h-9 w-9 flex items-center justify-center rounded-full bg-white/10 text-white cursor-pointer hover:bg-white/20 transition-colors"
+              className="h-12 w-12 flex items-center justify-center rounded-sm border-2 border-white/20 bg-[#121214] text-white cursor-pointer active:bg-white/10 transition-colors"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
+              <span className="text-2xl font-black">X</span>
             </button>
           </div>
-          
-          <div className="p-4 border-b border-white/10 bg-slate-900/50">
-            <div className="relative">
-              <svg xmlns="http://www.w3.org/2000/svg" className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-              </svg>
-              <input
-                type="text"
-                placeholder="Buscar por código, serie o marca..."
-                value={busqueda}
-                onChange={(e) => setBusqueda(e.target.value)}
-                className="w-full rounded-2xl border border-slate-600 bg-black/40 py-3.5 pl-10 pr-4 text-[15px] text-white placeholder-slate-500 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/50 focus:outline-none transition-colors"
-              />
-            </div>
+
+          {/* Buscador Fijo (h-14 para dedos grandes, sin bordes inútiles) */}
+          <div className="p-3 border-b-2 border-white/10 bg-[#0a0a0a] shrink-0">
+            <input
+              type="text"
+              placeholder="BUSCAR CÓDIGO O MARCA..."
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value.toUpperCase())}
+              className="w-full h-14 rounded-sm border-2 border-white/20 bg-black px-4 font-mono text-xl font-black text-white placeholder-slate-600 focus:border-emerald-500 focus:outline-none transition-colors uppercase"
+            />
           </div>
 
-          <div className="flex-1 overflow-y-auto px-2 pb-6">
+          {/* Listado de Stock (Scrollable, tarjetas densas) */}
+          <div className="flex-1 overflow-y-auto p-3 space-y-3 bg-[#050505]">
             {stockFiltrado.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-20 text-slate-500">
-                <svg xmlns="http://www.w3.org/2000/svg" className="mb-4 h-12 w-12 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
-                </svg>
-                <p className="text-[15px]">No se encontraron resultados.</p>
+              <div className="flex flex-col items-center justify-center h-full text-center text-slate-700 pb-20">
+                <span className="text-6xl font-black">?</span>
+                <span className="text-xl font-black uppercase tracking-widest mt-2">SIN RESULTADOS</span>
               </div>
             ) : (
-                <div className="space-y-2 mt-4">
-                  {stockFiltrado.map((n) => (
-                    <div key={n.id} className="flex flex-col gap-2 rounded-2xl border border-white/[0.06] bg-white/[0.03] p-4">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <span className="font-mono text-sm font-bold text-white bg-black/50 px-2.5 py-1 rounded-md border border-white/10">
-                            {n.codigo_unico}
-                          </span>
-                        </div>
-                        <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[10px] uppercase font-bold tracking-wider ${
-                          n.ciclo_vida === 'nuevo' 
-                            ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" 
-                            : "bg-amber-500/10 text-amber-400 border border-amber-500/20"
-                        }`}>
-                          {n.ciclo_vida.replace('_', ' ')}
-                        </span>
-                      </div>
-                      
-                      <div className="mt-1">
-                        <div className="font-semibold text-[15px] text-white">{n.modelos_neumaticos?.marca || "Desconocida"}</div>
-                        <div className="text-[13px] text-slate-400">{n.modelos_neumaticos?.medida || ""}</div>
-                      </div>
+              <div className="space-y-3 pb-6">
+                {stockFiltrado.map((n) => (
+                  // TARJETA DE NEUMÁTICO (Compacta pero con letras grandes)
+                  <div key={n.id} className="flex flex-col rounded-sm border-2 border-emerald-500/30 bg-[#101010] p-4">
 
-                      <div className="mt-2 text-[12px] text-slate-500 flex items-center justify-between border-t border-white/5 pt-3">
-                        <span className="font-mono">Serie: {n.numero_serie || "S/N"}</span>
-                        <span>
-                          {n.usuarios ? (
-                            <>Resp: <span className="text-slate-400">{n.usuarios.nombre_completo.split(' ')[0]}</span></>
-                          ) : (
-                            <span className="italic">Sistema</span>
-                          )}
-                        </span>
+                    {/* Fila Superior: Código y Estado */}
+                    <div className="flex items-center justify-between border-b-2 border-white/10 pb-3 mb-3">
+                      <span className="font-mono text-3xl sm:text-4xl font-black text-white tracking-tighter bg-black px-3 py-1 rounded-sm border border-white/10 leading-none">
+                        {n.codigo_unico}
+                      </span>
+                      <div className={`px-3 py-1.5 rounded-sm border text-[11px] font-black uppercase tracking-widest ${n.ciclo_vida === 'nuevo'
+                          ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                          : "bg-amber-500/10 text-amber-400 border-amber-500/20"
+                        }`}>
+                        {n.ciclo_vida.replace('_', ' ')}
                       </div>
                     </div>
-                  ))}
-                </div>
+
+                    {/* Detalles Técnicos */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="flex flex-col border-l-4 border-white/10 pl-3">
+                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-0.5">MARCA</span>
+                        <span className="font-black text-xl text-white uppercase leading-none">{n.modelos_neumaticos?.marca || "N/A"}</span>
+                      </div>
+                      <div className="flex flex-col border-l-4 border-white/10 pl-3">
+                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-0.5">MEDIDA</span>
+                        <span className="font-black text-xl text-white uppercase leading-none">{n.modelos_neumaticos?.medida || "N/A"}</span>
+                      </div>
+                    </div>
+
+                    {/* Info Secundaria (Serie/Resp) */}
+                    <div className="mt-4 pt-3 text-[11px] text-slate-500 flex items-center justify-between border-t border-white/10 font-black uppercase tracking-widest">
+                      <span className="font-mono text-slate-400">SERIE: {n.numero_serie || "S/N"}</span>
+                      <span>
+                        {n.usuarios ? (
+                          <>RESP: <span className="text-slate-300">{n.usuarios.nombre_completo.split(' ')[0]}</span></>
+                        ) : (
+                          <span className="italic text-slate-600">SISTEMA</span>
+                        )}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
         </div>

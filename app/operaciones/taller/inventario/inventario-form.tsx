@@ -27,81 +27,99 @@ export default function InventarioForm() {
     setLoading(false);
   }
 
-  const inputCls = "w-full rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-2.5 text-[14px] text-white placeholder-white/20 focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/20 focus:outline-none transition-colors";
+  // ─── CLASES TÁCTICAS (COMPACTAS PERO LEGIBLES) ───
+  // h-14 = 56px (perfecto para dedos sin comerse toda la pantalla)
+  const inputUI = "w-full h-14 rounded-sm border-2 border-emerald-500/30 bg-black px-3 font-mono text-xl font-black text-white focus:border-emerald-500 focus:outline-none transition-colors uppercase placeholder:text-slate-700";
+  const labelUI = "block text-[11px] font-black text-slate-400 mb-1 uppercase tracking-widest";
 
   return (
-    <form id="inventario-form" action={handleSubmit} className="space-y-3.5">
+    <form id="inventario-form" action={handleSubmit} className="space-y-3 w-full">
+
+      {/* ─── ÉXITO: COMPACTO ─── */}
       {exito && (
-        <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/[0.06] p-3 space-y-1.5">
-          <p className="text-[13px] font-medium text-emerald-400">✓ {exito}</p>
+        <div className="rounded-sm border-2 border-emerald-500 bg-emerald-500/10 p-3 text-center animate-in fade-in">
+          <p className="text-[12px] font-black text-emerald-400 uppercase tracking-widest mb-2">INGRESO OK</p>
           {codigoGenerado && (
-            <div className="flex items-center gap-2 rounded-md bg-black/30 px-2.5 py-1.5">
-              <span className="text-[11px] text-white/30">Código:</span>
-              <span className="font-mono text-[13px] font-bold text-white">{codigoGenerado}</span>
+            <div className="bg-black border-2 border-emerald-500/30 py-2 rounded-sm">
+              <span className="font-mono text-4xl font-black text-white tracking-tighter leading-none">{codigoGenerado}</span>
             </div>
           )}
         </div>
       )}
+
+      {/* ─── ERROR ─── */}
       {error && (
-        <div className="rounded-lg border border-red-500/20 bg-red-500/[0.06] p-3 text-[13px] font-medium text-red-400">
-          ✕ {error}
+        <div className="rounded-sm border-2 border-red-500 bg-red-500/10 p-3 text-center animate-in fade-in">
+          <p className="text-[12px] font-black text-red-500 uppercase tracking-widest">⚠ {error}</p>
         </div>
       )}
 
+      {/* MODELO */}
       <div>
-        <label htmlFor="modelo_id" className="block text-[12px] font-medium text-white/40 mb-1.5 uppercase tracking-wider">Modelo *</label>
-        <select id="modelo_id" name="modelo_id" required className={inputCls}>
-          <option value="" className="bg-slate-900 text-white">Selecciona un modelo</option>
-          {modelos.map((m) => (<option key={m.id} value={m.id} className="bg-slate-900 text-white">{m.marca} — {m.medida}</option>))}
-        </select>
-        {modelos.length === 0 && (
-          <p className="mt-1 text-[11px] text-amber-400/70">No hay modelos. El administrador debe crearlos primero.</p>
-        )}
-      </div>
-
-      <div className="grid grid-cols-2 gap-2.5">
-        <div>
-          <label htmlFor="numero_serie" className="block text-[12px] font-medium text-white/40 mb-1.5 uppercase tracking-wider">N° Serie *</label>
-          <input id="numero_serie" name="numero_serie" type="text" required placeholder="Grabado en goma" className={`${inputCls} font-mono uppercase`} />
-        </div>
-        <div>
-          <label htmlFor="codigo_dot" className="block text-[12px] font-medium text-white/40 mb-1.5 uppercase tracking-wider">DOT *</label>
-          <input id="codigo_dot" name="codigo_dot" type="text" required maxLength={4} placeholder="4223" className={inputCls} onChange={(e) => { e.target.value = e.target.value.replace(/\D/g, ''); }} />
-        </div>
-      </div>
-
-      <div>
-        <label htmlFor="ciclo_vida" className="block text-[12px] font-medium text-white/40 mb-1.5 uppercase tracking-wider">Condición</label>
-        <select id="ciclo_vida" name="ciclo_vida" className={inputCls}>
-          <option value="nuevo" className="bg-slate-900 text-white">Nuevo</option>
-          <option value="recapado_1" className="bg-slate-900 text-white">Recapado 1</option>
-          <option value="recapado_2" className="bg-slate-900 text-white">Recapado 2</option>
-          <option value="recapado_3" className="bg-slate-900 text-white">Recapado 3</option>
+        <label htmlFor="modelo_id" className={labelUI}>MODELO / MEDIDA *</label>
+        <select id="modelo_id" name="modelo_id" required className={inputUI}>
+          <option value="">-- SELECCIONAR --</option>
+          {modelos.map((m) => (
+            <option key={m.id} value={m.id}>{m.marca} — {m.medida}</option>
+          ))}
         </select>
       </div>
 
-      <div className="grid grid-cols-2 gap-2.5">
+      {/* SERIE + DOT EN LA MISMA LÍNEA */}
+      <div className="grid grid-cols-2 gap-3">
         <div>
-          <label htmlFor="factura_numero" className="block text-[12px] font-medium text-white/40 mb-1.5 uppercase tracking-wider">
-            Factura <span className="text-white/20">(opc)</span>
-          </label>
-          <input id="factura_numero" name="factura_numero" type="text" placeholder="F-00123" className={inputCls} />
+          <label htmlFor="numero_serie" className={labelUI}>N° SERIE *</label>
+          <input id="numero_serie" name="numero_serie" type="text" required placeholder="GRABADO" className={inputUI} />
         </div>
         <div>
-          <label htmlFor="proveedor" className="block text-[12px] font-medium text-white/40 mb-1.5 uppercase tracking-wider">
-            Proveedor <span className="text-white/20">(opc)</span>
-          </label>
-          <input id="proveedor" name="proveedor" type="text" placeholder="Michelin" className={inputCls} />
+          <label htmlFor="codigo_dot" className={labelUI}>DOT *</label>
+          <input
+            id="codigo_dot"
+            name="codigo_dot"
+            type="tel"
+            inputMode="numeric"
+            required
+            maxLength={4}
+            placeholder="4223"
+            className={inputUI}
+            onChange={(e) => { e.target.value = e.target.value.replace(/\D/g, ''); }}
+          />
         </div>
       </div>
 
-      <button
-        type="submit"
-        disabled={loading}
-        className="w-full rounded-lg bg-amber-500 px-4 py-2.5 text-[14px] font-semibold text-black hover:bg-amber-400 disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-[0.98] cursor-pointer"
-      >
-        {loading ? "Registrando..." : "Registrar Neumático"}
-      </button>
+      {/* CONDICIÓN */}
+      <div>
+        <label htmlFor="ciclo_vida" className={labelUI}>CONDICIÓN *</label>
+        <select id="ciclo_vida" name="ciclo_vida" className={inputUI}>
+          <option value="nuevo">NUEVO</option>
+          <option value="recapado_1">RECAPADO 1</option>
+          <option value="recapado_2">RECAPADO 2</option>
+          <option value="recapado_3">RECAPADO 3</option>
+        </select>
+      </div>
+
+      {/* FACTURA Y PROVEEDOR (OPCIONALES) COMPACTADOS */}
+      <div className="grid grid-cols-2 gap-3 pt-2 border-t-2 border-white/10">
+        <div>
+          <label htmlFor="factura_numero" className={labelUI}>FACTURA</label>
+          <input id="factura_numero" name="factura_numero" type="text" placeholder="OPCIONAL" className={inputUI} />
+        </div>
+        <div>
+          <label htmlFor="proveedor" className={labelUI}>PROVEEDOR</label>
+          <input id="proveedor" name="proveedor" type="text" placeholder="OPCIONAL" className={inputUI} />
+        </div>
+      </div>
+
+      {/* ─── BOTÓN DE EJECUCIÓN (FIJO Y DIRECTO) ─── */}
+      <div className="pt-2">
+        <button
+          type="submit"
+          disabled={loading || modelos.length === 0}
+          className="w-full h-16 rounded-sm bg-emerald-500 text-black text-[18px] font-black uppercase tracking-[0.2em] active:scale-[0.98] disabled:opacity-20 disabled:grayscale transition-all"
+        >
+          {loading ? "PROCESANDO..." : "INGRESAR A BODEGA"}
+        </button>
+      </div>
     </form>
   );
 }

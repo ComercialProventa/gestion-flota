@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import ChasisPreview from "@/components/buses/chasis-preview";
 import { registrarBus } from "../actions";
 
@@ -14,21 +16,42 @@ import { registrarBus } from "../actions";
  * El selector de chasis controla qué tipo de bus se dibuja en <ChasisPreview />.
  */
 export default function NuevoBusForm() {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+
   const [chasis, setChasis] = useState<"estandar_6" | "doble_piso_10">("estandar_6");
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function handleSubmit(formData: FormData) {
-    setLoading(true);
-    setError(null);
+  // ─── Configuración de React Query ──────────────────────────────
+  const mutation = useMutation({
+    mutationFn: async (formData: FormData) => {
+      return await registrarBus(formData);
+    },
+    onSuccess: (result) => {
+      // Si la Server Action devuelve un error controlado (ej: patente duplicada)
+      if (result?.error) {
+        setError(result.error);
+        return;
+      }
 
-    const result = await registrarBus(formData);
-
-    // Si hay error, lo mostramos (si hay redirect, no llegamos aquí)
-    if (result?.error) {
-      setError(result.error);
-      setLoading(false);
+      // Si todo sale bien:
+      if (result?.success) {
+        // 1. Invalidamos la caché de la lista de buses para que se refresque en segundo plano
+        queryClient.invalidateQueries({ queryKey: ["buses"] });
+        // 2. Redirigimos al administrador a la vista general sin recargar la página
+        router.push("/admin/buses");
+      }
+    },
+    onError: () => {
+      // Error de red o caída del servidor
+      setError("Ocurrió un error inesperado al conectar con el servidor.");
     }
+  });
+
+  // Reemplazamos tu async manual por la llamada a la mutación
+  function handleSubmit(formData: FormData) {
+    setError(null);
+    mutation.mutate(formData);
   }
 
   const inputClasses =
@@ -95,22 +118,20 @@ export default function NuevoBusForm() {
               <button
                 type="button"
                 onClick={() => setChasis("estandar_6")}
-                className={`rounded-xl border p-3 text-center text-sm font-medium transition-all cursor-pointer ${
-                  chasis === "estandar_6"
+                className={`rounded-xl border p-3 text-center text-sm font-medium transition-all cursor-pointer ${chasis === "estandar_6"
                     ? "border-sky-500 bg-sky-500/15 text-sky-400 ring-2 ring-sky-500/20"
                     : "border-slate-600 bg-slate-700/50 text-slate-400 hover:border-slate-500"
-                }`}
+                  }`}
               >
                 <span className="block text-xs font-bold mb-0.5 uppercase tracking-wider">6R</span>
               </button>
               <button
                 type="button"
                 onClick={() => setChasis("doble_piso_10")}
-                className={`rounded-xl border p-3 text-center text-sm font-medium transition-all cursor-pointer ${
-                  chasis === "doble_piso_10"
+                className={`rounded-xl border p-3 text-center text-sm font-medium transition-all cursor-pointer ${chasis === "doble_piso_10"
                     ? "border-sky-500 bg-sky-500/15 text-sky-400 ring-2 ring-sky-500/20"
                     : "border-slate-600 bg-slate-700/50 text-slate-400 hover:border-slate-500"
-                }`}
+                  }`}
               >
                 <span className="block text-xs font-bold mb-0.5 uppercase tracking-wider">10R</span>
               </button>
@@ -132,10 +153,10 @@ export default function NuevoBusForm() {
           {/* Botón de envío */}
           <button
             type="submit"
-            disabled={loading}
+            disabled={mutation.isPending}
             className="w-full rounded-xl bg-sky-600 px-4 py-3.5 text-sm font-semibold text-white shadow-lg shadow-sky-600/25 hover:bg-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all cursor-pointer"
           >
-            {loading ? (
+            {mutation.isPending ? (
               <span className="inline-flex items-center justify-center gap-2">
                 <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />

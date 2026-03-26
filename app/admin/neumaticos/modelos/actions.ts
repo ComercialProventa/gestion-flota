@@ -9,6 +9,24 @@ import { createClient } from "@/utils/supabase/server";
  * Valida marca, medida y vida útil, luego inserta en la tabla
  * modelos_neumaticos. Captura error de duplicados si existiera.
  */
+
+/**
+ * Obtener todos los modelos de neumáticos (Usado por React Query)
+ */
+export async function getModelos() {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("modelos_neumaticos")
+    .select("*")
+    .order("marca", { ascending: true });
+
+  if (error) throw new Error(error.message);
+  console.log("Datos recibidos:", data);
+  return data;
+}
+
+
 export async function crearModelo(formData: FormData) {
   const marca = (formData.get("marca") as string || "").trim();
   const medida = (formData.get("medida") as string || "").trim();
@@ -26,12 +44,12 @@ export async function crearModelo(formData: FormData) {
 
   const { error: dbError } = await supabase
     .from("modelos_neumaticos")
-    .insert({ 
-      marca, 
-      medida, 
+    .insert({
+      marca,
+      medida,
       aplicacion_eje,
       profundidad_estria_nueva_mm: 20, // Default value to satisfy database
-      vida_util_km: vidaUtilKm 
+      vida_util_km: vidaUtilKm
     });
 
   if (dbError) {

@@ -1,11 +1,26 @@
 "use server";
 
-import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/utils/supabase/server";
 import { subirImagenVehiculo } from "@/utils/supabase/storage";
 
 const EJES_VALIDOS = ["2_ejes_6_ruedas", "3_ejes_10_ruedas"];
+
+/**
+ * Obtener todas las unidades de la flota (Usado por React Query)
+ */
+export async function getBuses() {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("buses")
+    .select("id, patente, marca, modelo, ano, chasis, foto_url, vencimiento_revision_tecnica, vencimiento_seguro, capacidad_estanque")
+    .order("patente", { ascending: true });
+
+  if (error) throw new Error(error.message);
+
+  return data;
+}
 
 /**
  * Registrar una nueva unidad en la flota.
@@ -52,7 +67,8 @@ export async function registrarUnidad(formData: FormData) {
   }
 
   revalidatePath("/admin/flota");
-  redirect("/admin/flota");
+  // REDIRECT ELIMINADO - Devolvemos success para que React Query sepa que todo salió bien
+  return { success: true };
 }
 
 /**
@@ -105,7 +121,8 @@ export async function actualizarUnidad(formData: FormData) {
   }
 
   revalidatePath("/admin/flota");
-  redirect("/admin/flota");
+  // REDIRECT ELIMINADO
+  return { success: true };
 }
 
 /**

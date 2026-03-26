@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import VigenciaCompacta from "@/components/flota/vigencia-compacta";
+import { useMutation, useQueryClient } from "@tanstack/react-query"; // Importaciones añadidas
 import { eliminarUnidad, renovarDocumentoUnidad } from "./actions";
 
 export type Unidad = {
@@ -20,8 +21,9 @@ export type Unidad = {
 };
 
 export default function FlotaLista({ unidades }: { unidades: Unidad[] }) {
+  const queryClient = useQueryClient(); // Instanciamos el cliente de caché
+
   const [eliminando, setEliminando] = useState<Unidad | null>(null);
-  const [elimLoading, setElimLoading] = useState(false);
   const [elimError, setElimError] = useState<string | null>(null);
 
   const [renovando, setRenovando] = useState<{
@@ -30,32 +32,56 @@ export default function FlotaLista({ unidades }: { unidades: Unidad[] }) {
     label: string;
   } | null>(null);
   const [renovarFecha, setRenovarFecha] = useState("");
-  const [renovarLoading, setRenovarLoading] = useState(false);
   const [renovarError, setRenovarError] = useState<string | null>(null);
-
   const [busqueda, setBusqueda] = useState("");
 
-  async function handleEliminar() {
+  // ─── MUTACIÓN: Eliminar Unidad ──────────────────────────────────────────
+  const eliminarMutation = useMutation({
+    mutationFn: (id: string) => eliminarUnidad(id),
+    onSuccess: (result) => {
+      if (result.error) {
+        setElimError(result.error);
+      } else {
+        // ¡Magia de caché! Le decimos a React Query que vuelva a pedir la flota
+        queryClient.invalidateQueries({ queryKey: ["flota"] });
+        setEliminando(null);
+      }
+    },
+    onError: () => setElimError("Fallo de conexión al eliminar."),
+  });
+
+  // ─── MUTACIÓN: Renovar Documento ────────────────────────────────────────
+  const renovarMutation = useMutation({
+    mutationFn: ({ id, tipo, fecha }: { id: string; tipo: "revision_tecnica" | "seguro"; fecha: string }) =>
+      renovarDocumentoUnidad(id, tipo, fecha),
+    onSuccess: (result) => {
+      if (result.error) {
+        setRenovarError(result.error);
+      } else {
+        // Invalida la caché para actualizar las fechas de vencimiento en pantalla
+        queryClient.invalidateQueries({ queryKey: ["flota"] });
+        setRenovando(null);
+        setRenovarFecha("");
+      }
+    },
+    onError: () => setRenovarError("Fallo de conexión al renovar."),
+  });
+
+  // ─── HANDLERS ─────────────────────────────────────────────────────────
+  function handleEliminar() {
     if (!eliminando) return;
-    setElimLoading(true);
     setElimError(null);
-    const result = await eliminarUnidad(eliminando.id);
-    setElimLoading(false);
-    if (result.error) setElimError(result.error);
-    else setEliminando(null);
+    eliminarMutation.mutate(eliminando.id);
   }
 
-  async function handleRenovar() {
+  function handleRenovar() {
     if (!renovando || !renovarFecha) return;
-    setRenovarLoading(true);
     setRenovarError(null);
-    const result = await renovarDocumentoUnidad(renovando.unidad.id, renovando.tipo, renovarFecha);
-    setRenovarLoading(false);
-    if (result.error) setRenovarError(result.error);
-    else {
-      setRenovando(null);
-      setRenovarFecha("");
-    }
+    renovarMutation.mutate({
+      id: renovando.unidad.id,
+      tipo: renovando.tipo,
+      fecha: renovarFecha,
+    });
   }
 
   const unidadesFiltradas = useMemo(() => {
@@ -174,8 +200,80 @@ export default function FlotaLista({ unidades }: { unidades: Unidad[] }) {
         ))}
       </div>
 
-      {/* Modales (Sin cambios en lógica, solo limpieza visual aplicada) */}
-      {/* ... (Se mantienen igual que en la versión anterior para asegurar funcionalidad) */}
+      {/* --- MODAL ELIMINAR --- */}
+      {eliminando && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="w-full max-w-sm rounded-lg border border-white/10 bg-[#121214] p-5 shadow-2xl">
+            <h3 className="mb-2 text-lg font-bold text-white">Dar de Baja Unidad</h3>
+            <p className="mb-5 text-sm text-slate-400">
+              ¿Estás seguro que deseas dar de baja el bus <span className="font-bold text-white">{eliminando.patente}</span>? Esta acción no se puede deshacer.
+            </p>
+            {elimError && <p className="mb-4 text-xs font-semibold text-red-400">{elimError}</p>}
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setEliminando(null)}
+                disabled={eliminarMutation.isPending}
+                className="flex-1 rounded border border-white/10 bg-transparent px-4 py-2.5 text-xs font-semibold text-white hover:bg-white/5 disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleEliminar}
+                disabled={eliminarMutation.isPending}
+                className="flex-1 rounded bg-red-600 px-4 py-2.5 text-xs font-semibold text-white hover:bg-red-500 disabled:opacity-50"
+              >
+                {eliminarMutation.isPending ? "Procesando..." : "Sí, Dar de Baja"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- MODAL RENOVAR --- */}
+      {renovando && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="w-full max-w-sm rounded-lg border border-white/10 bg-[#121214] p-5 shadow-2xl">
+            <h3 className="mb-1 text-lg font-bold text-white">Renovar Documento</h3>
+            <p className="mb-5 text-xs text-slate-400">
+              {renovando.label} - Unidad <span className="font-bold text-white">{renovando.unidad.patente}</span>
+            </p>
+
+            <div className="mb-5">
+              <label className={labelClasses}>Nueva Fecha de Vencimiento</label>
+              <input
+                type="date"
+                value={renovarFecha}
+                onChange={(e) => setRenovarFecha(e.target.value)}
+                className={inputClasses}
+                style={{ colorScheme: "dark" }}
+              />
+            </div>
+
+            {renovarError && <p className="mb-4 text-xs font-semibold text-red-400">{renovarError}</p>}
+
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setRenovando(null)}
+                disabled={renovarMutation.isPending}
+                className="flex-1 rounded border border-white/10 bg-transparent px-4 py-2.5 text-xs font-semibold text-white hover:bg-white/5 disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleRenovar}
+                disabled={renovarMutation.isPending || !renovarFecha}
+                className="flex-1 rounded bg-sky-600 px-4 py-2.5 text-xs font-semibold text-white hover:bg-sky-500 disabled:opacity-50"
+              >
+                {renovarMutation.isPending ? "Guardando..." : "Confirmar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

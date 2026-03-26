@@ -299,7 +299,7 @@ export default function ChasisInteractivo({ buses }: { buses: Bus[] }) {
                 type="tel"
                 inputMode="numeric"
                 value={kmInput}
-                onChange={(e) => setKmInput(e.target.value)}
+                onChange={(e) => setKmInput(e.target.value.replace(/\D/g, ''))}
                 placeholder={`${ultimoKm}`}
                 className={`w-full h-28 border-4 bg-black px-2 font-mono text-[60px] sm:text-[80px] leading-none font-black text-white text-center focus:outline-none rounded-sm ${modalError ? 'border-red-500 bg-red-500/10 text-red-500' : 'border-white/20 focus:border-amber-500'}`}
               />
@@ -318,19 +318,44 @@ export default function ChasisInteractivo({ buses }: { buses: Bus[] }) {
         </div>
       )}
 
-      {/* ─── MODAL SELECTOR DE BUSES ─── */}
+      {/* ─── MODAL SELECTOR DE BUSES (Ajustado) ─── */}
       {modalBusesVisible && (
-        <div className="fixed inset-0 z-[100] bg-black animate-in slide-in-from-bottom-4 flex flex-col">
-          <div className="p-6 shrink-0 border-b-4 border-white/10 flex justify-between items-center bg-[#050505]">
-            <h3 className="text-4xl font-black text-white uppercase tracking-tighter">FLOTA</h3>
+        <div className="fixed inset-0 z-[150] bg-[#050505] animate-in slide-in-from-bottom-4 flex flex-col duration-200">
+
+          {/* Cabecera Fija Compactada */}
+          <div className="p-4 sm:p-5 shrink-0 border-b-4 border-white/10 flex justify-between items-center bg-black">
+            <div>
+              <h3 className="text-2xl sm:text-3xl font-black text-white uppercase tracking-tighter leading-none">
+                SELECCIONAR UNIDAD
+              </h3>
+              <p className="text-[11px] text-amber-500 font-black uppercase tracking-widest mt-1.5">
+                FLOTA ACTIVA EN TALLER
+              </p>
+            </div>
             {busSeleccionado && (
-              <button onClick={() => setModalBusesVisible(false)} className="h-16 w-16 flex items-center justify-center border-4 border-white/20 text-white font-black rounded-sm text-3xl">X</button>
+              <button
+                onClick={() => setModalBusesVisible(false)}
+                className="h-12 w-12 sm:h-14 sm:w-14 flex items-center justify-center border-4 border-white/20 bg-[#121214] text-white font-black rounded-sm text-2xl active:bg-white/10 transition-colors"
+              >
+                X
+              </button>
             )}
           </div>
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-20">
+
+          {/* Lista de Flota Densidad Táctica */}
+          <div className="flex-1 overflow-y-auto p-3 space-y-3 pb-20">
             {buses.map((b) => (
-              <button key={b.id} onClick={() => { setBusId(b.id); setModalBusesVisible(false); }} className="w-full flex items-center justify-center border-4 border-white/10 bg-[#101010] p-10 active:bg-amber-500 active:text-black transition-colors group rounded-sm">
-                <span className="font-mono text-6xl font-black tracking-tighter uppercase group-active:text-black">{b.patente}</span>
+              <button
+                key={b.id}
+                onClick={() => { setBusId(b.id); setModalBusesVisible(false); }}
+                className="w-full flex items-center justify-between border-4 border-white/10 bg-[#101010] p-4 sm:p-5 active:bg-amber-500 active:border-amber-500 transition-colors group rounded-sm"
+              >
+                <span className="font-mono text-4xl sm:text-5xl font-black tracking-tighter uppercase group-active:text-black leading-none">
+                  {b.patente}
+                </span>
+                <span className="text-[11px] sm:text-[13px] font-black text-slate-500 group-active:text-black/70 uppercase tracking-widest">
+                  SELECCIONAR
+                </span>
               </button>
             ))}
           </div>

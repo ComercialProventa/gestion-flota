@@ -8,25 +8,39 @@ import HistorialConductor from "./historial-conductor";
 import OperacionesShell from "../operaciones-shell";
 
 export default function CombustibleCliente() {
-  const { data: perfil, isLoading: loadingPerfil } = useQuery({
+  const { data: perfil, isLoading: loadingPerfil, isError: errorPerfil } = useQuery({
     queryKey: ["perfil_operario"],
     queryFn: getPerfilOperario,
     staleTime: 1000 * 60 * 10,
+    retry: 1,
   });
 
   const { data: busesData, isLoading: loadingBuses } = useQuery({
     queryKey: ["buses_combustible"],
     queryFn: getBusesParaCombustible,
     staleTime: 1000 * 60 * 5,
+    retry: 1,
   });
 
   const { data: historial, isLoading: loadingHistorial } = useQuery({
     queryKey: ["historial_combustible"],
     queryFn: getHistorialCombustible,
     staleTime: 1000 * 60 * 2,
+    retry: 1,
   });
 
   const [tab, setTab] = useState<"nueva" | "historial">("nueva");
+
+  if (errorPerfil) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-[#0a0a0a]">
+        <div className="flex flex-col items-center text-center text-slate-500 p-8">
+          <p className="text-sm font-bold uppercase tracking-widest mb-4">Error al cargar</p>
+          <a href="/login" className="text-amber-500 underline text-xs">Reintentar sesión</a>
+        </div>
+      </div>
+    );
+  }
 
   if (loadingPerfil || loadingBuses || loadingHistorial || !perfil) {
     return (

@@ -21,13 +21,14 @@ export type NeumaticoStock = {
 };
 
 export default function StockTallerList() {
-  const { data: stockData, isLoading } = useQuery<NeumaticoStock[]>({
+  const { data: stockData, isLoading, isError } = useQuery<NeumaticoStock[]>({
     queryKey: ["stock_inventario"],
     queryFn: async () => {
       const data = await getStockInventario();
       return data as unknown as NeumaticoStock[];
     },
     staleTime: 1000 * 60 * 5,
+    retry: 1,
   });
 
   const stock = stockData || [];

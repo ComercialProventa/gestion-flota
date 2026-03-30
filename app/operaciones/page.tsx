@@ -6,11 +6,23 @@ import { getPerfilOperario } from "./actions";
 import OperacionesShell from "./operaciones-shell";
 
 export default function OperacionesDashboard() {
-  const { data: perfil, isLoading } = useQuery({
+  const { data: perfil, isLoading, isError } = useQuery({
     queryKey: ["perfil_operario"],
     queryFn: getPerfilOperario,
     staleTime: 1000 * 60 * 10,
+    retry: 1,
   });
+
+  if (isError) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-[#0a0a0a]">
+        <div className="flex flex-col items-center text-center text-slate-500 p-8">
+          <p className="text-sm font-bold uppercase tracking-widest mb-4">Error al cargar</p>
+          <a href="/login" className="text-amber-500 underline text-xs">Reintentar sesión</a>
+        </div>
+      </div>
+    );
+  }
 
   if (isLoading || !perfil) {
     return (

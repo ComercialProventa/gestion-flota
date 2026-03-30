@@ -63,10 +63,11 @@ type Bus = {
 };
 
 export default function ChasisInteractivo() {
-  const { data: busesData, isLoading } = useQuery<Bus[]>({
+  const { data: busesData, isLoading, isError } = useQuery<Bus[]>({
     queryKey: ["buses_rotacion"],
     queryFn: getBusesParaRotacion,
     staleTime: 1000 * 60 * 5,
+    retry: 1,
   });
 
   const buses = busesData || [];
@@ -181,6 +182,15 @@ export default function ChasisInteractivo() {
       <div className="flex flex-col items-center justify-center py-20 text-slate-500">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-amber-500 border-t-transparent mb-4"></div>
         <p className="text-sm font-bold animate-pulse uppercase tracking-widest">Cargando unidades...</p>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-slate-500">
+        <p className="text-sm font-bold uppercase tracking-widest mb-2">Error al cargar unidades</p>
+        <a href="/operaciones" className="text-amber-500 underline text-xs">Volver</a>
       </div>
     );
   }

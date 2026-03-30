@@ -3,6 +3,8 @@ import Link from "next/link";
 import InventarioAdminTable from "./inventario-admin-table";
 import { obtenerModelosNeumaticos } from "./actions";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Inventario de Neumáticos | Administración",
   description: "DataGrid avanzado de inventario de neumáticos con filtros y trazabilidad",

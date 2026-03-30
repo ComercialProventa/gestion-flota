@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import RegistrosCombustibleCliente from "./registros-cliente";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Historial de Combustible | Correcciones",
   description: "Edición y seguimiento de cargas de combustible",

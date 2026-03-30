@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import AuditoriaCliente from "./auditoria-cliente";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Bitácora de Auditoría",
   description: "Registro detallado de cambios y trazabilidad del sistema",

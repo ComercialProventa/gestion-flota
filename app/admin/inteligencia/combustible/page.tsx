@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import CombustibleDashboard from "./combustible-dashboard";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Antirrobo de Combustible | Inteligencia",
   description: "Tendencias de rendimiento, comparativa gemelas y alertas de estanque fantasma",

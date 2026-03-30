@@ -23,6 +23,21 @@ export async function getBuses() {
 }
 
 /**
+ * Obtener una unidad por su ID
+ */
+export async function getUnidadById(id: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("buses")
+    .select("*")
+    .eq("id", id)
+    .single();
+
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+/**
  * Registrar una nueva unidad en la flota.
  */
 export async function registrarUnidad(formData: FormData) {

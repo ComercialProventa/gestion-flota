@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { actualizarRegistroCombustible, eliminarRegistroCombustible } from "./actions";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { getRegistrosCombustible, actualizarRegistroCombustible, eliminarRegistroCombustible } from "./actions";
 
 type RegistroCombustible = {
   id: string;
@@ -13,8 +14,18 @@ type RegistroCombustible = {
   usuarios?: { nombre_completo: string } | null;
 };
 
-export default function RegistrosCombustibleCliente({ initialData }: { initialData: any[] }) {
-  const [registros, setRegistros] = useState<RegistroCombustible[]>(initialData);
+export default function RegistrosCombustibleCliente() {
+  const queryClient = useQueryClient();
+  const { data: registros, isLoading } = useQuery<RegistroCombustible[]>({
+    queryKey: ["registros_combustible"],
+    queryFn: async () => {
+      const data = await getRegistrosCombustible();
+      return data as unknown as RegistroCombustible[];
+    },
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const lista: RegistroCombustible[] = registros || [];
   const [busqueda, setBusqueda] = useState("");
   
   // Modal State
@@ -24,12 +35,21 @@ export default function RegistrosCombustibleCliente({ initialData }: { initialDa
   const [cargando, setCargando] = useState(false);
   const [errorTexto, setErrorTexto] = useState("");
 
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-slate-500">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-sky-500 border-t-transparent mb-4"></div>
+        <p className="text-sm font-medium animate-pulse">Cargando registros...</p>
+      </div>
+    );
+  }
+
   const filtrados = busqueda
-    ? registros.filter(r => 
+    ? lista.filter(r => 
         r.buses?.patente.toLowerCase().includes(busqueda.toLowerCase()) ||
         r.usuarios?.nombre_completo.toLowerCase().includes(busqueda.toLowerCase())
       )
-    : registros;
+    : lista;
 
   const handleEditClick = (log: RegistroCombustible) => {
     setEditingLog(log);
@@ -53,12 +73,7 @@ export default function RegistrosCombustibleCliente({ initialData }: { initialDa
     if (cls.error) {
       setErrorTexto(cls.error);
     } else {
-      // Actualizar local
-      setRegistros(prev => prev.map(r => 
-        r.id === editingLog.id 
-          ? { ...r, litros_cargados: parseFloat(editLitros), kilometraje: parseInt(editKm, 10) } 
-          : r
-      ));
+      queryClient.invalidateQueries({ queryKey: ["registros_combustible"] });
       setEditingLog(null);
     }
     setCargando(false);
@@ -70,7 +85,7 @@ export default function RegistrosCombustibleCliente({ initialData }: { initialDa
     setCargando(true);
     const cls = await eliminarRegistroCombustible(id);
     if (!cls.error) {
-        setRegistros(prev => prev.filter(r => r.id !== id));
+        queryClient.invalidateQueries({ queryKey: ["registros_combustible"] });
     } else {
         alert(cls.error);
     }

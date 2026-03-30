@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { getAuditoria } from "./actions";
 
 export type AuditLog = {
   id: string;
@@ -34,10 +36,28 @@ const DOT_COLOR = {
   DELETE: "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.4)]",
 };
 
-export default function AuditoriaCliente({ initialLogs }: { initialLogs: any[] }) {
-  const [logs] = useState<AuditLog[]>(initialLogs);
+export default function AuditoriaCliente() {
+  const { data: logsData, isLoading } = useQuery<AuditLog[]>({
+    queryKey: ["auditoria"],
+    queryFn: async () => {
+      const data = await getAuditoria();
+      return data as unknown as AuditLog[];
+    },
+    staleTime: 1000 * 60 * 2,
+  });
+
+  const logs: AuditLog[] = logsData || [];
   const [busqueda, setBusqueda] = useState("");
   const [expandido, setExpandido] = useState<string | null>(null);
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-slate-500">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-sky-500 border-t-transparent mb-4"></div>
+        <p className="text-sm font-medium animate-pulse">Cargando bitácora...</p>
+      </div>
+    );
+  }
 
   const filtrados = useMemo(() => {
     const q = busqueda.toLowerCase().trim();

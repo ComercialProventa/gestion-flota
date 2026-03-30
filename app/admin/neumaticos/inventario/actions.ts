@@ -3,6 +3,49 @@
 import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
 
+export async function getNeumaticos() {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("neumaticos")
+    .select(`
+      id,
+      codigo_unico,
+      numero_serie,
+      codigo_dot,
+      ciclo_vida,
+      estado,
+      posicion_actual,
+      desgaste_acumulado_km,
+      factura_numero,
+      proveedor,
+      precio,
+      creado_en,
+      modelos_neumaticos ( id, marca, medida ),
+      usuarios ( nombre_completo ),
+      buses ( patente )
+    `)
+    .order("creado_en", { ascending: false });
+
+  if (error) throw new Error(error.message);
+  return data || [];
+}
+
+export async function getInventarioCounts() {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("neumaticos")
+    .select("estado");
+
+  if (error) throw new Error(error.message);
+
+  const lista = data || [];
+  return {
+    inventario: lista.filter((n) => n.estado === "inventario").length,
+    instalado: lista.filter((n) => n.estado === "instalado").length,
+    reciclaje: lista.filter((n) => n.estado === "reciclaje").length,
+  };
+}
+
 /**
  * Obtiene todos los modelos de neumáticos disponibles
  */

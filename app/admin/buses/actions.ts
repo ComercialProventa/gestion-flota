@@ -23,6 +23,18 @@ export async function getBuses() {
   return data;
 }
 
+export async function getBusById(id: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("buses")
+    .select("*")
+    .eq("id", id)
+    .single();
+
+  if (error) throw new Error(error.message);
+  return data;
+}
+
 // ============================================================================
 // 2. MUTATION: Registrar un nuevo bus
 // ============================================================================

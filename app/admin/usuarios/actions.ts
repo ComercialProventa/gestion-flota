@@ -1,7 +1,19 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { createClient } from "@/utils/supabase/server";
 import { createAdminClient } from "@/utils/supabase/admin";
+
+export async function getUsuarios() {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("usuarios")
+    .select("id, nombre_completo, rut, correo, rol, creado_en")
+    .order("nombre_completo", { ascending: true });
+
+  if (error) throw new Error(error.message);
+  return data;
+}
 
 /**
  * Genera una contraseña aleatoria de 8 caracteres (letras y números).

@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { registrarIngresoBodega, editarNeumaticoBodega, eliminarNeumaticoBodega } from "./actions";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { getNeumaticos, getInventarioCounts, registrarIngresoBodega, editarNeumaticoBodega, eliminarNeumaticoBodega } from "./actions";
 
 export type NeumaticoAdmin = {
   id: string;
@@ -61,16 +62,40 @@ const POSICION_LABEL: Record<string, string> = {
 };
 
 export default function InventarioAdminTable({
-  neumaticos,
-  counts,
   modelos,
 }: {
-  neumaticos: NeumaticoAdmin[];
-  counts: { inventario: number; instalado: number; reciclaje: number };
   modelos: { id: string; marca: string; medida: string }[];
 }) {
+  const queryClient = useQueryClient();
+
+  const { data: neumaticos, isLoading } = useQuery<NeumaticoAdmin[]>({
+    queryKey: ["neumaticos_inventario"],
+    queryFn: async () => {
+      const data = await getNeumaticos();
+      return data as unknown as NeumaticoAdmin[];
+    },
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const { data: counts } = useQuery<{ inventario: number; instalado: number; reciclaje: number }>({
+    queryKey: ["neumaticos_counts"],
+    queryFn: getInventarioCounts,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const neumaticosData = neumaticos || [];
+  const countsData = counts || { inventario: 0, instalado: 0, reciclaje: 0 };
   const [filtro, setFiltro] = useState<FiltroEstado>("todos");
   const [busqueda, setBusqueda] = useState("");
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-slate-500">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-sky-500 border-t-transparent mb-4"></div>
+        <p className="text-sm font-medium animate-pulse">Cargando inventario...</p>
+      </div>
+    );
+  }
 
   // Modal Ingreso a Bodega
   const [mostrarModalIngreso, setMostrarModalIngreso] = useState(false);
@@ -173,7 +198,7 @@ export default function InventarioAdminTable({
   };
 
   const filtrados = useMemo(() => {
-    let lista = neumaticos;
+    let lista = neumaticosData;
     if (filtro !== "todos") {
       lista = lista.filter((n) => n.estado === filtro);
     }
@@ -189,11 +214,11 @@ export default function InventarioAdminTable({
         (n.buses && n.buses.patente.toLowerCase().includes(q)) ||
         (n.usuarios && n.usuarios.nombre_completo.toLowerCase().includes(q))
     );
-  }, [neumaticos, filtro, busqueda]);
+  }, [neumaticosData, filtro, busqueda]);
 
   const getCount = (key: FiltroEstado) => {
-    if (key === "todos") return neumaticos.length;
-    return counts[key] || 0;
+    if (key === "todos") return neumaticosData.length;
+    return countsData[key] || 0;
   };
 
   // Clases compartidas del sistema de diseño
@@ -355,7 +380,7 @@ export default function InventarioAdminTable({
 
       {/* Footer con conteo */}
       <div className="border-t border-white/5 bg-black/20 px-5 py-3 text-xs font-medium text-slate-500">
-        Mostrando <span className="text-slate-300">{filtrados.length}</span> de {neumaticos.length} registros
+        Mostrando <span className="text-slate-300">{filtrados.length}</span> de {neumaticosData.length} registros
       </div>
 
       {/* =========================================

@@ -2,6 +2,27 @@
 import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
 
+export async function getRegistrosCombustible() {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("registros_combustible")
+    .select(`
+      id,
+      fecha,
+      hora,
+      kilometraje,
+      litros_cargados,
+      buses (patente),
+      usuarios (nombre_completo)
+    `)
+    .order("fecha", { ascending: false })
+    .order("hora", { ascending: false })
+    .limit(300);
+
+  if (error) throw new Error(error.message);
+  return data || [];
+}
+
 export async function actualizarRegistroCombustible(id: string, litros: number, kilometraje: number) {
   const supabase = await createClient();
   

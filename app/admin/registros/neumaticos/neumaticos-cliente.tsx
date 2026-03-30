@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { actualizarMovimientoNeumatico } from "./actions";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { getMovimientosNeumaticos, actualizarMovimientoNeumatico } from "./actions";
 
 type MovimientoNeumatico = {
   id: string;
@@ -15,8 +16,18 @@ type MovimientoNeumatico = {
   neumaticos?: { codigo_unico: string } | null;
 };
 
-export default function RegistrosNeumaticosCliente({ initialData }: { initialData: any[] }) {
-  const [registros, setRegistros] = useState<MovimientoNeumatico[]>(initialData);
+export default function RegistrosNeumaticosCliente() {
+  const queryClient = useQueryClient();
+  const { data: registros, isLoading } = useQuery<MovimientoNeumatico[]>({
+    queryKey: ["movimientos_neumaticos"],
+    queryFn: async () => {
+      const data = await getMovimientosNeumaticos();
+      return data as unknown as MovimientoNeumatico[];
+    },
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const lista: MovimientoNeumatico[] = registros || [];
   const [busqueda, setBusqueda] = useState("");
   
   // Modal State
@@ -25,13 +36,22 @@ export default function RegistrosNeumaticosCliente({ initialData }: { initialDat
   const [cargando, setCargando] = useState(false);
   const [errorTexto, setErrorTexto] = useState("");
 
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-slate-500">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-sky-500 border-t-transparent mb-4"></div>
+        <p className="text-sm font-medium animate-pulse">Cargando historial...</p>
+      </div>
+    );
+  }
+
   const filtrados = busqueda
-    ? registros.filter(r => 
+    ? lista.filter(r => 
         r.buses?.patente.toLowerCase().includes(busqueda.toLowerCase()) ||
         r.usuarios?.nombre_completo.toLowerCase().includes(busqueda.toLowerCase()) ||
         r.neumaticos?.codigo_unico.toLowerCase().includes(busqueda.toLowerCase())
       )
-    : registros;
+    : lista;
 
   const handleEditClick = (log: MovimientoNeumatico) => {
     setEditingLog(log);
@@ -53,11 +73,7 @@ export default function RegistrosNeumaticosCliente({ initialData }: { initialDat
     if (cls.error) {
       setErrorTexto(cls.error);
     } else {
-      setRegistros(prev => prev.map(r => 
-        r.id === editingLog.id 
-          ? { ...r, kilometraje_bus_momento: parseInt(editKm, 10) } 
-          : r
-      ));
+      queryClient.invalidateQueries({ queryKey: ["movimientos_neumaticos"] });
       setEditingLog(null);
     }
     setCargando(false);

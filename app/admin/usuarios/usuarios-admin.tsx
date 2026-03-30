@@ -1,11 +1,31 @@
 "use client";
 
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import UsuariosTable, { type Usuario } from "@/components/usuarios/usuarios-table";
-import { actualizarPerfilUsuario, cambiarContrasenaUsuario } from "./actions";
+import { getUsuarios, actualizarPerfilUsuario, cambiarContrasenaUsuario } from "./actions";
 import AsignacionBusesModal from "./asignacion-buses-modal";
 
-export default function UsuariosAdmin({ usuarios }: { usuarios: Usuario[] }) {
+export default function UsuariosAdmin() {
+  const { data: usuarios, isLoading } = useQuery<Usuario[]>({
+    queryKey: ["usuarios"],
+    queryFn: async () => {
+      const data = await getUsuarios();
+      return (data || []) as Usuario[];
+    },
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const lista: Usuario[] = usuarios || [];
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-slate-500">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-sky-500 border-t-transparent mb-4"></div>
+        <p className="text-sm font-medium animate-pulse">Cargando usuarios...</p>
+      </div>
+    );
+  }
   const [editando, setEditando] = useState<Usuario | null>(null);
   const [cambiandoPwd, setCambiandoPwd] = useState<Usuario | null>(null);
   const [asignando, setAsignando] = useState<Usuario | null>(null);
@@ -59,7 +79,7 @@ export default function UsuariosAdmin({ usuarios }: { usuarios: Usuario[] }) {
   return (
     <>
       <UsuariosTable
-        usuarios={usuarios}
+        usuarios={lista}
         esAdmin={true}
         onEditarPerfil={(u) => { setEditError(null); setEditando(u); }}
         onCambiarContrasena={(u) => { setPwdError(null); setCambiandoPwd(u); }}

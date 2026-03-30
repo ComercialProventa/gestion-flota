@@ -1,9 +1,4 @@
 import type { Metadata } from "next";
-import {
-  obtenerRendimientoFlota,
-  obtenerComparativaGemelas,
-  obtenerAlertasEstanque,
-} from "./actions";
 import CombustibleDashboard from "./combustible-dashboard";
 
 export const metadata: Metadata = {
@@ -11,13 +6,7 @@ export const metadata: Metadata = {
   description: "Tendencias de rendimiento, comparativa gemelas y alertas de estanque fantasma",
 };
 
-export default async function CombustiblePage() {
-  const [rendimiento, gemelas, alertas] = await Promise.all([
-    obtenerRendimientoFlota(),
-    obtenerComparativaGemelas(),
-    obtenerAlertasEstanque(),
-  ]);
-
+export default function CombustiblePage() {
   return (
     <div className="flex flex-col h-full space-y-6 p-4 md:p-6 lg:p-8 antialiased">
       <header className="flex items-center justify-between border-b border-white/5 pb-4">
@@ -28,11 +17,7 @@ export default async function CombustiblePage() {
       </header>
 
       <main className="flex-1 w-full mx-auto max-w-6xl mt-6">
-        <CombustibleDashboard
-          rendimiento={rendimiento}
-          gemelas={gemelas}
-          alertas={alertas}
-        />
+        <CombustibleDashboard />
       </main>
     </div>
   );

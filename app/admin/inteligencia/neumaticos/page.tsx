@@ -1,8 +1,4 @@
 import type { Metadata } from "next";
-import {
-  obtenerRankingCPK,
-  obtenerAlertasCambiazo,
-} from "./actions";
 import NeumaticosDashboard from "./neumaticos-dashboard";
 
 export const metadata: Metadata = {
@@ -10,12 +6,7 @@ export const metadata: Metadata = {
   description: "Ranking de rentabilidad real (CPK) y auditoría de desgaste",
 };
 
-export default async function NeumaticosPage() {
-  const [ranking, alertas] = await Promise.all([
-    obtenerRankingCPK(),
-    obtenerAlertasCambiazo(),
-  ]);
-
+export default function NeumaticosPage() {
   return (
     <div className="flex flex-col h-full space-y-6 p-4 md:p-6 lg:p-8 antialiased">
       <header className="flex items-center justify-between border-b border-white/5 pb-4">
@@ -26,7 +17,7 @@ export default async function NeumaticosPage() {
       </header>
 
       <main className="flex-1 w-full mx-auto max-w-6xl mt-6">
-        <NeumaticosDashboard ranking={ranking} alertas={alertas} />
+        <NeumaticosDashboard />
       </main>
     </div>
   );

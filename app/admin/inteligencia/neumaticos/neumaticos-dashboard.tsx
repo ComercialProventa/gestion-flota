@@ -1,19 +1,33 @@
 "use client";
 
+import { useQuery } from "@tanstack/react-query";
 import type { RankingCPK, AlertaCambiazo } from "./actions";
+import { obtenerRankingCPK, obtenerAlertasCambiazo } from "./actions";
 
-/**
- * NeumaticosDashboard — Client Component
- * 1. Ranking de Rentabilidad (CPK) - Mejor vs Peor negocio
- * 2. Alertas de "El Cambiazo" (Robo de neumáticos nuevos)
- */
-export default function NeumaticosDashboard({
-  ranking,
-  alertas,
-}: {
-  ranking: RankingCPK[];
-  alertas: AlertaCambiazo[];
-}) {
+export default function NeumaticosDashboard() {
+  const { data: ranking, isLoading: loadingRanking } = useQuery<RankingCPK[]>({
+    queryKey: ["ranking_cpk"],
+    queryFn: obtenerRankingCPK,
+    staleTime: 1000 * 60 * 10,
+  });
+
+  const { data: alertas, isLoading: loadingAlertas } = useQuery<AlertaCambiazo[]>({
+    queryKey: ["alertas_cambiazo"],
+    queryFn: obtenerAlertasCambiazo,
+    staleTime: 1000 * 60 * 10,
+  });
+
+  const rankingData = ranking || [];
+  const alertasData = alertas || [];
+
+  if (loadingRanking || loadingAlertas) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-slate-500">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-sky-500 border-t-transparent mb-4"></div>
+        <p className="text-sm font-medium animate-pulse">Analizando datos de neumáticos...</p>
+      </div>
+    );
+  }
   return (
     <div className="space-y-8">
       {/* ═══ SECCIÓN 1: RANKING CPK ═══ */}
@@ -27,7 +41,7 @@ export default function NeumaticosDashboard({
           </p>
         </div>
 
-        {ranking.length === 0 ? (
+        {rankingData.length === 0 ? (
           <div className="rounded border border-white/5 bg-[#121214] p-8 text-center text-sm text-slate-500">
             No hay neumáticos reciclados con precio registrado para calcular el CPK.
           </div>
@@ -45,13 +59,13 @@ export default function NeumaticosDashboard({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-700/50">
-                  {ranking.map((r, i) => (
+                  {rankingData.map((r, i) => (
                     <tr key={r.modeloId} className="transition-colors hover:bg-white/5/20">
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-3">
                           <span className={`flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-bold ${
                             i === 0 ? "bg-amber-500 text-amber-950" :
-                            i === ranking.length - 1 ? "bg-red-500 text-red-950" :
+                            i === rankingData.length - 1 ? "bg-red-500 text-red-950" :
                             "bg-slate-700 text-slate-300"
                           }`}>
                             {i + 1}
@@ -103,7 +117,7 @@ export default function NeumaticosDashboard({
           </p>
         </div>
 
-        {alertas.length === 0 ? (
+        {alertasData.length === 0 ? (
           <div className="rounded border border-emerald-500/20 bg-emerald-500/5 p-6 text-center text-sm text-emerald-400 flex items-center justify-center gap-2">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
@@ -112,7 +126,7 @@ export default function NeumaticosDashboard({
           </div>
         ) : (
           <div className="space-y-3">
-            {alertas.map((a) => (
+            {alertasData.map((a) => (
               <div key={a.id} className="rounded border border-red-500/30 bg-red-500/5 p-5 relative overflow-hidden">
                 {/* Decorative alert bg */}
                 <div className="absolute top-0 right-0 p-4 opacity-5">

@@ -1,28 +1,47 @@
 "use client";
 
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import type { UnidadRendimiento, ComparativaGemela, AlertaEstanque } from "./actions";
+import { obtenerRendimientoFlota, obtenerComparativaGemelas, obtenerAlertasEstanque } from "./actions";
 
-/**
- * CombustibleDashboard — Client Component con 3 secciones:
- * 1. Gráfico de Tendencia de Rendimiento (Km/L) por unidad
- * 2. Comparativa de Unidades Gemelas
- * 3. Alertas de Estanque Fantasma
- */
-export default function CombustibleDashboard({
-  rendimiento,
-  gemelas,
-  alertas,
-}: {
-  rendimiento: UnidadRendimiento[];
-  gemelas: ComparativaGemela[];
-  alertas: AlertaEstanque[];
-}) {
+export default function CombustibleDashboard() {
+  const { data: rendimiento, isLoading: loadingRendimiento } = useQuery<UnidadRendimiento[]>({
+    queryKey: ["rendimiento_flota"],
+    queryFn: obtenerRendimientoFlota,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const { data: gemelas, isLoading: loadingGemelas } = useQuery<ComparativaGemela[]>({
+    queryKey: ["comparativa_gemelas"],
+    queryFn: obtenerComparativaGemelas,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const { data: alertas, isLoading: loadingAlertas } = useQuery<AlertaEstanque[]>({
+    queryKey: ["alertas_estanque"],
+    queryFn: obtenerAlertasEstanque,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const rendimientoData = rendimiento || [];
+  const gemelasData = gemelas || [];
+  const alertasData = alertas || [];
+
   const [unidadSeleccionada, setUnidadSeleccionada] = useState<string>(
-    rendimiento[0]?.busId || ""
+    rendimientoData[0]?.busId || ""
   );
 
-  const unidadActual = rendimiento.find((u) => u.busId === unidadSeleccionada);
+  const unidadActual = rendimientoData.find((u) => u.busId === unidadSeleccionada);
+
+  if (loadingRendimiento || loadingGemelas || loadingAlertas) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-slate-500">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-sky-500 border-t-transparent mb-4"></div>
+        <p className="text-sm font-medium animate-pulse">Analizando datos de combustible...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -33,7 +52,7 @@ export default function CombustibleDashboard({
           <span className="text-xs font-normal text-slate-500">— caída &gt;30% = alerta roja</span>
         </h2>
 
-        {rendimiento.length === 0 ? (
+        {rendimientoData.length === 0 ? (
           <div className="rounded border border-white/5 bg-[#121214] p-8 text-center text-sm text-slate-500">
             No hay datos suficientes. Se necesitan al menos 2 registros de combustible por unidad.
           </div>
@@ -41,7 +60,7 @@ export default function CombustibleDashboard({
           <div className="space-y-4">
             {/* Selector de unidad */}
             <div className="flex items-center gap-3 flex-wrap">
-              {rendimiento.map((u) => (
+              {rendimientoData.map((u) => (
                 <button
                   key={u.busId}
                   type="button"
@@ -109,13 +128,13 @@ export default function CombustibleDashboard({
           <span className="text-xs font-normal text-slate-500">— diferencia &gt;30% = alerta</span>
         </h2>
 
-        {gemelas.length === 0 ? (
+        {gemelasData.length === 0 ? (
           <div className="rounded border border-white/5 bg-[#121214] p-8 text-center text-sm text-slate-500">
             No hay unidades gemelas (misma marca, modelo y año) para comparar.
           </div>
         ) : (
           <div className="space-y-4">
-            {gemelas.map((g) => (
+            {gemelasData.map((g) => (
               <div
                 key={g.grupo}
                 className={`rounded border p-5 ${
@@ -186,7 +205,7 @@ export default function CombustibleDashboard({
           <span className="text-xs font-normal text-slate-500">— intentos de carga &gt; capacidad del estanque</span>
         </h2>
 
-        {alertas.length === 0 ? (
+        {alertasData.length === 0 ? (
           <div className="rounded border border-emerald-500/20 bg-emerald-500/5 p-6 text-center text-sm text-emerald-400 flex items-center justify-center gap-2">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
@@ -195,7 +214,7 @@ export default function CombustibleDashboard({
           </div>
         ) : (
           <div className="space-y-2">
-            {alertas.map((a) => (
+            {alertasData.map((a) => (
               <div key={a.id} className="rounded border border-red-500/20 bg-red-500/5 p-4 flex items-center gap-4">
                 <div className="flex h-10 w-10 items-center justify-center rounded bg-red-600/20 text-red-400 text-lg shrink-0">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>

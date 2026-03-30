@@ -1,16 +1,35 @@
 "use client";
 
+import { useQuery } from "@tanstack/react-query";
 import type { AnomaliaMantenimiento, GastoMensual } from "./actions";
+import { obtenerAnomaliasMantenimiento, obtenerGastoMensualPorUnidad } from "./actions";
 
-export default function MantenimientoDashboard({
-  anomalias,
-  gastos,
-}: {
-  anomalias: AnomaliaMantenimiento[];
-  gastos: GastoMensual[];
-}) {
-  const maxGasto = gastos.length > 0 ? Math.max(...gastos.map((g) => g.gastoTotal)) : 0;
-  const gastoTotalGlobal = gastos.reduce((sum, g) => sum + g.gastoTotal, 0);
+export default function MantenimientoDashboard() {
+  const { data: anomalias, isLoading: loadingAnomalias } = useQuery<AnomaliaMantenimiento[]>({
+    queryKey: ["anomalias_mantenimiento"],
+    queryFn: obtenerAnomaliasMantenimiento,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const { data: gastos, isLoading: loadingGastos } = useQuery<GastoMensual[]>({
+    queryKey: ["gasto_mensual"],
+    queryFn: obtenerGastoMensualPorUnidad,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const anomaliasData = anomalias || [];
+  const gastosData = gastos || [];
+  const maxGasto = gastosData.length > 0 ? Math.max(...gastosData.map((g) => g.gastoTotal)) : 0;
+  const gastoTotalGlobal = gastosData.reduce((sum, g) => sum + g.gastoTotal, 0);
+
+  if (loadingAnomalias || loadingGastos) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-slate-500">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-sky-500 border-t-transparent mb-4"></div>
+        <p className="text-sm font-medium animate-pulse">Analizando mantenimiento...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -25,7 +44,7 @@ export default function MantenimientoDashboard({
           </p>
         </div>
 
-        {anomalias.length === 0 ? (
+        {anomaliasData.length === 0 ? (
           <div className="rounded border border-emerald-500/20 bg-emerald-500/5 p-6 text-center text-sm text-emerald-400 flex items-center justify-center gap-2">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
@@ -34,7 +53,7 @@ export default function MantenimientoDashboard({
           </div>
         ) : (
           <div className="grid gap-3 sm:grid-cols-2">
-            {anomalias.map((a) => (
+            {anomaliasData.map((a) => (
               <div key={a.id} className="rounded border border-white/10 bg-red-500/5 p-5 relative overflow-hidden flex gap-4">
                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded bg-red-600/20 text-red-500 animate-pulse">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -74,11 +93,11 @@ export default function MantenimientoDashboard({
           </div>
 
           <div className="lg:col-span-3 rounded border border-white/5 bg-[#121214] p-6 overflow-x-auto">
-            {gastos.length === 0 ? (
+            {gastosData.length === 0 ? (
               <p className="text-sm text-slate-500 text-center py-6">Sin gastos registrados este mes.</p>
             ) : (
               <div className="space-y-4 min-w-[500px]">
-                {gastos.map((g, i) => {
+                {gastosData.map((g, i) => {
                   const isTop = i === 0 && g.gastoTotal > 0;
                   const pct = maxGasto > 0 ? (g.gastoTotal / maxGasto) * 100 : 0;
                   

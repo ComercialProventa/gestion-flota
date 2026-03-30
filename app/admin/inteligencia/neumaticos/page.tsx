@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import NeumaticosDashboard from "./neumaticos-dashboard";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Auditoría de Neumáticos | Inteligencia",
   description: "Ranking de rentabilidad real (CPK) y auditoría de desgaste",

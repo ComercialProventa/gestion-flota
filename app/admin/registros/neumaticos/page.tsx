@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import RegistrosNeumaticosCliente from "./neumaticos-cliente";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Historial de Neumáticos | Correcciones",
   description: "Edición y seguimiento de movimientos de neumáticos",

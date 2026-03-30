@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import MantenimientoDashboard from "./mantenimiento-dashboard";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Mantenimiento | Inteligencia",
   description: "Frecuencia de cambios, anomalías y gasto por unidad",

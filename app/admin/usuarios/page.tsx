@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import UsuariosAdmin from "./usuarios-admin";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Gestión de Usuarios | Panel Admin",
 };

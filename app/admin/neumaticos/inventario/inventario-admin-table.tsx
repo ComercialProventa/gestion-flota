@@ -85,23 +85,15 @@ export default function InventarioAdminTable({
 
   const neumaticosData = neumaticos || [];
   const countsData = counts || { inventario: 0, instalado: 0, reciclaje: 0 };
+
+  // ── TODOS LOS HOOKS DEBEN IR ANTES DE CUALQUIER RETURN CONDICIONAL ──
   const [filtro, setFiltro] = useState<FiltroEstado>("todos");
   const [busqueda, setBusqueda] = useState("");
-
-  if (isLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center py-20 text-slate-500">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-sky-500 border-t-transparent mb-4"></div>
-        <p className="text-sm font-medium animate-pulse">Cargando inventario...</p>
-      </div>
-    );
-  }
 
   // Modal Ingreso a Bodega
   const [mostrarModalIngreso, setMostrarModalIngreso] = useState(false);
   const [cargandoIngreso, setCargandoIngreso] = useState(false);
   const [errorIngreso, setErrorIngreso] = useState("");
-
   const [formIngreso, setFormIngreso] = useState({
     modeloId: "",
     cantidad: 1,
@@ -109,6 +101,44 @@ export default function InventarioAdminTable({
     proveedor: "",
     precio: 0,
   });
+
+  // Modal de Edición
+  const [editingNeumatico, setEditingNeumatico] = useState<NeumaticoAdmin | null>(null);
+  const [formEdit, setFormEdit] = useState({
+    modeloId: "",
+    numeroSerie: "",
+    codigoDot: "",
+    factura: "",
+    proveedor: "",
+    precio: 0,
+  });
+  const [cargandoEdit, setCargandoEdit] = useState(false);
+  const [errorEdit, setErrorEdit] = useState("");
+
+  // Eliminación
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  // useMemo hook
+  const filtrados = useMemo(() => {
+    let lista = neumaticosData;
+    if (filtro !== "todos") {
+      lista = lista.filter((n) => n.estado === filtro);
+    }
+    const q = busqueda.trim().toLowerCase();
+    if (!q) return lista;
+    return lista.filter(
+      (n) =>
+        n.codigo_unico.toLowerCase().includes(q) ||
+        (n.numero_serie && n.numero_serie.toLowerCase().includes(q)) ||
+        (n.codigo_dot && n.codigo_dot.toLowerCase().includes(q)) ||
+        (n.modelos_neumaticos && n.modelos_neumaticos.marca.toLowerCase().includes(q)) ||
+        (n.modelos_neumaticos && n.modelos_neumaticos.medida.toLowerCase().includes(q)) ||
+        (n.buses && n.buses.patente.toLowerCase().includes(q)) ||
+        (n.usuarios && n.usuarios.nombre_completo.toLowerCase().includes(q))
+    );
+  }, [neumaticosData, filtro, busqueda]);
+
+  // ── FUNCIONES (no son hooks, pueden ir después) ──
 
   const handleIngresarBodega = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -132,22 +162,11 @@ export default function InventarioAdminTable({
     } else {
       setMostrarModalIngreso(false);
       setFormIngreso({ modeloId: "", cantidad: 1, factura: "", proveedor: "", precio: 0 });
+      queryClient.invalidateQueries({ queryKey: ["neumaticos_inventario"] });
+      queryClient.invalidateQueries({ queryKey: ["neumaticos_counts"] });
     }
     setCargandoIngreso(false);
   };
-
-  // Modal de Edición
-  const [editingNeumatico, setEditingNeumatico] = useState<NeumaticoAdmin | null>(null);
-  const [formEdit, setFormEdit] = useState({
-    modeloId: "",
-    numeroSerie: "",
-    codigoDot: "",
-    factura: "",
-    proveedor: "",
-    precio: 0,
-  });
-  const [cargandoEdit, setCargandoEdit] = useState(false);
-  const [errorEdit, setErrorEdit] = useState("");
 
   const abrirEdicion = (n: NeumaticoAdmin) => {
     setEditingNeumatico(n);
@@ -181,40 +200,23 @@ export default function InventarioAdminTable({
       setErrorEdit(cls.error);
     } else {
       setEditingNeumatico(null);
+      queryClient.invalidateQueries({ queryKey: ["neumaticos_inventario"] });
     }
     setCargandoEdit(false);
   };
 
-  // Eliminación Segura
-  const [deletingId, setDeletingId] = useState<string | null>(null);
   const handleEliminar = async (id: string) => {
     if (!window.confirm("¿Estás súper seguro de eliminar este registro de neumático de forma permanente?")) return;
     setDeletingId(id);
     const cls = await eliminarNeumaticoBodega(id);
     if (cls.error) {
       alert(cls.error);
+    } else {
+      queryClient.invalidateQueries({ queryKey: ["neumaticos_inventario"] });
+      queryClient.invalidateQueries({ queryKey: ["neumaticos_counts"] });
     }
     setDeletingId(null);
   };
-
-  const filtrados = useMemo(() => {
-    let lista = neumaticosData;
-    if (filtro !== "todos") {
-      lista = lista.filter((n) => n.estado === filtro);
-    }
-    const q = busqueda.trim().toLowerCase();
-    if (!q) return lista;
-    return lista.filter(
-      (n) =>
-        n.codigo_unico.toLowerCase().includes(q) ||
-        (n.numero_serie && n.numero_serie.toLowerCase().includes(q)) ||
-        (n.codigo_dot && n.codigo_dot.toLowerCase().includes(q)) ||
-        (n.modelos_neumaticos && n.modelos_neumaticos.marca.toLowerCase().includes(q)) ||
-        (n.modelos_neumaticos && n.modelos_neumaticos.medida.toLowerCase().includes(q)) ||
-        (n.buses && n.buses.patente.toLowerCase().includes(q)) ||
-        (n.usuarios && n.usuarios.nombre_completo.toLowerCase().includes(q))
-    );
-  }, [neumaticosData, filtro, busqueda]);
 
   const getCount = (key: FiltroEstado) => {
     if (key === "todos") return neumaticosData.length;
@@ -225,6 +227,16 @@ export default function InventarioAdminTable({
   const labelClasses = "block text-[11px] font-semibold text-slate-400 mb-1.5 uppercase tracking-wide";
   const inputClasses = "w-full rounded border border-white/10 bg-black/40 px-3 py-2 text-sm text-white placeholder-slate-500 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/30 focus:outline-none transition-colors";
   const inputClassesEdit = "w-full rounded border border-white/10 bg-black/40 px-3 py-2 text-sm text-white placeholder-slate-500 focus:border-sky-500 focus:ring-1 focus:ring-sky-500/30 focus:outline-none transition-colors";
+
+  // ── RETURN CONDICIAL DESPUÉS DE TODOS LOS HOOKS ──
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-slate-500">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-sky-500 border-t-transparent mb-4"></div>
+        <p className="text-sm font-medium animate-pulse">Cargando inventario...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="rounded-lg border border-white/10 bg-[#151517] shadow-sm flex flex-col">

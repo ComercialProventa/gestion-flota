@@ -1,6 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { getStockInventario } from "./actions";
 
 export type NeumaticoStock = {
   id: string;
@@ -18,7 +20,17 @@ export type NeumaticoStock = {
   } | null;
 };
 
-export default function StockTallerList({ stock }: { stock: NeumaticoStock[] }) {
+export default function StockTallerList() {
+  const { data: stockData, isLoading } = useQuery<NeumaticoStock[]>({
+    queryKey: ["stock_inventario"],
+    queryFn: async () => {
+      const data = await getStockInventario();
+      return data as unknown as NeumaticoStock[];
+    },
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const stock = stockData || [];
   const [isOpen, setIsOpen] = useState(false);
   const [busqueda, setBusqueda] = useState("");
 

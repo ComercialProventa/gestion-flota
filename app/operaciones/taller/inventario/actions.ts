@@ -3,6 +3,20 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/utils/supabase/server";
 
+export async function getStockInventario() {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("neumaticos")
+    .select(`
+      id, codigo_unico, numero_serie, codigo_dot, ciclo_vida, creado_en,
+      modelos_neumaticos ( marca, medida ), usuarios ( nombre_completo )
+    `)
+    .eq("estado", "inventario")
+    .order("creado_en", { ascending: false });
+
+  return data || [];
+}
+
 /**
  * Obtener todos los modelos de neumáticos para el selector del formulario.
  */

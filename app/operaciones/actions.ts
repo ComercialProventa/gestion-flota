@@ -3,6 +3,98 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/utils/supabase/server";
 
+export async function getPerfilOperario() {
+  const supabase = await createClient();
+  const { data: { user: authUser } } = await supabase.auth.getUser();
+  if (!authUser) return null;
+
+  const { data: profile } = await supabase
+    .from("usuarios")
+    .select("nombre_completo, rol")
+    .eq("id", authUser.id)
+    .single();
+
+  return {
+    userId: authUser.id,
+    nombre: profile?.nombre_completo?.split(" ")[0] || "Operario",
+    rol: profile?.rol || "conductor",
+  };
+}
+
+export async function getBusesParaCombustible() {
+  const supabase = await createClient();
+  const { data: { user: authUser } } = await supabase.auth.getUser();
+  if (!authUser) return { buses: [], rol: "conductor" };
+
+  const [profileRes, busesRes] = await Promise.all([
+    supabase.from("usuarios").select("rol").eq("id", authUser.id).single(),
+    supabase.from("buses").select("id, patente, foto_url, capacidad_estanque").order("patente"),
+  ]);
+
+  const rol = profileRes.data?.rol || "conductor";
+  let buses = busesRes.data || [];
+
+  if (rol === "conductor") {
+    const { data: asignaciones } = await supabase
+      .from("asignacion_flota")
+      .select("bus_id").eq("usuario_id", authUser.id);
+    const ids = new Set(asignaciones?.map((a) => a.bus_id) || []);
+    buses = buses.filter((b) => ids.has(b.id));
+  }
+
+  return { buses, rol };
+}
+
+export async function getHistorialCombustible() {
+  const supabase = await createClient();
+  const { data: { user: authUser } } = await supabase.auth.getUser();
+  if (!authUser) return [];
+
+  const { data } = await supabase
+    .from("registros_combustible")
+    .select("id, fecha, hora, kilometraje, litros_cargados, buses(patente)")
+    .eq("usuario_id", authUser.id)
+    .order("fecha", { ascending: false })
+    .order("hora", { ascending: false })
+    .limit(5);
+
+  return data || [];
+}
+
+export async function getBusesParaOperaciones() {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("buses")
+    .select("id, patente")
+    .order("patente");
+
+  return data || [];
+}
+
+export async function getBusesParaRotacion() {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("buses")
+    .select("id, patente, foto_url, chasis, neumaticos(posicion_actual)")
+    .order("patente");
+
+  return data || [];
+}
+
+export async function getStockInventario() {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("neumaticos")
+    .select(`
+      id, codigo_unico, numero_serie, codigo_dot, ciclo_vida, creado_en,
+      modelos_neumaticos ( marca, medida ), usuarios ( nombre_completo )
+    `)
+    .eq("estado", "inventario")
+    .order("creado_en", { ascending: false });
+
+  return data || [];
+}
+
 /**
  * Obtiene el último kilometraje registrado para un bus específico.
  *

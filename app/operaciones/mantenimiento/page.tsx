@@ -1,20 +1,14 @@
 import type { Metadata } from "next";
-import { createClient } from "@/utils/supabase/server";
 import MantenimientoForm from "./mantenimiento-form";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Mantenimiento | Operaciones",
   description: "Registro de repuestos y mantenimiento",
 };
 
-export default async function MantenimientoPage() {
-  const supabase = await createClient();
-
-  const { data: buses } = await supabase
-    .from("buses")
-    .select("id, patente")
-    .order("patente");
-
+export default function MantenimientoPage() {
   return (
     <div className="min-h-screen bg-slate-900">
       <header className="sticky top-0 z-10 border-b border-slate-700/50 bg-slate-800/80 backdrop-blur-sm">
@@ -42,7 +36,7 @@ export default async function MantenimientoPage() {
               <p className="text-xs text-slate-400">Todo registro alimenta las métricas del administrador</p>
             </div>
           </div>
-          <MantenimientoForm buses={buses || []} />
+          <MantenimientoForm />
         </div>
       </main>
     </div>

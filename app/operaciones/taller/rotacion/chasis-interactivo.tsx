@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   obtenerNeumaticosBus,
   obtenerUltimoKmBus,
@@ -11,6 +12,7 @@ import {
   type NeumaticoInventario,
   type ModeloNeumatico,
 } from "./actions";
+import { getBusesParaRotacion } from "../../actions";
 import ModalReemplazo from "./modal-reemplazo";
 
 // ─── Constantes de posiciones ─────────────────────
@@ -60,7 +62,14 @@ type Bus = {
   neumaticos?: { posicion_actual: string }[];
 };
 
-export default function ChasisInteractivo({ buses }: { buses: Bus[] }) {
+export default function ChasisInteractivo() {
+  const { data: busesData, isLoading } = useQuery<Bus[]>({
+    queryKey: ["buses_rotacion"],
+    queryFn: getBusesParaRotacion,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const buses = busesData || [];
   const [busId, setBusId] = useState("");
   const [neumaticos, setNeumaticos] = useState<Neumatico[]>([]);
   const [cargando, setCargando] = useState(false);
@@ -166,6 +175,15 @@ export default function ChasisInteractivo({ buses }: { buses: Bus[] }) {
 
   const busSeleccionado = buses.find((b) => b.id === busId);
   const is3Ejes = busSeleccionado?.chasis === "3_ejes_10_ruedas" || busSeleccionado?.chasis === "doble_piso_10";
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-slate-500">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-amber-500 border-t-transparent mb-4"></div>
+        <p className="text-sm font-bold animate-pulse uppercase tracking-widest">Cargando unidades...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col w-full space-y-3 pb-8 antialiased">

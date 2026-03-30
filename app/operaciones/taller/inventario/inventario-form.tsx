@@ -1,18 +1,23 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { obtenerModelos, registrarNeumaticoInventario } from "./actions";
 
 type Modelo = { id: string; marca: string; medida: string };
 
 export default function InventarioForm() {
-  const [modelos, setModelos] = useState<Modelo[]>([]);
+  const { data: modelosData } = useQuery<Modelo[]>({
+    queryKey: ["modelos_inventario"],
+    queryFn: obtenerModelos,
+    staleTime: 1000 * 60 * 10,
+  });
+
+  const modelos = modelosData || [];
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [exito, setExito] = useState<string | null>(null);
   const [codigoGenerado, setCodigoGenerado] = useState<string | null>(null);
-
-  useEffect(() => { obtenerModelos().then(setModelos); }, []);
 
   async function handleSubmit(formData: FormData) {
     setLoading(true); setError(null); setExito(null); setCodigoGenerado(null);

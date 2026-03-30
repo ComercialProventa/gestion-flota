@@ -1,43 +1,33 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
-import { createClient } from "@/utils/supabase/client";
+import { getPerfilOperario } from "./actions";
 import OperacionesShell from "./operaciones-shell";
 
 export default function OperacionesDashboard() {
-  const [user, setUser] = useState<{ nombre: string; rol: string } | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { data: perfil, isLoading } = useQuery({
+    queryKey: ["perfil_operario"],
+    queryFn: getPerfilOperario,
+    staleTime: 1000 * 60 * 10,
+  });
 
-  useEffect(() => {
-    async function getProfile() {
-      const supabase = createClient();
-      const { data: { user: authUser } } = await supabase.auth.getUser();
-
-      if (authUser) {
-        const { data: profile } = await supabase
-          .from("usuarios")
-          .select("nombre_completo, rol")
-          .eq("id", authUser.id)
-          .single();
-
-        setUser({
-          nombre: profile?.nombre_completo?.split(" ")[0] || "Operario",
-          rol: profile?.rol || "conductor"
-        });
-      }
-      setLoading(false);
-    }
-    getProfile();
-  }, []);
-
-  if (loading) return null;
+  if (isLoading || !perfil) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-[#0a0a0a]">
+        <div className="flex flex-col items-center text-slate-500">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-amber-500 border-t-transparent mb-4"></div>
+          <p className="text-sm font-bold animate-pulse uppercase tracking-widest">Cargando...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <OperacionesShell
-      rol={user?.rol || "conductor"}
+      rol={perfil.rol}
       title="CENTRAL"
-      subtitle={`OP: ${user?.nombre}`}
+      subtitle={`OP: ${perfil.nombre}`}
     >
       <div className="space-y-4 antialiased">
 
@@ -56,7 +46,7 @@ export default function OperacionesDashboard() {
         </div>
 
         {/* ─── BOTONES DE TALLER (Solo si no es conductor) ─── */}
-        {user?.rol !== "conductor" && (
+        {perfil.rol !== "conductor" && (
           <div className="space-y-4">
             <DashboardButton
               href="/operaciones/taller/rotacion"
@@ -105,7 +95,7 @@ export default function OperacionesDashboard() {
 
 // ─── COMPONENTE: EL BOTÓN INDUSTRIAL ───
 
-function DashboardButton({ href, title, color, icon }: any) {
+function DashboardButton({ href, title, color, icon }: { href: string; title: string; color: string; icon: React.ReactNode }) {
   return (
     <Link
       href={href}

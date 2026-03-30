@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { getBusesParaOperaciones } from "../actions";
 import { registrarMantenimiento } from "./actions";
 
 type Bus = {
@@ -21,7 +23,12 @@ const PIEZAS_COMUNES = [
   "Amortiguador",
 ];
 
-export default function MantenimientoForm({ buses }: { buses: Bus[] }) {
+export default function MantenimientoForm() {
+  const { data: buses, isLoading } = useQuery<Bus[]>({
+    queryKey: ["buses_mantenimiento"],
+    queryFn: getBusesParaOperaciones,
+    staleTime: 1000 * 60 * 5,
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [exito, setExito] = useState<string | null>(null);
@@ -49,6 +56,7 @@ export default function MantenimientoForm({ buses }: { buses: Bus[] }) {
     setLoading(false);
   }
 
+  const lista = buses || [];
   const inputClasses = "w-full rounded-xl border border-slate-600 bg-slate-700/50 px-4 py-3 text-base text-white focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 focus:outline-none transition-colors";
 
   return (
@@ -68,7 +76,7 @@ export default function MantenimientoForm({ buses }: { buses: Bus[] }) {
         <label htmlFor="bus_id" className="block text-sm font-medium text-slate-300 mb-1.5">Unidad</label>
         <select id="bus_id" name="bus_id" required className={inputClasses}>
           <option value="">Selecciona una unidad...</option>
-          {buses.map(b => (
+          {lista.map(b => (
             <option key={b.id} value={b.id}>{b.patente}</option>
           ))}
         </select>

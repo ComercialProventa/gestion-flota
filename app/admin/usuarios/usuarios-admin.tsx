@@ -18,14 +18,7 @@ export default function UsuariosAdmin() {
 
   const lista: Usuario[] = usuarios || [];
 
-  if (isLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center py-20 text-slate-500">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-sky-500 border-t-transparent mb-4"></div>
-        <p className="text-sm font-medium animate-pulse">Cargando usuarios...</p>
-      </div>
-    );
-  }
+  // ── TODOS LOS HOOKS ANTES DE CUALQUIER RETURN CONDICIONAL ──
   const [editando, setEditando] = useState<Usuario | null>(null);
   const [cambiandoPwd, setCambiandoPwd] = useState<Usuario | null>(null);
   const [asignando, setAsignando] = useState<Usuario | null>(null);
@@ -37,6 +30,15 @@ export default function UsuariosAdmin() {
   const [pwdLoading, setPwdLoading] = useState(false);
   const [pwdError, setPwdError] = useState<string | null>(null);
   const [pwdExito, setPwdExito] = useState(false);
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-slate-500">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-sky-500 border-t-transparent mb-4"></div>
+        <p className="text-sm font-medium animate-pulse">Cargando usuarios...</p>
+      </div>
+    );
+  }
 
   async function handleGuardarPerfil(formData: FormData) {
     setEditLoading(true);

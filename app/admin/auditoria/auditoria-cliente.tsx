@@ -50,15 +50,6 @@ export default function AuditoriaCliente() {
   const [busqueda, setBusqueda] = useState("");
   const [expandido, setExpandido] = useState<string | null>(null);
 
-  if (isLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center py-20 text-slate-500">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-sky-500 border-t-transparent mb-4"></div>
-        <p className="text-sm font-medium animate-pulse">Cargando bitácora...</p>
-      </div>
-    );
-  }
-
   const filtrados = useMemo(() => {
     const q = busqueda.toLowerCase().trim();
     if (!q) return logs;
@@ -70,6 +61,15 @@ export default function AuditoriaCliente() {
       return nombreString.includes(q) || accionStr.includes(q) || tablaStr.includes(q) || uuidStr.includes(q);
     });
   }, [logs, busqueda]);
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-slate-500">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-sky-500 border-t-transparent mb-4"></div>
+        <p className="text-sm font-medium animate-pulse">Cargando bitácora...</p>
+      </div>
+    );
+  }
 
   // Variables de diseño corporativo
   const labelClasses = "block text-[10px] font-medium text-slate-500 mb-1.5 uppercase tracking-widest";

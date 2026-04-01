@@ -37,7 +37,7 @@ export async function actualizarRegistroCombustible(id: string, litros: number, 
     
   if (error) return { error: error.message };
   
-  revalidatePath("/admin/registros/combustible");
+  revalidatePath("/admin/registros");
   revalidatePath("/admin/auditoria");
   return { success: true };
 }
@@ -48,10 +48,10 @@ export async function eliminarRegistroCombustible(id: string) {
     .from("registros_combustible")
     .delete()
     .eq("id", id);
-    
+
   if (error) return { error: error.message };
-  
-  revalidatePath("/admin/registros/combustible");
+
+  revalidatePath("/admin/registros");
   revalidatePath("/admin/auditoria");
   return { success: true };
 }

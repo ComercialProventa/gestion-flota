@@ -81,17 +81,6 @@ export default function OperacionesDashboard() {
                 </svg>
               )}
             />
-
-            <DashboardButton
-              href="/operaciones/mantenimiento"
-              title="TALLER / HOJAS RUTA"
-              color="bg-sky-600"
-              icon={(
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.83-5.83M15.17 11.42L21 5.58A2.652 2.652 0 0017.25 1.83l-5.83 5.83" />
-                </svg>
-              )}
-            />
           </div>
         )}
 

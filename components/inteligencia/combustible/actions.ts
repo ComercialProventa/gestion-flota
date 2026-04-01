@@ -593,6 +593,6 @@ export async function resolverAlerta(alertaId: string) {
   const supabase = await createClient();
   const { error } = await supabase.from("alertas_sistema").update({ resuelta: true }).eq("id", alertaId);
   if (error) return { error: error.message };
-  revalidatePath("/admin/inteligencia/combustible");
+  revalidatePath("/admin/inteligencia");
   return { success: true };
 }

@@ -9,7 +9,6 @@ const NAV_ITEMS = [
   { label: "Combustible", href: "/operaciones/combustible", icon: "fuel" },
   { label: "Rotación", href: "/operaciones/taller/rotacion", icon: "rotate" },
   { label: "Ingreso", href: "/operaciones/taller/inventario", icon: "box" },
-  { label: "Mantenimiento", href: "/operaciones/mantenimiento", icon: "wrench" },
 ];
 
 function NavIcon({ icon, className }: { icon: string; className?: string }) {

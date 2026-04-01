@@ -1,31 +1,43 @@
-export default function LoadingInteligenciaHub() {
+export default function LoadingInteligencia() {
   return (
-    <div className="flex flex-col h-full space-y-6 p-4 md:p-6 lg:p-8 antialiased animate-pulse">
-      <header className="flex items-center justify-between pb-4">
-        <div className="mx-auto flex w-full max-w-5xl items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-4">
-            <div className="h-8 w-8 rounded-md bg-surface" />
-            <div className="space-y-2">
-              <div className="h-6 w-64 rounded-md bg-surface" />
-              <div className="h-4 w-48 rounded-md bg-surface" />
-            </div>
-          </div>
-        </div>
+    <div className="max-w-5xl">
+      <header className="px-8 pt-10 pb-6">
+        <div className="h-7 w-64 rounded-md bg-surface animate-pulse" />
+        <div className="h-4 w-48 rounded-md bg-surface animate-pulse mt-2" />
       </header>
 
-      <main className="flex-1 w-full mx-auto max-w-5xl mt-6">
-        {/* Banner skeleton */}
-        <div className="mb-8 h-24 rounded-md bg-surface" />
-
-        {/* Cards skeleton */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+      <main className="px-8 pb-12">
+        {/* Tabs skeleton */}
+        <div className="flex gap-4 mb-8 border-b border-divider pb-2.5">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="rounded-md bg-surface p-6 h-48" />
+            <div key={i} className="h-5 w-28 rounded bg-surface animate-pulse" />
           ))}
         </div>
 
-        {/* Resumen skeleton */}
-        <div className="mt-8 h-20 rounded-md bg-surface" />
+        {/* Filters skeleton */}
+        <div className="flex gap-3 mb-8">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div key={i} className="h-7 w-20 rounded bg-surface animate-pulse" />
+          ))}
+        </div>
+
+        {/* KPIs skeleton */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-6 mb-10">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div key={i} className="space-y-2">
+              <div className="h-3 w-16 rounded bg-surface animate-pulse" />
+              <div className="h-6 w-24 rounded bg-surface animate-pulse" />
+            </div>
+          ))}
+        </div>
+
+        {/* Table skeleton */}
+        <div className="space-y-3">
+          <div className="h-4 w-40 rounded bg-surface animate-pulse" />
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="h-12 rounded-md bg-surface animate-pulse" />
+          ))}
+        </div>
       </main>
     </div>
   );

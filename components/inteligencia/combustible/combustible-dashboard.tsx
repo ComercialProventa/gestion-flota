@@ -7,37 +7,26 @@ import { obtenerRendimientoFlota, obtenerRanking, obtenerKpis, obtenerComparativ
 
 function toISO(d: Date): string { return d.toISOString().split("T")[0]; }
 function fmt(n: number): string { return n.toLocaleString("es-CL"); }
-function periodoAnterior(desde: string, hasta: string): { desde: string; hasta: string } {
-  const d1 = new Date(desde); const d2 = new Date(hasta);
-  const dias = Math.ceil((d2.getTime() - d1.getTime()) / 86400000);
-  const antHasta = new Date(d1); antHasta.setDate(antHasta.getDate() - 1);
-  const antDesde = new Date(antHasta); antDesde.setDate(antDesde.getDate() - dias);
-  return { desde: toISO(antDesde), hasta: toISO(antHasta) };
-}
 
 const PRESETS = [
-  { label: "Esta semana", desde: () => { const d = new Date(); d.setDate(d.getDate() - d.getDay() + 1); return toISO(d); }, hasta: () => toISO(new Date()) },
-  { label: "Sem. pasada", desde: () => { const d = new Date(); d.setDate(d.getDate() - d.getDay() - 6); return toISO(d); }, hasta: () => { const d = new Date(); d.setDate(d.getDate() - d.getDay()); return toISO(d); } },
+  { label: "7d", desde: () => { const d = new Date(); d.setDate(d.getDate() - 7); return toISO(d); }, hasta: () => toISO(new Date()) },
+  { label: "30d", desde: () => { const d = new Date(); d.setDate(d.getDate() - 30); return toISO(d); }, hasta: () => toISO(new Date()) },
   { label: "Este mes", desde: () => { const d = new Date(); d.setDate(1); return toISO(d); }, hasta: () => toISO(new Date()) },
-  { label: "Mes pasado", desde: () => { const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - 1); return toISO(d); }, hasta: () => { const d = new Date(); d.setDate(0); return toISO(d); } },
   { label: "3 meses", desde: () => { const d = new Date(); d.setMonth(d.getMonth() - 3); return toISO(d); }, hasta: () => toISO(new Date()) },
-  { label: "Este año", desde: () => { const d = new Date(); d.setMonth(0, 1); return toISO(d); }, hasta: () => toISO(new Date()) },
 ];
 
 export default function CombustibleDashboard() {
   const queryClient = useQueryClient();
   const [desde, setDesde] = useState(() => { const d = new Date(); d.setMonth(d.getMonth() - 3); return toISO(d); });
   const [hasta, setHasta] = useState(() => toISO(new Date()));
-  const [comparar, setComparar] = useState(false);
+  const [flotaSel, setFlotaSel] = useState<string>("todas");
   const [unidadSel, setUnidadSel] = useState<string>("");
   const [inputDesde, setInputDesde] = useState(desde);
   const [inputHasta, setInputHasta] = useState(hasta);
 
   function aplicarFechas(d: string, h: string) { setDesde(d); setHasta(h); setInputDesde(d); setInputHasta(h); }
 
-  const ant = useMemo(() => periodoAnterior(desde, hasta), [desde, hasta]);
-
-  // Queries principales
+  // Queries
   const { data: problemas } = useQuery<Problema[]>({ queryKey: ["problemas", desde, hasta], queryFn: () => obtenerTopProblemas(desde, hasta), staleTime: 1000 * 60 * 5 });
   const { data: kpis } = useQuery<KpiResumen>({ queryKey: ["kpis", desde, hasta], queryFn: () => obtenerKpis(desde, hasta), staleTime: 1000 * 60 * 5 });
   const { data: proyeccion } = useQuery<Proyeccion>({ queryKey: ["proyeccion", desde, hasta], queryFn: () => obtenerProyeccion(desde, hasta), staleTime: 1000 * 60 * 5 });
@@ -46,16 +35,33 @@ export default function CombustibleDashboard() {
   const { data: rendimiento } = useQuery<UnidadRendimiento[]>({ queryKey: ["rendimiento", desde, hasta], queryFn: () => obtenerRendimientoFlota(desde, hasta), staleTime: 1000 * 60 * 5 });
   const { data: gemelas } = useQuery<ComparativaGemela[]>({ queryKey: ["gemelas", desde, hasta], queryFn: () => obtenerComparativaGemelas(desde, hasta), staleTime: 1000 * 60 * 5 });
   const { data: alertas } = useQuery<AlertaEstanque[]>({ queryKey: ["alertas"], queryFn: obtenerAlertasEstanque, staleTime: 1000 * 60 * 5 });
-  const { data: kpisAnt } = useQuery<KpiResumen>({ queryKey: ["kpis", ant.desde, ant.hasta], queryFn: () => obtenerKpis(ant.desde, ant.hasta), staleTime: 1000 * 60 * 5, enabled: comparar });
 
-  const rendimientoData = rendimiento || [];
-  const rankingData = ranking || [];
+  const rankingRaw = useMemo(() => ranking || [], [ranking]);
+  const rendimientoRaw = useMemo(() => rendimiento || [], [rendimiento]);
   const problemasData = problemas || [];
   const conductoresData = conductores || [];
   const gemelasData = gemelas || [];
   const alertasData = alertas || [];
   const kpisData = kpis || { rendimientoPromedioFlota: 0, costoPorKmPromedio: null, gastoTotalPeriodo: 0, kmTotalesPeriodo: 0, unidadesConAlerta: 0, totalUnidades: 0 };
   const proyeccionData = proyeccion || { gastoProyectado: 0, gastoAnterior: 0, variacionPct: 0, costoKmProyectado: null, diasAnalizados: 0 };
+
+  // Extraer flotas únicas de los datos
+  const flotasDisponibles = useMemo(() => {
+    const tipos = new Set<string>();
+    rankingRaw.forEach(r => { if (r.tipo) tipos.add(r.tipo); });
+    return Array.from(tipos).sort();
+  }, [rankingRaw]);
+
+  // Filtrar por flota seleccionada
+  const rankingData = useMemo(() => {
+    if (flotaSel === "todas") return rankingRaw;
+    return rankingRaw.filter(r => r.tipo === flotaSel);
+  }, [rankingRaw, flotaSel]);
+
+  const rendimientoData = useMemo(() => {
+    if (flotaSel === "todas") return rendimientoRaw;
+    return rendimientoRaw.filter(r => r.tipo === flotaSel);
+  }, [rendimientoRaw, flotaSel]);
 
   const unidadActual = rendimientoData.find((u) => u.busId === unidadSel) || rendimientoData[0];
 
@@ -64,106 +70,143 @@ export default function CombustibleDashboard() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["alertas"] }),
   });
 
-  return (
-    <div className="space-y-10">
+  const periodoLabel = `${desde} — ${hasta}`;
 
-      {/* ─── FILTROS ─── */}
-      <div className="flex flex-wrap items-end gap-3">
-        <div>
-          <label className="block text-[10px] font-medium text-dim mb-1">Desde</label>
-          <input type="date" value={inputDesde} onChange={(e) => setInputDesde(e.target.value)} onBlur={() => aplicarFechas(inputDesde, inputHasta)}
-            className="bg-surface rounded-md px-3 py-1.5 text-[12px] text-foreground focus:outline-none focus:ring-1 focus:ring-accent/30" style={{ colorScheme: "dark" }} />
+  return (
+    <div className="space-y-8">
+
+      {/* ─── FILTROS DE PERIODO ─── */}
+      <div className="bg-surface rounded-md p-4">
+        <div className="flex flex-wrap items-end gap-4">
+          <div className="flex-1 min-w-[200px]">
+            <p className="text-[11px] font-medium text-dim uppercase tracking-wide mb-2">Periodo</p>
+            <div className="flex items-center gap-2">
+              <div>
+                <label className="block text-[10px] text-dim mb-1">Desde</label>
+                <input type="date" value={inputDesde} onChange={(e) => setInputDesde(e.target.value)} onBlur={() => aplicarFechas(inputDesde, inputHasta)}
+                  className="bg-background rounded-md px-3 py-1.5 text-[12px] text-foreground focus:outline-none focus:ring-1 focus:ring-accent/30" style={{ colorScheme: "dark" }} />
+              </div>
+              <span className="text-dim text-[12px] mt-4">→</span>
+              <div>
+                <label className="block text-[10px] text-dim mb-1">Hasta</label>
+                <input type="date" value={inputHasta} onChange={(e) => setInputHasta(e.target.value)} onBlur={() => aplicarFechas(inputDesde, inputHasta)}
+                  className="bg-background rounded-md px-3 py-1.5 text-[12px] text-foreground focus:outline-none focus:ring-1 focus:ring-accent/30" style={{ colorScheme: "dark" }} />
+              </div>
+            </div>
+            <div className="flex gap-1.5 mt-2">
+              {PRESETS.map((p) => (
+                <button key={p.label} onClick={() => aplicarFechas(p.desde(), p.hasta())}
+                  className="px-2.5 py-1 rounded text-[11px] text-dim hover:text-foreground hover:bg-background transition-colors cursor-pointer">
+                  {p.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {flotasDisponibles.length > 1 && (
+            <div>
+              <p className="text-[11px] font-medium text-dim uppercase tracking-wide mb-2">Flota</p>
+              <select value={flotaSel} onChange={(e) => setFlotaSel(e.target.value)}
+                className="bg-background rounded-md px-3 py-1.5 text-[12px] text-foreground focus:outline-none focus:ring-1 focus:ring-accent/30 cursor-pointer">
+                <option value="todas">Todas las flotas</option>
+                {flotasDisponibles.map(f => (
+                  <option key={f} value={f}>{f}</option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
-        <div>
-          <label className="block text-[10px] font-medium text-dim mb-1">Hasta</label>
-          <input type="date" value={inputHasta} onChange={(e) => setInputHasta(e.target.value)} onBlur={() => aplicarFechas(inputDesde, inputHasta)}
-            className="bg-surface rounded-md px-3 py-1.5 text-[12px] text-foreground focus:outline-none focus:ring-1 focus:ring-accent/30" style={{ colorScheme: "dark" }} />
-        </div>
-        <div className="flex gap-1.5 flex-wrap">
-          {PRESETS.map((p) => (
-            <button key={p.label} onClick={() => aplicarFechas(p.desde(), p.hasta())}
-              className="px-2 py-1 rounded text-[10px] text-dim hover:text-foreground hover:bg-surface transition-colors cursor-pointer">
-              {p.label}
-            </button>
-          ))}
-        </div>
-        <button onClick={() => setComparar(!comparar)}
-          className={`px-2 py-1 rounded text-[10px] font-medium transition-colors cursor-pointer ${comparar ? "text-accent bg-surface-hover" : "text-dim hover:text-foreground"}`}>
-          {comparar ? "✓ Comparando" : "vs anterior"}
-        </button>
+        <p className="text-[10px] text-dim mt-2 font-mono">{periodoLabel}</p>
       </div>
 
-      {/* ─── KPIs + PROYECCIÓN ─── */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-6">
-        <div>
-          <p className="text-[10px] text-dim uppercase tracking-wide">Rendimiento</p>
-          <p className="text-[18px] font-semibold text-foreground mt-0.5">{kpisData.rendimientoPromedioFlota} Km/L</p>
-          {comparar && kpisAnt && <p className="text-[10px] text-dim mt-0.5">anterior: {kpisAnt.rendimientoPromedioFlota}</p>}
-        </div>
-        <div>
-          <p className="text-[10px] text-dim uppercase tracking-wide">Costo / Km</p>
-          <p className="text-[18px] font-semibold text-accent mt-0.5">{kpisData.costoPorKmPromedio !== null ? `$${fmt(kpisData.costoPorKmPromedio)}` : "—"}</p>
-          {comparar && kpisAnt?.costoPorKmPromedio !== null && <p className="text-[10px] text-dim mt-0.5">anterior: ${fmt(kpisAnt!.costoPorKmPromedio!)}</p>}
-        </div>
-        <div>
-          <p className="text-[10px] text-dim uppercase tracking-wide">Gasto Total</p>
-          <p className="text-[18px] font-semibold text-foreground mt-0.5">${fmt(kpisData.gastoTotalPeriodo)}</p>
-          {comparar && kpisAnt && <p className="text-[10px] text-dim mt-0.5">anterior: ${fmt(kpisAnt.gastoTotalPeriodo)}</p>}
-        </div>
-        <div>
-          <p className="text-[10px] text-dim uppercase tracking-wide">Km Recorridos</p>
-          <p className="text-[18px] font-semibold text-foreground mt-0.5">{fmt(kpisData.kmTotalesPeriodo)}</p>
-        </div>
-        <div>
-          <p className="text-[10px] text-dim uppercase tracking-wide">Alertas</p>
-          <p className={`text-[18px] font-semibold mt-0.5 ${kpisData.unidadesConAlerta > 0 ? "text-red" : "text-green"}`}>{kpisData.unidadesConAlerta} / {kpisData.totalUnidades}</p>
-        </div>
-        <div>
+      {/* ─── KPIs ─── */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+        <KpiCard label="Rendimiento" value={`${kpisData.rendimientoPromedioFlota} Km/L`} color="text-foreground" />
+        <KpiCard label="Costo / Km" value={kpisData.costoPorKmPromedio !== null ? `$${fmt(kpisData.costoPorKmPromedio)}` : "—"} color="text-accent" />
+        <KpiCard label="Gasto Total" value={`$${fmt(kpisData.gastoTotalPeriodo)}`} color="text-foreground" />
+        <KpiCard label="Km Recorridos" value={fmt(kpisData.kmTotalesPeriodo)} color="text-foreground" />
+        <KpiCard label="Alertas" value={`${kpisData.unidadesConAlerta} / ${kpisData.totalUnidades}`} color={kpisData.unidadesConAlerta > 0 ? "text-red" : "text-green"} />
+        <div className="bg-surface rounded-md p-3">
           <p className="text-[10px] text-dim uppercase tracking-wide">Proyección 30d</p>
-          <p className={`text-[18px] font-semibold mt-0.5 ${proyeccionData.variacionPct > 10 ? "text-red" : "text-foreground"}`}>${fmt(proyeccionData.gastoProyectado)}</p>
+          <p className={`text-[17px] font-semibold mt-0.5 ${proyeccionData.variacionPct > 10 ? "text-red" : "text-foreground"}`}>${fmt(proyeccionData.gastoProyectado)}</p>
           <p className={`text-[10px] mt-0.5 ${proyeccionData.variacionPct > 0 ? "text-red" : "text-green"}`}>
-            {proyeccionData.variacionPct > 0 ? "+" : ""}{proyeccionData.variacionPct}% vs mes anterior
+            {proyeccionData.variacionPct > 0 ? "+" : ""}{proyeccionData.variacionPct}% vs anterior
           </p>
         </div>
       </div>
 
-      {/* ─── TOP 3 PROBLEMAS ─── */}
+      {/* ─── TENDENCIA SEMANAL (siempre visible) ─── */}
+      {rendimientoData.length > 0 && (
+        <div>
+          <h2 className="text-[11px] font-medium text-dim uppercase tracking-wide mb-3">Tendencia Semanal por Unidad</h2>
+          <div className="flex gap-1.5 flex-wrap mb-4">
+            {rendimientoData.map((u) => (
+              <button key={u.busId} onClick={() => setUnidadSel(u.busId)}
+                className={`px-3 py-1 rounded-md text-[12px] font-mono transition-colors cursor-pointer ${
+                  (unidadActual?.busId === u.busId)
+                    ? (u.enAlerta ? "text-red bg-surface-hover" : "text-accent bg-surface-hover")
+                    : (u.enAlerta ? "text-red" : "text-dim hover:text-foreground")
+                }`}>
+                {u.patente}{u.enAlerta && " ⚠"}
+              </button>
+            ))}
+          </div>
+          {unidadActual && (
+            <div className="bg-surface rounded-md p-5">
+              <div className="flex flex-wrap gap-6 mb-4">
+                <Stat label="Promedio Histórico" value={`${unidadActual.promedioHistorico} Km/L`} color="text-foreground" />
+                <Stat label="Último Periodo" value={`${unidadActual.rendimientoActual} Km/L`} color={unidadActual.enAlerta ? "text-red" : "text-green"} />
+                <Stat label="Variación" value={`${unidadActual.variacionPct > 0 ? "+" : ""}${unidadActual.variacionPct}%`} color={unidadActual.variacionPct < -30 ? "text-red" : unidadActual.variacionPct < 0 ? "text-accent" : "text-green"} />
+                {unidadActual.costoPorKm !== null && <Stat label="Costo/Km" value={`$${fmt(unidadActual.costoPorKm)}`} color="text-accent" />}
+              </div>
+              <RendimientoChart semanas={unidadActual.semanas} promedio={unidadActual.promedioHistorico} />
+              {unidadActual.enAlerta && <p className="text-[11px] text-red mt-3">⚠ Rendimiento anormalmente bajo. Revisar cargas y conductor asignado.</p>}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ─── PROBLEMAS DETECTADOS ─── */}
       {problemasData.length > 0 && (
-        <Section titulo="Problemas Detectados" defaultOpen>
-          <div className="space-y-4">
-            {problemasData.map((p, i) => (
-              <div key={p.busId + p.tipo} className="bg-surface rounded-md p-5">
+        <div>
+          <h2 className="text-[11px] font-medium text-dim uppercase tracking-wide mb-3">Problemas Detectados</h2>
+          <div className="space-y-3">
+            {problemasData.map((p) => (
+              <div key={p.busId + p.tipo} className="bg-surface rounded-md p-4">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="text-[10px] font-mono text-dim">#{i + 1}</span>
                       <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${
-                        p.tipo === "ineficiencia" ? "text-red bg-red/10" : p.tipo === "costo" ? "text-accent bg-accent/10" : "text-accent bg-accent/10"
+                        p.tipo === "ineficiencia" ? "text-red bg-red/10" : "text-accent bg-accent/10"
                       }`}>
                         {p.tipo === "ineficiencia" ? "Ineficiencia" : p.tipo === "costo" ? "Costo alto" : "Caída"}
                       </span>
                     </div>
-                    <h3 className="text-[14px] font-semibold text-foreground">{p.titulo}</h3>
+                    <h3 className="text-[13px] font-semibold text-foreground">{p.titulo}</h3>
                     <p className="text-[12px] text-muted mt-1">{p.detalle}</p>
                     {p.conductor && <p className="text-[11px] text-dim mt-1">Conductor: <span className="text-foreground">{p.conductor}</span></p>}
                   </div>
                 </div>
-                <div className="mt-3 pt-3 border-t border-divider">
+                <div className="mt-2 pt-2 border-t border-divider">
                   <p className="text-[11px] text-accent">→ {p.accion}</p>
                 </div>
               </div>
             ))}
           </div>
-        </Section>
+        </div>
       )}
 
       {/* ─── RANKING ─── */}
-      <Section titulo="Ranking de Eficiencia" count={rankingData.length}>
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-[11px] font-medium text-dim uppercase tracking-wide">Ranking de Eficiencia</h2>
+          <span className="text-[10px] text-dim font-mono">{rankingData.length} unidades</span>
+        </div>
         {rankingData.length === 0 ? (
-          <p className="text-[13px] text-dim py-8">No hay datos suficientes. Se necesitan al menos 2 registros por unidad.</p>
+          <p className="text-[13px] text-dim py-8 text-center">No hay datos suficientes para este periodo.</p>
         ) : (
-          <div>
-            <div className="hidden md:grid grid-cols-12 gap-4 px-4 py-2 text-[11px] font-medium text-dim uppercase tracking-wide">
+          <div className="bg-surface rounded-md overflow-hidden">
+            <div className="hidden md:grid grid-cols-12 gap-4 px-4 py-2 text-[11px] font-medium text-dim uppercase tracking-wide border-b border-divider">
               <div className="col-span-1">#</div>
               <div className="col-span-3">Unidad</div>
               <div className="col-span-2">Km/L</div>
@@ -173,7 +216,7 @@ export default function CombustibleDashboard() {
             </div>
             <div className="divide-y divide-divider">
               {rankingData.map((r, i) => (
-                <div key={r.busId} className="grid grid-cols-1 md:grid-cols-12 gap-1 md:gap-4 px-4 py-3 hover:bg-surface transition-colors">
+                <div key={r.busId} className="grid grid-cols-1 md:grid-cols-12 gap-1 md:gap-4 px-4 py-3 hover:bg-surface-hover transition-colors">
                   <div className="hidden md:block md:col-span-1"><span className={`text-[12px] font-mono ${i < 3 ? "text-red" : "text-dim"}`}>{i + 1}</span></div>
                   <div className="md:col-span-3">
                     <span className={`text-[13px] font-mono font-medium ${r.enAlerta ? "text-red" : "text-foreground"}`}>{r.patente}</span>
@@ -188,12 +231,13 @@ export default function CombustibleDashboard() {
             </div>
           </div>
         )}
-      </Section>
+      </div>
 
-      {/* ─── CORRELACIÓN CONDUCTOR ─── */}
+      {/* ─── SECCIONES SECUNDARIAS (colapsables) ─── */}
+
       {conductoresData.length > 0 && (
         <Section titulo="Rendimiento por Conductor" count={conductoresData.length}>
-          <div>
+          <div className="bg-surface rounded-md overflow-hidden">
             <div className="hidden md:grid grid-cols-12 gap-4 px-4 py-2 text-[11px] font-medium text-dim uppercase tracking-wide">
               <div className="col-span-3">Conductor</div>
               <div className="col-span-2">Unidades</div>
@@ -206,7 +250,7 @@ export default function CombustibleDashboard() {
               {conductoresData.map((c) => {
                 const enAlerta = c.viajes < 0;
                 return (
-                  <div key={c.conductorId} className="grid grid-cols-1 md:grid-cols-12 gap-1 md:gap-4 px-4 py-3 hover:bg-surface transition-colors">
+                  <div key={c.conductorId} className="grid grid-cols-1 md:grid-cols-12 gap-1 md:gap-4 px-4 py-3 hover:bg-surface-hover transition-colors">
                     <div className="md:col-span-3">
                       <span className={`text-[13px] font-medium ${enAlerta ? "text-red" : "text-foreground"}`}>{c.nombre}</span>
                       {enAlerta && <span className="text-[10px] text-red ml-2">⚠ Bajo promedio</span>}
@@ -224,37 +268,6 @@ export default function CombustibleDashboard() {
         </Section>
       )}
 
-      {/* ─── TENDENCIA ─── */}
-      {rendimientoData.length > 0 && (
-        <Section titulo="Tendencia Semanal">
-          <div className="flex gap-2 flex-wrap mb-4">
-            {rendimientoData.map((u) => (
-              <button key={u.busId} onClick={() => setUnidadSel(u.busId)}
-                className={`px-3 py-1 rounded-md text-[12px] font-mono transition-colors cursor-pointer ${
-                  (unidadActual?.busId === u.busId) ? (u.enAlerta ? "text-red bg-surface-hover" : "text-accent bg-surface-hover") : (u.enAlerta ? "text-red" : "text-dim hover:text-foreground")
-                }`}>
-                {u.patente}{u.enAlerta && " ⚠"}
-              </button>
-            ))}
-          </div>
-          {unidadActual && (
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-              <div className="space-y-3">
-                <Stat label="Promedio" value={`${unidadActual.promedioHistorico} Km/L`} color="text-foreground" />
-                <Stat label="Último Periodo" value={`${unidadActual.rendimientoActual} Km/L`} color={unidadActual.enAlerta ? "text-red" : "text-green"} />
-                <Stat label="Variación" value={`${unidadActual.variacionPct > 0 ? "+" : ""}${unidadActual.variacionPct}%`} color={unidadActual.variacionPct < -30 ? "text-red" : unidadActual.variacionPct < 0 ? "text-accent" : "text-green"} />
-                {unidadActual.costoPorKm !== null && <Stat label="Costo/Km" value={`$${fmt(unidadActual.costoPorKm)}`} color="text-accent" />}
-                {unidadActual.enAlerta && <p className="text-[11px] text-red">Rendimiento anormalmente bajo. Revisar cargas y conductor asignado.</p>}
-              </div>
-              <div className="lg:col-span-3 bg-surface rounded-md p-4">
-                <RendimientoChart semanas={unidadActual.semanas} promedio={unidadActual.promedioHistorico} />
-              </div>
-            </div>
-          )}
-        </Section>
-      )}
-
-      {/* ─── GEMELAS ─── */}
       {gemelasData.length > 0 && (
         <Section titulo="Comparativa Gemelas" count={gemelasData.length}>
           <div className="space-y-3">
@@ -288,11 +301,8 @@ export default function CombustibleDashboard() {
         </Section>
       )}
 
-      {/* ─── ALERTAS ─── */}
-      <Section titulo="Alertas de Capacidad de Estanque" count={alertasData.length || undefined}>
-        {alertasData.length === 0 ? (
-          <p className="text-[13px] text-green py-4">Sin alertas activas. Todo en orden.</p>
-        ) : (
+      {alertasData.length > 0 && (
+        <Section titulo="Alertas de Estanque" count={alertasData.length}>
           <div className="space-y-2">
             {alertasData.map((a) => (
               <div key={a.id} className="flex items-center gap-4 py-3 hover:bg-surface transition-colors">
@@ -311,8 +321,17 @@ export default function CombustibleDashboard() {
               </div>
             ))}
           </div>
-        )}
-      </Section>
+        </Section>
+      )}
+    </div>
+  );
+}
+
+function KpiCard({ label, value, color }: { label: string; value: string; color: string }) {
+  return (
+    <div className="bg-surface rounded-md p-3">
+      <p className="text-[10px] text-dim uppercase tracking-wide">{label}</p>
+      <p className={`text-[17px] font-semibold mt-0.5 ${color}`}>{value}</p>
     </div>
   );
 }
@@ -337,7 +356,7 @@ function Stat({ label, value, color }: { label: string; value: string; color: st
   return (
     <div>
       <p className="text-[10px] text-dim uppercase tracking-wide">{label}</p>
-      <p className={`text-[15px] font-semibold mt-0.5 ${color}`}>{value}</p>
+      <p className={`text-[14px] font-semibold mt-0.5 ${color}`}>{value}</p>
     </div>
   );
 }

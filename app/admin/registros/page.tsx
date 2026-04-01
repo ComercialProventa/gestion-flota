@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import RegistrosTabs from "@/components/registros/registros-tabs";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Correcciones Operativas",
-  description: "Gestión y edición manual de registros operativos del sistema",
+  description: "Edición manual y rectificación de historiales",
 };
 
-export default function RegistrosOperativosDashboard() {
+export default function RegistrosPage() {
   return (
     <div className="max-w-5xl">
       <header className="px-8 pt-10 pb-6">
@@ -15,23 +17,7 @@ export default function RegistrosOperativosDashboard() {
       </header>
 
       <main className="px-8 pb-12">
-        <div className="grid gap-6 sm:grid-cols-2">
-          <Link
-            href="/admin/registros/combustible"
-            className="group"
-          >
-            <h3 className="text-[15px] font-semibold text-foreground">Cargas de Combustible</h3>
-            <p className="mt-1 text-[12px] text-muted">Corrige litros o kilometrajes mal ingresados</p>
-          </Link>
-
-          <Link
-            href="/admin/registros/neumaticos"
-            className="group"
-          >
-            <h3 className="text-[15px] font-semibold text-foreground">Movimientos Neumáticos</h3>
-            <p className="mt-1 text-[12px] text-muted">Corrige profundidad de estría, odómetros o motivos</p>
-          </Link>
-        </div>
+        <RegistrosTabs />
       </main>
     </div>
   );

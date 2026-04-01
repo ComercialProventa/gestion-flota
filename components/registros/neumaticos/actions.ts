@@ -38,7 +38,7 @@ export async function actualizarMovimientoNeumatico(id: string, kilometraje: num
     
   if (error) return { error: error.message };
   
-  revalidatePath("/admin/registros/neumaticos");
+  revalidatePath("/admin/registros");
   revalidatePath("/admin/auditoria");
   return { success: true };
 }

@@ -33,8 +33,8 @@ export default function UsuariosAdmin() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 text-slate-500">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-sky-500 border-t-transparent mb-4"></div>
+      <div className="flex flex-col items-center justify-center py-20 text-zinc-500">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent border-t-transparent mb-4"></div>
         <p className="text-sm font-medium animate-pulse">Cargando usuarios...</p>
       </div>
     );
@@ -75,8 +75,8 @@ export default function UsuariosAdmin() {
   }
 
   // Clases del Sistema de Diseño Técnico
-  const labelClasses = "block text-[11px] font-semibold text-slate-500 mb-1.5 uppercase tracking-wider";
-  const inputClasses = "w-full rounded border border-white/10 bg-black/40 px-3 py-2 text-sm text-white placeholder-slate-600 focus:border-sky-500 focus:ring-1 focus:ring-sky-500/30 focus:outline-none transition-all";
+  const labelClasses = "block text-[11px] font-semibold text-zinc-500 mb-1.5 uppercase tracking-wider";
+  const inputClasses = "w-full rounded-lg border border-border-strong bg-surface-overlay px-3 py-2 text-sm text-foreground placeholder:text-zinc-600 focus:border-accent focus:ring-1 focus:ring-accent/20 focus:outline-none transition-all";
 
   return (
     <>
@@ -91,10 +91,10 @@ export default function UsuariosAdmin() {
       {/* MODAL: EDITAR PERFIL */}
       {editando && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-          <div className="w-full max-w-sm rounded border border-white/5 bg-[#121214] p-6 shadow-xl space-y-5">
+          <div className="w-full max-w-sm rounded-xl border border-border-default bg-surface-card p-6 shadow-2xl space-y-5">
             <div>
-              <h3 className="text-lg font-bold text-white tracking-tight">Editar Usuario</h3>
-              <p className="text-xs text-slate-500 font-mono mt-1">{editando.correo}</p>
+              <h3 className="text-lg font-bold text-foreground tracking-tight">Editar Usuario</h3>
+              <p className="text-xs text-zinc-500 font-mono mt-1">{editando.correo}</p>
             </div>
 
             {editExito && <div className="text-[12px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 p-2 rounded">Cambios guardados.</div>}
@@ -120,8 +120,8 @@ export default function UsuariosAdmin() {
               </div>
 
               <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => setEditando(null)} className="flex-1 rounded border border-white/10 py-2 text-sm font-medium text-slate-400 hover:bg-white/5 transition-colors">Cancelar</button>
-                <button type="submit" disabled={editLoading} className="flex-1 rounded bg-sky-600 py-2 text-sm font-semibold text-white hover:bg-sky-500 transition-colors">
+                <button type="button" onClick={() => setEditando(null)} className="flex-1 rounded-lg border border-border-strong py-2 text-sm font-medium text-zinc-400 hover:bg-surface-raised transition-colors">Cancelar</button>
+                <button type="submit" disabled={editLoading} className="flex-1 rounded-lg bg-accent-600 py-2 text-sm font-semibold text-white hover:bg-accent-500 transition-colors">
                   {editLoading ? "Guardando..." : "Guardar"}
                 </button>
               </div>
@@ -133,8 +133,8 @@ export default function UsuariosAdmin() {
       {/* MODAL: CAMBIAR PWD */}
       {cambiandoPwd && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-          <div className="w-full max-w-sm rounded border border-white/5 bg-[#121214] p-6 shadow-xl space-y-5">
-            <h3 className="text-lg font-bold text-white tracking-tight">Nueva Contraseña</h3>
+          <div className="w-full max-w-sm rounded-xl border border-border-default bg-surface-card p-6 shadow-2xl space-y-5">
+            <h3 className="text-lg font-bold text-foreground tracking-tight">Nueva Contraseña</h3>
 
             {pwdExito && <div className="text-[12px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 p-2 rounded">Contraseña actualizada.</div>}
             {pwdError && <div className="text-[12px] text-red-400 bg-red-500/10 border border-red-500/20 p-2 rounded">{pwdError}</div>}
@@ -145,7 +145,7 @@ export default function UsuariosAdmin() {
                 <input name="nueva_contrasena" type="password" required minLength={8} placeholder="Mínimo 8 caracteres" className={inputClasses} />
               </div>
               <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => setCambiandoPwd(null)} className="flex-1 rounded border border-white/10 py-2 text-sm font-medium text-slate-400 hover:bg-white/5 transition-colors">Cancelar</button>
+                <button type="button" onClick={() => setCambiandoPwd(null)} className="flex-1 rounded-lg border border-border-strong py-2 text-sm font-medium text-zinc-400 hover:bg-surface-raised transition-colors">Cancelar</button>
                 <button type="submit" disabled={pwdLoading} className="flex-1 rounded bg-amber-600 py-2 text-sm font-semibold text-white hover:bg-amber-500 transition-colors">
                   {pwdLoading ? "Cambiando..." : "Actualizar"}
                 </button>

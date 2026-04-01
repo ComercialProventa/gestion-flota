@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTheme } from "@/components/theme-provider";
+import { signOut } from "@/app/login/actions";
 
 type SubItemType = { name: string; href: string };
 type LinkType = { name: string; href: string; icon: React.ReactNode; subItems?: SubItemType[] };
@@ -96,6 +98,7 @@ const MENU_ITEMS: MenuGroupType[] = [
 
 export default function AdminSidebar() {
   const pathname = usePathname();
+  const { theme, toggleTheme } = useTheme();
 
   return (
     <aside className="hidden md:flex flex-col w-56 bg-background min-h-screen sticky top-0 h-screen">
@@ -169,7 +172,7 @@ export default function AdminSidebar() {
       </nav>
 
       {/* User */}
-      <div className="px-3 py-3">
+      <div className="px-3 py-3 border-t border-divider space-y-2">
         <div className="flex items-center gap-2.5 px-2.5 py-2">
           <div className="flex h-7 w-7 items-center justify-center rounded-full bg-accent-dim text-accent text-[10px] font-bold">
             AD
@@ -178,6 +181,34 @@ export default function AdminSidebar() {
             <p className="text-[12px] font-medium text-foreground truncate leading-none">Admin</p>
             <p className="text-[10px] text-dim truncate font-mono mt-0.5">admin@proventa.cl</p>
           </div>
+        </div>
+        <div className="flex items-center gap-1 px-2">
+          <button
+            onClick={toggleTheme}
+            className="flex-1 flex items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-[11px] font-medium text-dim hover:text-foreground hover:bg-surface-hover transition-colors cursor-pointer"
+          >
+            {theme === "dark" ? (
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
+              </svg>
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
+              </svg>
+            )}
+            {theme === "dark" ? "Claro" : "Oscuro"}
+          </button>
+          <form action={signOut} className="flex-1">
+            <button
+              type="submit"
+              className="w-full flex items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-[11px] font-medium text-dim hover:text-red hover:bg-red/10 transition-colors cursor-pointer"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
+              </svg>
+              Salir
+            </button>
+          </form>
         </div>
       </div>
     </aside>

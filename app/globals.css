@@ -1,6 +1,8 @@
 @import "tailwindcss";
 
-:root {
+/* ─── Tema Oscuro (por defecto) ─── */
+:root,
+[data-theme="dark"] {
   /* ─── Surfaces ─── */
   --bg: #0a0a0a;
   --fg: #ededed;
@@ -20,13 +22,43 @@
   --red: #ef4444;
   --blue: #3b82f6;
 
-  /* ─── Border (minimal usage) ─── */
+  /* ─── Border ─── */
   --border: rgba(255, 255, 255, 0.06);
   --divider: rgba(255, 255, 255, 0.04);
 
-  /* ─── Fonts ─── */
-  --font-sans: 'Plus Jakarta Sans', system-ui, sans-serif;
-  --font-mono: 'JetBrains Mono', 'SF Mono', monospace;
+  /* ─── Scrollbar ─── */
+  --scrollbar-thumb: rgba(255, 255, 255, 0.06);
+  --scrollbar-thumb-hover: rgba(255, 255, 255, 0.1);
+}
+
+/* ─── Tema Claro ─── */
+[data-theme="light"] {
+  /* ─── Surfaces ─── */
+  --bg: #f8f9fa;
+  --fg: #1a1a1a;
+  --surface: #ffffff;
+  --surface-hover: #f1f3f5;
+  --muted: #6b7280;
+  --dim: #9ca3af;
+
+  /* ─── Accent: Warm Amber ─── */
+  --accent: #d97706;
+  --accent-hover: #b45309;
+  --accent-muted: rgba(217, 119, 6, 0.1);
+  --accent-dim: rgba(217, 119, 6, 0.05);
+
+  /* ─── Semantic ─── */
+  --green: #16a34a;
+  --red: #dc2626;
+  --blue: #2563eb;
+
+  /* ─── Border ─── */
+  --border: rgba(0, 0, 0, 0.08);
+  --divider: rgba(0, 0, 0, 0.05);
+
+  /* ─── Scrollbar ─── */
+  --scrollbar-thumb: rgba(0, 0, 0, 0.1);
+  --scrollbar-thumb-hover: rgba(0, 0, 0, 0.2);
 }
 
 @theme inline {
@@ -69,15 +101,15 @@ input, select, textarea {
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--scrollbar-thumb);
   border-radius: 99px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--scrollbar-thumb-hover);
 }
 
 /* ─── Selection ─── */
 ::selection {
   background: rgba(245, 158, 11, 0.2);
-  color: #fbbf24;
+  color: var(--accent);
 }

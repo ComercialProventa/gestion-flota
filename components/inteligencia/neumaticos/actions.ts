@@ -67,11 +67,10 @@ export async function obtenerRankingCPK(): Promise<RankingCPK[]> {
       ? Math.round((precioPromedio / rendimientoRealKmPromedio) * 100) / 100
       : 0;
 
-    const ratioRealVsEsperado = rendimientoRealKmPromedio / minfo.vida_util_km;
+    // rentabilidad basada en CPK: más bajo = más rentable
     let rentabilidad: "buena" | "regular" | "mala" = "regular";
-
-    if (ratioRealVsEsperado >= 0.95) rentabilidad = "buena";
-    else if (ratioRealVsEsperado <= 0.70) rentabilidad = "mala";
+    if (cpk > 0 && cpk <= 3.0) rentabilidad = "buena";
+    else if (cpk > 5.0) rentabilidad = "mala";
 
     ranking.push({
       modeloId,

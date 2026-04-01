@@ -2,16 +2,14 @@
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useState } from 'react'
+import ThemeProvider from '@/components/theme-provider'
 
 export default function Providers({ children }: { children: React.ReactNode }) {
-    // Inicializamos el cliente una sola vez por sesión
     const [queryClient] = useState(
         () =>
             new QueryClient({
                 defaultOptions: {
                     queries: {
-                        // Aquí está la magia: los datos se consideran "frescos" por 5 minutos.
-                        // Si navegas a otra página y vuelves antes de 5 mins, la carga es instantánea desde la caché.
                         staleTime: 1000 * 60 * 5,
                     },
                 },
@@ -19,8 +17,10 @@ export default function Providers({ children }: { children: React.ReactNode }) {
     )
 
     return (
-        <QueryClientProvider client={queryClient}>
-            {children}
-        </QueryClientProvider>
+        <ThemeProvider>
+            <QueryClientProvider client={queryClient}>
+                {children}
+            </QueryClientProvider>
+        </ThemeProvider>
     )
 }

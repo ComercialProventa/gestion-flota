@@ -4,6 +4,8 @@
 
 El Centro de Inteligencia es el panel donde el sistema analiza automáticamente los datos operacionales de la flota y presenta indicadores clave, alertas y tendencias para tomar decisiones informadas.
 
+Acceso: Sidebar → **Centro de Inteligencia** (`/admin/inteligencia`)
+
 ---
 
 ## Módulo 1: Combustible
@@ -26,7 +28,7 @@ El rendimiento de combustible de cada unidad de la flota, comparando consumo rea
 ### Filtros Disponibles
 
 - **Periodo:** Seleccione un rango de fechas o use los accesos rápidos (7 días, 30 días, este mes, 3 meses).
-- **Flota:** Si tiene más de un tipo de unidad (ej: buses, minibuses), puede filtrar para ver solo una flota específica.
+- **Flota:** Si tiene más de un tipo de unidad (ej: buses, camiones), puede filtrar para ver solo una flota específica.
 
 ### Tendencia Semanal
 
@@ -66,21 +68,61 @@ Tabla completa de todas las unidades ordenadas por rendimiento. Permite identifi
 
 La rentabilidad real de cada modelo de neumático, calculando cuánto cuesta cada kilómetro recorrido con cada tipo de cubierta.
 
-### Indicador Principal: CPK (Costo por Kilómetro)
+Solo se analizan neumáticos que ya completaron su ciclo de vida (estado: reciclaje) y que tienen precio de compra registrado.
+
+### Ranking de Rentabilidad (CPK)
+
+El indicador principal es el **CPK (Costo por Kilómetro)**:
 
 | Campo | Qué significa |
 |-------|---------------|
+| **#** | Posición en el ranking (1 = más rentable). |
 | **Modelo** | Marca y medida del neumático. |
+| **Muestras** | Cantidad de neumáticos de este modelo que se analizaron. Más muestras = dato más confiable. |
 | **Rend. Medio** | Kilómetros reales promedio que duró antes de ser reciclado. |
-| **Precio Prom.** | Precio promedio de compra de ese modelo. |
-| **CPK ($/Km)** | Costo por kilómetro = Precio / Km real recorrido. **Más bajo = más rentable.** |
-| **Rentabilidad** | Clasificación automática: buena (duró ≥95% de lo esperado), regular, o mala (duró ≤70%). |
+| **esperado** | Kilómetros que el fabricante estima que debería durar. |
+| **Precio Prom.** | Precio promedio de compra de ese modelo (en pesos). |
+| **CPK ($/Km)** | **Costo por kilómetro** = Precio promedio / Km real recorrido. **Más bajo = más rentable.** |
+| **Rentabilidad** | Clasificación automática comparando km real vs esperado: |
+| | **Buena** (verde): duró ≥95% de lo esperado |
+| | **Regular** (amarillo): duró entre 71% y 94% |
+| | **Mala** (rojo): duró ≤70% de lo esperado |
 
-### ¿Cómo usarlo?
+### Ejemplo práctico
 
-1. El modelo con el **CPK más bajo** es el más rentable a largo plazo.
-2. Si un modelo tiene rentabilidad **"mala"**, considere cambiar de proveedor o marca.
-3. Compare modelos similares para futuras compras.
+Supongamos que tiene dos modelos 295/80R22.5:
+
+| Modelo | Precio | Km Real | CPK | Rentabilidad |
+|--------|--------|---------|-----|--------------|
+| Michelin | $320.000 | 110.000 km | $2.91/km | Buena |
+| Aeolus | $120.000 | 55.000 km | $2.18/km | Mala |
+
+A primera vista, el Aeolus parece más barato ($2.18 vs $2.91/km). Pero si considera que para cubrir los mismos 110.000 km necesitaría comprar **2 neumáticos Aeolus** ($240.000 total), el Michelin sigue siendo más rentable.
+
+### ¿Cómo usarlo para decisiones?
+
+1. **Compras futuras:** El modelo con el **CPK más bajo** es el más rentable a largo plazo.
+2. **Evaluar proveedores:** Si un modelo tiene rentabilidad **"mala"**, investigue si el problema es el producto o el precio.
+3. **Presupuesto:** Use el CPK para proyectar costos reales de neumáticos por kilómetro recorrido.
+
+---
+
+## Módulo 3: Mantenimiento
+
+### ¿Qué monitorea?
+
+Anomalías en la frecuencia de cambios de repuestos y gasto mensual por unidad.
+
+### Alertas de Frecuencia
+
+Detecta piezas que se cambian más de 3 veces en 30 días en la misma unidad, lo que sugiere:
+- Falla mecánica oculta
+- Mala calidad del repuesto
+- Error en el diagnóstico del mecánico
+
+### Gasto Mensual por Unidad
+
+Muestra el gasto total en repuestos y servicios de cada unidad durante el mes en curso, permitiendo identificar rápidamente la unidad que concentra los gastos operacionales.
 
 ---
 
@@ -90,6 +132,20 @@ La rentabilidad real de cada modelo de neumático, calculando cuánto cuesta cad
 |--------|----------------|---------------------|
 | **Combustible** | Monitorear eficiencia y gasto de combustible | Detectar unidades problemáticas, optimizar rutas, planificar gasto |
 | **Neumáticos** | Evaluar qué modelos de neumático son más rentables | Decidir qué marca/modelo comprar, identificar proveedores malos |
+| **Mantenimiento** | Detectar anomalías de repuestos y gasto | Identificar fallas recurrentes, controlar gasto operacional |
+
+---
+
+## Datos de prueba
+
+El sistema incluye datos mock para poder evaluar los dashboards sin datos reales:
+
+| Archivo | Contenido |
+|---------|-----------|
+| `supabase/migrations/016_mock_combustible.sql` | 10 buses, 10 conductores, ~750 cargas de combustible |
+| `supabase/migrations/018_mock_neumaticos.sql` | ~70 neumáticos reciclados de 12 modelos diferentes |
+
+Para ejecutar los mocks en Supabase, ejecute los archivos SQL en orden en el SQL Editor de su proyecto.
 
 ---
 

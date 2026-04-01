@@ -41,7 +41,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" className="h-full antialiased">
+    <html lang="es" className="h-full antialiased" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: `
+          (function() {
+            var t = localStorage.getItem('theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', t);
+          })();
+        `}} />
+      </head>
       <body className={`${fontSans.variable} ${fontMono.variable} font-sans min-h-full flex flex-col bg-background text-foreground`}>
         {children}
       </body>

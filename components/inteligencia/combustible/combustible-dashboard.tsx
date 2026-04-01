@@ -2,8 +2,8 @@
 
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import type { UnidadRendimiento, RankingItem, ComparativaGemela, AlertaEstanque, KpiResumen, Problema, ConductorRendimiento, Proyeccion } from "./actions";
-import { obtenerRendimientoFlota, obtenerRanking, obtenerKpis, obtenerComparativaGemelas, obtenerAlertasEstanque, resolverAlerta, obtenerTopProblemas, obtenerCorrelacionConductor, obtenerProyeccion } from "./actions";
+import type { UnidadRendimiento, RankingItem, DashboardData } from "./actions";
+import { obtenerDashboardCombustible, resolverAlerta } from "./actions";
 
 function toISO(d: Date): string { return d.toISOString().split("T")[0]; }
 function fmt(n: number): string { return n.toLocaleString("es-CL"); }
@@ -26,24 +26,21 @@ export default function CombustibleDashboard() {
 
   function aplicarFechas(d: string, h: string) { setDesde(d); setHasta(h); setInputDesde(d); setInputHasta(h); }
 
-  // Queries
-  const { data: problemas } = useQuery<Problema[]>({ queryKey: ["problemas", desde, hasta], queryFn: () => obtenerTopProblemas(desde, hasta), staleTime: 1000 * 60 * 5 });
-  const { data: kpis } = useQuery<KpiResumen>({ queryKey: ["kpis", desde, hasta], queryFn: () => obtenerKpis(desde, hasta), staleTime: 1000 * 60 * 5 });
-  const { data: proyeccion } = useQuery<Proyeccion>({ queryKey: ["proyeccion", desde, hasta], queryFn: () => obtenerProyeccion(desde, hasta), staleTime: 1000 * 60 * 5 });
-  const { data: ranking } = useQuery<RankingItem[]>({ queryKey: ["ranking", desde, hasta], queryFn: () => obtenerRanking(desde, hasta), staleTime: 1000 * 60 * 5 });
-  const { data: conductores } = useQuery<ConductorRendimiento[]>({ queryKey: ["conductores", desde, hasta], queryFn: () => obtenerCorrelacionConductor(desde, hasta), staleTime: 1000 * 60 * 5 });
-  const { data: rendimiento } = useQuery<UnidadRendimiento[]>({ queryKey: ["rendimiento", desde, hasta], queryFn: () => obtenerRendimientoFlota(desde, hasta), staleTime: 1000 * 60 * 5 });
-  const { data: gemelas } = useQuery<ComparativaGemela[]>({ queryKey: ["gemelas", desde, hasta], queryFn: () => obtenerComparativaGemelas(desde, hasta), staleTime: 1000 * 60 * 5 });
-  const { data: alertas } = useQuery<AlertaEstanque[]>({ queryKey: ["alertas"], queryFn: obtenerAlertasEstanque, staleTime: 1000 * 60 * 5 });
+  // 1 query que trae todo
+  const { data: dashboard } = useQuery<DashboardData>({
+    queryKey: ["dashboard_combustible", desde, hasta],
+    queryFn: () => obtenerDashboardCombustible(desde, hasta),
+    staleTime: 1000 * 60 * 5,
+  });
 
-  const rankingRaw = useMemo(() => ranking || [], [ranking]);
-  const rendimientoRaw = useMemo(() => rendimiento || [], [rendimiento]);
-  const problemasData = problemas || [];
-  const conductoresData = conductores || [];
-  const gemelasData = gemelas || [];
-  const alertasData = alertas || [];
-  const kpisData = kpis || { rendimientoPromedioFlota: 0, costoPorKmPromedio: null, gastoTotalPeriodo: 0, kmTotalesPeriodo: 0, unidadesConAlerta: 0, totalUnidades: 0 };
-  const proyeccionData = proyeccion || { gastoProyectado: 0, gastoAnterior: 0, variacionPct: 0, costoKmProyectado: null, diasAnalizados: 0 };
+  const rankingRaw = useMemo(() => dashboard?.ranking || [], [dashboard]);
+  const rendimientoRaw = useMemo(() => dashboard?.rendimiento || [], [dashboard]);
+  const problemasData = dashboard?.problemas || [];
+  const conductoresData = dashboard?.conductores || [];
+  const gemelasData = dashboard?.gemelas || [];
+  const alertasData = dashboard?.alertas || [];
+  const kpisData = dashboard?.kpis || { rendimientoPromedioFlota: 0, costoPorKmPromedio: null, gastoTotalPeriodo: 0, kmTotalesPeriodo: 0, unidadesConAlerta: 0, totalUnidades: 0 };
+  const proyeccionData = dashboard?.proyeccion || { gastoProyectado: 0, gastoAnterior: 0, variacionPct: 0, costoKmProyectado: null, diasAnalizados: 0 };
 
   // Extraer flotas únicas de los datos
   const flotasDisponibles = useMemo(() => {
@@ -67,7 +64,7 @@ export default function CombustibleDashboard() {
 
   const resolverMutation = useMutation({
     mutationFn: (id: string) => resolverAlerta(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["alertas"] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["dashboard_combustible"] }),
   });
 
   const periodoLabel = `${desde} — ${hasta}`;

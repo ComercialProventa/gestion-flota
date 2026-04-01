@@ -109,6 +109,17 @@ export type Proyeccion = {
   diasAnalizados: number;
 };
 
+export type DashboardData = {
+  ranking: RankingItem[];
+  rendimiento: UnidadRendimiento[];
+  kpis: KpiResumen;
+  proyeccion: Proyeccion;
+  problemas: Problema[];
+  conductores: ConductorRendimiento[];
+  gemelas: ComparativaGemela[];
+  alertas: AlertaEstanque[];
+};
+
 // ─── HELPERS ────────────────────────────────────────────────
 
 function getSemanaISO(date: Date): string {
@@ -124,46 +135,45 @@ function toISO(d: Date): string {
   return d.toISOString().split("T")[0];
 }
 
-// Devuelve el periodo anterior de igual duración
-function periodoAnterior(desde: string, hasta: string): { desde: string; hasta: string } {
-  const d1 = new Date(desde);
-  const d2 = new Date(hasta);
-  const dias = Math.ceil((d2.getTime() - d1.getTime()) / 86400000);
-  const anteriorHasta = new Date(d1);
-  anteriorHasta.setDate(anteriorHasta.getDate() - 1);
-  const anteriorDesde = new Date(anteriorHasta);
-  anteriorDesde.setDate(anteriorDesde.getDate() - dias);
-  return { desde: toISO(anteriorDesde), hasta: toISO(anteriorHasta) };
-}
+// ─── DATOS BASE (una sola vez) ──────────────────────────────
 
-// ─── QUERY BASE ─────────────────────────────────────────────
+type BusInfo = { id: string; patente: string; marca: string; modelo: string; ano: number; tipo: string };
+type RegistroComb = { bus_id: string; fecha: string; kilometraje: number; litros_cargados: number; precio_total_pago: number | null };
+type Asignacion = { usuario_id: string; bus_id: string; nombre: string };
 
-async function queryRegistros(desde?: string, hasta?: string) {
-  const supabase = await createClient();
-  let q = supabase
-    .from("registros_combustible")
-    .select("bus_id, fecha, kilometraje, litros_cargados, precio_total_pago")
-    .order("fecha", { ascending: true });
-  if (desde) q = q.gte("fecha", desde);
-  if (hasta) q = q.lte("fecha", hasta);
-  return q;
-}
-
-// ─── RENDIMIENTO SEMANAL ────────────────────────────────────
-
-export async function obtenerRendimientoFlota(desde?: string, hasta?: string): Promise<UnidadRendimiento[]> {
+async function fetchDatosBase(desde?: string, hasta?: string) {
   const supabase = await createClient();
 
-  const { data: buses } = await supabase
-    .from("buses")
-    .select("id, patente, marca, modelo, ano, tipo")
-    .order("patente");
+  const [busesRes, registrosRes, asignacionesRes] = await Promise.all([
+    supabase.from("buses").select("id, patente, marca, modelo, ano, tipo").order("patente"),
+    supabase
+      .from("registros_combustible")
+      .select("bus_id, fecha, kilometraje, litros_cargados, precio_total_pago")
+      .gte("fecha", desde || "1900-01-01")
+      .lte("fecha", hasta || "2100-01-01")
+      .order("fecha", { ascending: true }),
+    supabase.from("asignacion_flota").select("usuario_id, bus_id, usuarios(nombre_completo)"),
+  ]);
 
-  if (!buses || buses.length === 0) return [];
+  const buses: BusInfo[] = (busesRes.data || []).map((b: any) => ({
+    id: b.id, patente: b.patente, marca: b.marca, modelo: b.modelo, ano: b.ano, tipo: b.tipo || "bus",
+  }));
 
-  const { data: registros } = await queryRegistros(desde, hasta);
-  if (!registros || registros.length === 0) return [];
+  const registros: RegistroComb[] = (registrosRes.data || []).map((r: any) => ({
+    bus_id: r.bus_id, fecha: r.fecha, kilometraje: r.kilometraje,
+    litros_cargados: r.litros_cargados, precio_total_pago: r.precio_total_pago,
+  }));
 
+  const asignaciones: Asignacion[] = (asignacionesRes.data || []).map((a: any) => ({
+    usuario_id: a.usuario_id, bus_id: a.bus_id, nombre: a.usuarios?.nombre_completo || "",
+  }));
+
+  return { buses, registros, asignaciones };
+}
+
+// ─── CÁLCULOS INTERNOS (no hacen queries) ───────────────────
+
+function calcularRendimiento(buses: BusInfo[], registros: RegistroComb[]): UnidadRendimiento[] {
   const resultado: UnidadRendimiento[] = [];
 
   for (const bus of buses) {
@@ -209,7 +219,7 @@ export async function obtenerRendimientoFlota(desde?: string, hasta?: string): P
 
     resultado.push({
       busId: bus.id, patente: bus.patente, marca: bus.marca, modelo: bus.modelo, ano: bus.ano,
-      tipo: bus.tipo || "bus", promedioHistorico, rendimientoActual, variacionPct,
+      tipo: bus.tipo, promedioHistorico, rendimientoActual, variacionPct,
       enAlerta: variacionPct < -30, semanas, costoPorKm, gastoTotal: totalGasto,
       kmTotal: totalKm, litrosTotal: Math.round(totalLitros),
     });
@@ -224,21 +234,7 @@ export async function obtenerRendimientoFlota(desde?: string, hasta?: string): P
   return resultado;
 }
 
-// ─── RANKING ────────────────────────────────────────────────
-
-export async function obtenerRanking(desde?: string, hasta?: string): Promise<RankingItem[]> {
-  const supabase = await createClient();
-
-  const { data: buses } = await supabase
-    .from("buses")
-    .select("id, patente, marca, modelo, tipo")
-    .order("patente");
-
-  if (!buses) return [];
-
-  const { data: registros } = await queryRegistros(desde, hasta);
-  if (!registros) return [];
-
+function calcularRanking(buses: BusInfo[], registros: RegistroComb[]): RankingItem[] {
   const items: RankingItem[] = [];
 
   for (const bus of buses) {
@@ -258,7 +254,7 @@ export async function obtenerRanking(desde?: string, hasta?: string): Promise<Ra
     const kmL = totalLitros > 0 ? Math.round((totalKm / totalLitros) * 100) / 100 : 0;
     const costoPorKm = totalGasto > 0 && totalKm > 0 ? Math.round(totalGasto / totalKm) : null;
 
-    items.push({ busId: bus.id, patente: bus.patente, marca: bus.marca, modelo: bus.modelo, tipo: bus.tipo || "bus", kmL, costoPorKm, gastoTotal: totalGasto, kmTotal: totalKm, enAlerta: false });
+    items.push({ busId: bus.id, patente: bus.patente, marca: bus.marca, modelo: bus.modelo, tipo: bus.tipo, kmL, costoPorKm, gastoTotal: totalGasto, kmTotal: totalKm, enAlerta: false });
   }
 
   const promedios = items.filter(i => i.kmL > 0).map(i => i.kmL);
@@ -272,12 +268,7 @@ export async function obtenerRanking(desde?: string, hasta?: string): Promise<Ra
   return items;
 }
 
-// ─── KPI RESUMEN ────────────────────────────────────────────
-
-export async function obtenerKpis(desde?: string, hasta?: string): Promise<KpiResumen> {
-  const ranking = await obtenerRanking(desde, hasta);
-  const rendimiento = await obtenerRendimientoFlota(desde, hasta);
-
+function calcularKpis(ranking: RankingItem[], rendimiento: UnidadRendimiento[]): KpiResumen {
   if (ranking.length === 0) {
     return { rendimientoPromedioFlota: 0, costoPorKmPromedio: null, gastoTotalPeriodo: 0, kmTotalesPeriodo: 0, unidadesConAlerta: 0, totalUnidades: 0 };
   }
@@ -295,17 +286,7 @@ export async function obtenerKpis(desde?: string, hasta?: string): Promise<KpiRe
   };
 }
 
-// ─── GEMELAS ────────────────────────────────────────────────
-
-export async function obtenerComparativaGemelas(desde?: string, hasta?: string): Promise<ComparativaGemela[]> {
-  const supabase = await createClient();
-
-  const { data: buses } = await supabase.from("buses").select("id, patente, marca, modelo, ano").order("marca");
-  if (!buses) return [];
-
-  const { data: registros } = await queryRegistros(desde, hasta);
-  if (!registros) return [];
-
+function calcularGemelas(buses: BusInfo[], registros: RegistroComb[]): ComparativaGemela[] {
   const totalesPorBus = new Map<string, { totalKm: number; totalLitros: number }>();
   for (const bus of buses) {
     const regs = registros.filter((r) => r.bus_id === bus.id);
@@ -317,7 +298,7 @@ export async function obtenerComparativaGemelas(desde?: string, hasta?: string):
     totalesPorBus.set(bus.id, { totalKm, totalLitros });
   }
 
-  const grupos = new Map<string, typeof buses>();
+  const grupos = new Map<string, BusInfo[]>();
   for (const bus of buses) {
     const key = `${bus.marca} ${bus.modelo} ${bus.ano}`;
     const list = grupos.get(key) || [];
@@ -345,47 +326,12 @@ export async function obtenerComparativaGemelas(desde?: string, hasta?: string):
   return resultado;
 }
 
-// ─── ALERTAS ESTANQUE FANTASMA ──────────────────────────────
-
-export async function obtenerAlertasEstanque(): Promise<AlertaEstanque[]> {
-  const supabase = await createClient();
-  const { data } = await supabase
-    .from("alertas_sistema")
-    .select("id, bus_id, titulo, detalle, creado_en, buses(patente)")
-    .eq("tipo", "estanque_fantasma")
-    .eq("resuelta", false)
-    .order("creado_en", { ascending: false })
-    .limit(20);
-
-  if (!data) return [];
-  return data.map((a: any) => ({
-    id: a.id, busId: a.bus_id, patente: a.buses?.patente || "—",
-    capacidadEstanque: 0, litrosIntentados: 0, excedentePct: 0,
-    fecha: a.creado_en, titulo: a.titulo,
-  }));
-}
-
-// ─── TOP 3 PROBLEMAS ────────────────────────────────────────
-
-export async function obtenerTopProblemas(desde?: string, hasta?: string): Promise<Problema[]> {
-  const ranking = await obtenerRanking(desde, hasta);
-  const rendimiento = await obtenerRendimientoFlota(desde, hasta);
+function calcularProblemas(ranking: RankingItem[], rendimiento: UnidadRendimiento[], asignaciones: Asignacion[]): Problema[] {
   if (ranking.length === 0) return [];
 
-  const supabase = await createClient();
-
-  // Obtener asignaciones de conductores
-  const { data: asignaciones } = await supabase
-    .from("asignacion_flota")
-    .select("bus_id, usuarios(nombre_completo)");
-
   const conductorPorBus = new Map<string, string>();
-  if (asignaciones) {
-    for (const a of asignaciones as any[]) {
-      if (a.usuarios?.nombre_completo) {
-        conductorPorBus.set(a.bus_id, a.usuarios.nombre_completo);
-      }
-    }
+  for (const a of asignaciones) {
+    if (a.nombre) conductorPorBus.set(a.bus_id, a.nombre);
   }
 
   const problemas: Problema[] = [];
@@ -393,9 +339,8 @@ export async function obtenerTopProblemas(desde?: string, hasta?: string): Promi
   const promedioFlota = kmLs.length > 0 ? kmLs.reduce((a, b) => a + b, 0) / kmLs.length : 0;
   const costos = ranking.filter(r => r.costoPorKm !== null).map(r => r.costoPorKm!);
   const costoPromedio = costos.length > 0 ? costos.reduce((a, b) => a + b, 0) / costos.length : 0;
-  const gastoPromedio = ranking.length > 0 ? ranking.reduce((a, r) => a + r.gastoTotal, 0) / ranking.length : 0;
 
-  // 1. Unidad más ineficiente (peor Km/L)
+  // 1. Unidad más ineficiente
   const peorKmL = ranking[0];
   if (peorKmL && peorKmL.kmL > 0 && peorKmL.kmL < promedioFlota * 0.75) {
     problemas.push({
@@ -405,10 +350,9 @@ export async function obtenerTopProblemas(desde?: string, hasta?: string): Promi
       titulo: `Unidad más ineficiente: ${peorKmL.patente}`,
       detalle: `Rinde ${peorKmL.kmL} Km/L vs promedio flota de ${promedioFlota.toFixed(1)} Km/L (${Math.round(((peorKmL.kmL - promedioFlota) / promedioFlota) * 100)}% bajo el promedio).`,
       accion: conductorPorBus.get(peorKmL.busId)
-        ? `Revisar con ${conductorPorBus.get(peorKmL.busId)} las cargas de este periodo. Verificar si hay rutas con mayor pendiente o tráfico.`
+        ? `Revisar con ${conductorPorBus.get(peorKmL.busId)} las cargas de este periodo.`
         : "Asignar conductor responsable y revisar cargas del periodo.",
-      valor: peorKmL.kmL,
-      referencia: promedioFlota,
+      valor: peorKmL.kmL, referencia: promedioFlota,
     });
   }
 
@@ -420,14 +364,13 @@ export async function obtenerTopProblemas(desde?: string, hasta?: string): Promi
       conductor: conductorPorBus.get(masCara.busId) || null,
       tipo: "costo",
       titulo: `Costo más alto: ${masCara.patente}`,
-      detalle: `Cuesta $${masCara.costoPorKm.toLocaleString("es-CL")}/km vs promedio de $${Math.round(costoPromedio).toLocaleString("es-CL")}/km. Gasto total: $${masCara.gastoTotal.toLocaleString("es-CL")}.`,
-      accion: "Verificar si el precio de combustible en la estación de esta unidad es superior, o si hay exceso de cargas cortas.",
-      valor: masCara.costoPorKm,
-      referencia: costoPromedio,
+      detalle: `Cuesta $${masCara.costoPorKm.toLocaleString("es-CL")}/km vs promedio de $${Math.round(costoPromedio).toLocaleString("es-CL")}/km.`,
+      accion: "Verificar si el precio de combustible en la estación de esta unidad es superior.",
+      valor: masCara.costoPorKm, referencia: costoPromedio,
     });
   }
 
-  // 3. Unidad que más empeoró (mayor caída vs su propio promedio)
+  // 3. Unidad que más empeoró
   const conCaida = rendimiento.filter(r => r.variacionPct < -20).sort((a, b) => a.variacionPct - b.variacionPct)[0];
   if (conCaida) {
     problemas.push({
@@ -437,15 +380,14 @@ export async function obtenerTopProblemas(desde?: string, hasta?: string): Promi
       titulo: `Mayor caída: ${conCaida.patente}`,
       detalle: `Cayó ${conCaida.variacionPct}% vs su propio promedio histórico. De ${conCaida.promedioHistorico} a ${conCaida.rendimientoActual} Km/L.`,
       accion: conductorPorBus.get(conCaida.busId)
-        ? `Consultar con ${conductorPorBus.get(conCaida.busId)} qué cambió este periodo. Revisar mantención mecánica y presión de neumáticos.`
-        : "Revisar mantención mecánica, presión de neumáticos y registros de carga.",
-      valor: conCaida.rendimientoActual,
-      referencia: conCaida.promedioHistorico,
+        ? `Consultar con ${conductorPorBus.get(conCaida.busId)} qué cambió este periodo.`
+        : "Revisar mantención mecánica y registros de carga.",
+      valor: conCaida.rendimientoActual, referencia: conCaida.promedioHistorico,
     });
   }
 
-  // Si no hay problemas suficientes, completar con la que más gasta
   if (problemas.length < 3) {
+    const gastoPromedio = ranking.length > 0 ? ranking.reduce((a, r) => a + r.gastoTotal, 0) / ranking.length : 0;
     const masGasta = [...ranking].sort((a, b) => b.gastoTotal - a.gastoTotal)[0];
     if (masGasta && !problemas.find(p => p.busId === masGasta.busId)) {
       problemas.push({
@@ -453,10 +395,9 @@ export async function obtenerTopProblemas(desde?: string, hasta?: string): Promi
         conductor: conductorPorBus.get(masGasta.busId) || null,
         tipo: "costo",
         titulo: `Mayor gasto: ${masGasta.patente}`,
-        detalle: `Gastó $${masGasta.gastoTotal.toLocaleString("es-CL")} este periodo (${masGasta.kmTotal.toLocaleString("es-CL")} km recorridos).`,
-        accion: "Comparar con unidades del mismo modelo. Verificar si tiene más km que las demás.",
-        valor: masGasta.gastoTotal,
-        referencia: gastoPromedio,
+        detalle: `Gastó $${masGasta.gastoTotal.toLocaleString("es-CL")} este periodo.`,
+        accion: "Comparar con unidades del mismo modelo.",
+        valor: masGasta.gastoTotal, referencia: gastoPromedio,
       });
     }
   }
@@ -464,38 +405,12 @@ export async function obtenerTopProblemas(desde?: string, hasta?: string): Promi
   return problemas.slice(0, 3);
 }
 
-// ─── CORRELACIÓN CONDUCTOR ──────────────────────────────────
-
-export async function obtenerCorrelacionConductor(desde?: string, hasta?: string): Promise<ConductorRendimiento[]> {
-  const supabase = await createClient();
-
-  // Obtener asignaciones con datos del conductor
-  const { data: asignaciones } = await supabase
-    .from("asignacion_flota")
-    .select("usuario_id, bus_id, usuarios(id, nombre_completo)");
-
-  if (!asignaciones || asignaciones.length === 0) return [];
-
-  // Obtener registros de combustible
-  let query = supabase
-    .from("registros_combustible")
-    .select("bus_id, kilometraje, litros_cargados, precio_total_pago, fecha")
-    .order("fecha", { ascending: true });
-
-  if (desde) query = query.gte("fecha", desde);
-  if (hasta) query = query.lte("fecha", hasta);
-
-  const { data: registros } = await query;
-  if (!registros || registros.length === 0) return [];
-
-  // Agrupar asignaciones por conductor
+function calcularConductores(buses: BusInfo[], registros: RegistroComb[], asignaciones: Asignacion[]): ConductorRendimiento[] {
   const porConductor = new Map<string, { id: string; nombre: string; buses: string[] }>();
-  for (const a of asignaciones as unknown as any[]) {
-    const uid = a.usuario_id;
-    const nombre = a.usuarios?.nombre_completo || "Sin nombre";
-    const entry = porConductor.get(uid) || { id: uid, nombre, buses: [] as string[] };
+  for (const a of asignaciones) {
+    const entry = porConductor.get(a.usuario_id) || { id: a.usuario_id, nombre: a.nombre, buses: [] as string[] };
     if (!entry.buses.includes(a.bus_id)) entry.buses.push(a.bus_id);
-    porConductor.set(uid, entry);
+    porConductor.set(a.usuario_id, entry);
   }
 
   const resultado: ConductorRendimiento[] = [];
@@ -504,7 +419,6 @@ export async function obtenerCorrelacionConductor(desde?: string, hasta?: string
     const regsDelConductor = registros.filter(r => cond.buses.includes(r.bus_id));
     if (regsDelConductor.length < 2) continue;
 
-    // Agrupar por bus y calcular
     let totalKm = 0; let totalLitros = 0; let totalGasto = 0; let viajes = 0;
     const busesConDatos: string[] = [];
 
@@ -527,64 +441,77 @@ export async function obtenerCorrelacionConductor(desde?: string, hasta?: string
     if (viajes === 0) continue;
 
     resultado.push({
-      conductorId: cond.id,
-      nombre: cond.nombre,
-      unidades: busesConDatos,
+      conductorId: cond.id, nombre: cond.nombre, unidades: busesConDatos,
       kmL: totalLitros > 0 ? Math.round((totalKm / totalLitros) * 100) / 100 : 0,
       costoPorKm: totalGasto > 0 && totalKm > 0 ? Math.round(totalGasto / totalKm) : null,
-      gastoTotal: totalGasto,
-      kmTotal: totalKm,
-      viajes,
+      gastoTotal: totalGasto, kmTotal: totalKm, viajes,
     });
   }
 
-  // Marcar alertas
   const kmLs = resultado.filter(r => r.kmL > 0).map(r => r.kmL);
   if (kmLs.length > 0) {
     const promedio = kmLs.reduce((a, b) => a + b, 0) / kmLs.length;
     const umbral = promedio * 0.7;
-    resultado.forEach(r => { if (r.kmL > 0 && r.kmL < umbral) r.viajes = -r.viajes; }); // viajes negativo = alerta
+    resultado.forEach(r => { if (r.kmL > 0 && r.kmL < umbral) r.viajes = -r.viajes; });
   }
 
-  resultado.sort((a, b) => a.kmL - b.kmL); // Peores primero
+  resultado.sort((a, b) => a.kmL - b.kmL);
   return resultado;
 }
 
-// ─── PROYECCIÓN MENSUAL ─────────────────────────────────────
+// ─── API PÚBLICA ────────────────────────────────────────────
 
-export async function obtenerProyeccion(desde?: string, hasta?: string): Promise<Proyeccion> {
-  if (!desde || !hasta) return { gastoProyectado: 0, gastoAnterior: 0, variacionPct: 0, costoKmProyectado: null, diasAnalizados: 0 };
+export async function obtenerDashboardCombustible(desde?: string, hasta?: string): Promise<DashboardData> {
+  const { buses, registros, asignaciones } = await fetchDatosBase(desde, hasta);
 
-  const diasPeriodo = Math.ceil((new Date(hasta).getTime() - new Date(desde).getTime()) / 86400000) + 1;
-  const kpis = await obtenerKpis(desde, hasta);
+  const ranking = calcularRanking(buses, registros);
+  const rendimiento = calcularRendimiento(buses, registros);
+  const kpis = calcularKpis(ranking, rendimiento);
+  const gemelas = calcularGemelas(buses, registros);
+  const conductores = calcularConductores(buses, registros, asignaciones);
+  const problemas = calcularProblemas(ranking, rendimiento, asignaciones);
 
-  // Proyectar a 30 días
-  const gastoDiario = kpis.gastoTotalPeriodo / diasPeriodo;
+  // Proyección
+  const diasPeriodo = desde && hasta ? Math.ceil((new Date(hasta).getTime() - new Date(desde).getTime()) / 86400000) + 1 : 0;
+  const gastoDiario = diasPeriodo > 0 ? kpis.gastoTotalPeriodo / diasPeriodo : 0;
   const gastoProyectado = Math.round(gastoDiario * 30);
-  const kmDiario = kpis.kmTotalesPeriodo / diasPeriodo;
+  const kmDiario = diasPeriodo > 0 ? kpis.kmTotalesPeriodo / diasPeriodo : 0;
   const kmProyectado = kmDiario * 30;
   const costoKmProyectado = kmProyectado > 0 ? Math.round(gastoProyectado / kmProyectado) : null;
 
-  // Periodo anterior para comparar
-  const d1 = new Date(desde); const d2 = new Date(hasta);
-  const ant = (() => {
+  // Periodo anterior
+  let variacionPct = 0;
+  let gastoAnterior = 0;
+  if (desde && hasta && diasPeriodo > 0) {
+    const d1 = new Date(desde);
     const antHasta = new Date(d1); antHasta.setDate(antHasta.getDate() - 1);
     const antDesde = new Date(antHasta); antDesde.setDate(antDesde.getDate() - diasPeriodo + 1);
-    return { desde: toISO(antDesde), hasta: toISO(antHasta) };
-  })();
 
-  const kpisAnt = await obtenerKpis(ant.desde, ant.hasta);
-  const variacionPct = kpisAnt.gastoTotalPeriodo > 0
-    ? Math.round(((kpis.gastoTotalPeriodo - kpisAnt.gastoTotalPeriodo) / kpisAnt.gastoTotalPeriodo) * 100)
-    : 0;
+    const { registros: regsAnt } = await fetchDatosBase(toISO(antDesde), toISO(antHasta));
+    const rankingAnt = calcularRanking(buses, regsAnt);
+    gastoAnterior = rankingAnt.reduce((acc, r) => acc + r.gastoTotal, 0);
+    variacionPct = gastoAnterior > 0 ? Math.round(((kpis.gastoTotalPeriodo - gastoAnterior) / gastoAnterior) * 100) : 0;
+  }
 
-  return {
-    gastoProyectado,
-    gastoAnterior: kpisAnt.gastoTotalPeriodo,
-    variacionPct,
-    costoKmProyectado,
-    diasAnalizados: diasPeriodo,
-  };
+  const proyeccion: Proyeccion = { gastoProyectado, gastoAnterior, variacionPct, costoKmProyectado, diasAnalizados: diasPeriodo };
+
+  // Alertas estanque (query separada, no depende de los datos base)
+  const supabase = await createClient();
+  const { data: alertasData } = await supabase
+    .from("alertas_sistema")
+    .select("id, bus_id, titulo, creado_en, buses(patente)")
+    .eq("tipo", "estanque_fantasma")
+    .eq("resuelta", false)
+    .order("creado_en", { ascending: false })
+    .limit(20);
+
+  const alertas: AlertaEstanque[] = (alertasData || []).map((a: any) => ({
+    id: a.id, busId: a.bus_id, patente: a.buses?.patente || "—",
+    capacidadEstanque: 0, litrosIntentados: 0, excedentePct: 0,
+    fecha: a.creado_en, titulo: a.titulo,
+  }));
+
+  return { ranking, rendimiento, kpis, proyeccion, problemas, conductores, gemelas, alertas };
 }
 
 // ─── RESOLVER ALERTA ────────────────────────────────────────

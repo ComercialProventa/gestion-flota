@@ -25,10 +25,10 @@ export type NeumaticoAdmin = {
 type FiltroEstado = "todos" | "inventario" | "instalado" | "reciclaje";
 
 const FILTROS: { key: FiltroEstado; label: string; color: string }[] = [
-  { key: "todos", label: "Todos", color: "bg-white/10 text-white" },
-  { key: "inventario", label: "En Bodega", color: "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" },
-  { key: "instalado", label: "Instalados", color: "bg-sky-500/10 text-sky-400 border border-sky-500/20" },
-  { key: "reciclaje", label: "De Baja", color: "bg-red-500/10 text-red-400 border border-red-500/20" },
+  { key: "todos", label: "Todos", color: "text-foreground" },
+  { key: "inventario", label: "En Bodega", color: "text-green" },
+  { key: "instalado", label: "Instalados", color: "text-accent" },
+  { key: "reciclaje", label: "De Baja", color: "text-red" },
 ];
 
 const ESTADO_LABEL: Record<string, string> = {
@@ -38,11 +38,11 @@ const ESTADO_LABEL: Record<string, string> = {
   bodega: "Bodega",
 };
 
-const ESTADO_STYLES: Record<string, string> = {
-  inventario: "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20",
-  instalado: "bg-sky-500/10 text-sky-400 border border-sky-500/20",
-  reciclaje: "bg-red-500/10 text-red-400 border border-red-500/20",
-  bodega: "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20",
+const ESTADO_COLOR: Record<string, string> = {
+  inventario: "text-green",
+  instalado: "text-accent",
+  reciclaje: "text-red",
+  bodega: "text-green",
 };
 
 const CICLO_LABEL: Record<string, string> = {
@@ -86,11 +86,9 @@ export default function InventarioAdminTable({
   const neumaticosData = neumaticos || [];
   const countsData = counts || { inventario: 0, instalado: 0, reciclaje: 0 };
 
-  // ── TODOS LOS HOOKS DEBEN IR ANTES DE CUALQUIER RETURN CONDICIONAL ──
   const [filtro, setFiltro] = useState<FiltroEstado>("todos");
   const [busqueda, setBusqueda] = useState("");
 
-  // Modal Ingreso a Bodega
   const [mostrarModalIngreso, setMostrarModalIngreso] = useState(false);
   const [cargandoIngreso, setCargandoIngreso] = useState(false);
   const [errorIngreso, setErrorIngreso] = useState("");
@@ -102,7 +100,6 @@ export default function InventarioAdminTable({
     precio: 0,
   });
 
-  // Modal de Edición
   const [editingNeumatico, setEditingNeumatico] = useState<NeumaticoAdmin | null>(null);
   const [formEdit, setFormEdit] = useState({
     modeloId: "",
@@ -115,10 +112,8 @@ export default function InventarioAdminTable({
   const [cargandoEdit, setCargandoEdit] = useState(false);
   const [errorEdit, setErrorEdit] = useState("");
 
-  // Eliminación
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  // useMemo hook
   const filtrados = useMemo(() => {
     let lista = neumaticosData;
     if (filtro !== "todos") {
@@ -137,8 +132,6 @@ export default function InventarioAdminTable({
         (n.usuarios && n.usuarios.nombre_completo.toLowerCase().includes(q))
     );
   }, [neumaticosData, filtro, busqueda]);
-
-  // ── FUNCIONES (no son hooks, pueden ir después) ──
 
   const handleIngresarBodega = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -223,38 +216,35 @@ export default function InventarioAdminTable({
     return countsData[key] || 0;
   };
 
-  // Clases compartidas del sistema de diseño
-  const labelClasses = "block text-[11px] font-semibold text-slate-400 mb-1.5 uppercase tracking-wide";
-  const inputClasses = "w-full rounded border border-white/10 bg-black/40 px-3 py-2 text-sm text-white placeholder-slate-500 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/30 focus:outline-none transition-colors";
-  const inputClassesEdit = "w-full rounded border border-white/10 bg-black/40 px-3 py-2 text-sm text-white placeholder-slate-500 focus:border-sky-500 focus:ring-1 focus:ring-sky-500/30 focus:outline-none transition-colors";
+  const labelClasses = "block text-[11px] font-medium text-dim mb-1";
+  const inputClasses = "w-full rounded-md bg-surface px-3 py-2 text-[13px] text-foreground placeholder:text-dim focus:outline-none focus:ring-1 focus:ring-accent/30";
 
-  // ── RETURN CONDICIAL DESPUÉS DE TODOS LOS HOOKS ──
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 text-slate-500">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-sky-500 border-t-transparent mb-4"></div>
+      <div className="flex flex-col items-center justify-center py-20 text-dim">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent border-t-transparent mb-4"></div>
         <p className="text-sm font-medium animate-pulse">Cargando inventario...</p>
       </div>
     );
   }
 
   return (
-    <div className="rounded-lg border border-white/10 bg-[#151517] shadow-sm flex flex-col">
+    <div className="bg-surface rounded-md flex flex-col">
 
       {/* Barra de filtros + búsqueda */}
-      <div className="border-b border-white/5 bg-white/[0.02] p-4 space-y-3">
+      <div className="border-b border-border p-4 space-y-3">
         <div className="flex flex-wrap items-center gap-2">
           {FILTROS.map((f) => (
             <button
               key={f.key}
               onClick={() => setFiltro(f.key)}
-              className={`inline-flex items-center gap-1.5 rounded px-2.5 py-1 text-xs font-semibold transition-colors cursor-pointer ${filtro === f.key
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-[13px] font-medium transition-colors cursor-pointer ${filtro === f.key
                   ? f.color
-                  : "bg-transparent text-slate-400 hover:bg-white/5 hover:text-slate-300"
+                  : "text-dim hover:text-foreground"
                 }`}
             >
               {f.label}
-              <span className="rounded bg-black/40 px-1.5 py-0.5 text-[10px] border border-white/5">
+              <span className="text-[11px] text-dim">
                 {getCount(f.key)}
               </span>
             </button>
@@ -263,7 +253,7 @@ export default function InventarioAdminTable({
 
         <div className="flex flex-col sm:flex-row gap-3 items-end">
           <div className="relative flex-1 w-full">
-            <svg xmlns="http://www.w3.org/2000/svg" className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <svg xmlns="http://www.w3.org/2000/svg" className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-dim" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
             </svg>
             <input
@@ -276,7 +266,7 @@ export default function InventarioAdminTable({
           </div>
           <button
             onClick={() => setMostrarModalIngreso(true)}
-            className="flex w-full sm:w-auto items-center justify-center gap-2 rounded bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-500 transition-colors whitespace-nowrap"
+            className="flex w-full sm:w-auto items-center justify-center gap-2 bg-accent text-background rounded-md px-4 py-2 text-[13px] font-medium hover:bg-accent-hover transition-colors whitespace-nowrap"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
             Registrar Ingreso
@@ -286,8 +276,8 @@ export default function InventarioAdminTable({
 
       {/* Tabla */}
       <div className="overflow-x-auto">
-        <table className="w-full text-left text-sm text-slate-300">
-          <thead className="bg-black/20 text-[11px] font-semibold uppercase tracking-wider text-slate-400 border-b border-white/5">
+        <table className="w-full text-left text-[13px] text-foreground">
+          <thead className="text-[11px] font-medium text-dim uppercase tracking-wide border-b border-border">
             <tr>
               <th className="px-5 py-3">Código</th>
               <th className="px-5 py-3">Serie / DOT</th>
@@ -298,65 +288,62 @@ export default function InventarioAdminTable({
               <th className="px-5 py-3 text-right">Acciones</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-white/5">
+          <tbody className="divide-y divide-divider">
             {filtrados.map((n) => (
-              <tr key={n.id} className="hover:bg-white/[0.02] transition-colors group">
+              <tr key={n.id} className="hover:bg-surface-hover transition-colors group">
                 <td className="px-5 py-3.5">
-                  <span className="font-mono text-xs font-bold text-white bg-black/40 px-2 py-1 rounded border border-white/10">
+                  <span className="font-mono text-xs font-medium text-foreground">
                     {n.codigo_unico}
                   </span>
                 </td>
                 <td className="px-5 py-3.5">
-                  <div className="font-mono text-xs text-slate-300">
-                    {n.numero_serie || <span className="text-slate-500 italic">S/N</span>}
+                  <div className="font-mono text-xs text-foreground">
+                    {n.numero_serie || <span className="text-dim italic">S/N</span>}
                   </div>
                   {n.codigo_dot && (
-                    <div className="text-[10px] text-slate-500 mt-0.5 font-mono">DOT: {n.codigo_dot}</div>
+                    <div className="text-[10px] text-dim mt-0.5 font-mono">DOT: {n.codigo_dot}</div>
                   )}
                 </td>
                 <td className="px-5 py-3.5">
-                  <div className="font-medium text-slate-200">{n.modelos_neumaticos?.marca || "Desconocida"}</div>
+                  <div className="font-medium text-foreground">{n.modelos_neumaticos?.marca || "Desconocida"}</div>
                   <div className="flex items-center gap-1.5 mt-0.5">
-                    <span className="font-mono text-xs text-slate-400">{n.modelos_neumaticos?.medida || "Desconocida"}</span>
-                    <span className="text-[10px] text-slate-500 uppercase tracking-wide">· {CICLO_LABEL[n.ciclo_vida] || n.ciclo_vida}</span>
+                    <span className="font-mono text-xs text-muted">{n.modelos_neumaticos?.medida || "Desconocida"}</span>
+                    <span className="text-[10px] text-dim uppercase tracking-wide">· {CICLO_LABEL[n.ciclo_vida] || n.ciclo_vida}</span>
                   </div>
                 </td>
                 <td className="px-5 py-3.5">
-                  <span className={`inline-flex items-center rounded px-2 py-0.5 text-[10px] uppercase font-bold tracking-wider ${ESTADO_STYLES[n.estado] || "bg-black/40 text-slate-400 border border-white/10"}`}>
+                  <span className={`text-[11px] font-medium uppercase tracking-wide ${ESTADO_COLOR[n.estado] || "text-dim"}`}>
                     {ESTADO_LABEL[n.estado] || n.estado}
                   </span>
                 </td>
                 <td className="px-5 py-3.5 hidden lg:table-cell">
                   {n.estado === "instalado" && n.buses ? (
                     <div>
-                      <span className="font-mono text-xs font-bold text-sky-400">{n.buses.patente}</span>
+                      <span className="font-mono text-xs font-medium text-accent">{n.buses.patente}</span>
                       {n.posicion_actual && (
-                        <div className="text-[10px] text-slate-500 mt-0.5 uppercase tracking-wide">{POSICION_LABEL[n.posicion_actual] || n.posicion_actual}</div>
+                        <div className="text-[10px] text-dim mt-0.5 uppercase tracking-wide">{POSICION_LABEL[n.posicion_actual] || n.posicion_actual}</div>
                       )}
                     </div>
                   ) : n.estado === "reciclaje" ? (
-                    <span className="text-xs text-slate-500 italic">Retirado</span>
+                    <span className="text-xs text-dim italic">Retirado</span>
                   ) : (
-                    <span className="text-xs text-slate-500">En bodega</span>
+                    <span className="text-xs text-dim">En bodega</span>
                   )}
                 </td>
                 <td className="px-5 py-3.5 hidden xl:table-cell">
                   {n.usuarios ? (
                     <div className="flex items-center gap-2">
-                      <div className="flex h-5 w-5 items-center justify-center rounded bg-white/5 border border-white/10 text-[9px] font-bold text-slate-300">
-                        {n.usuarios.nombre_completo.charAt(0).toUpperCase()}
-                      </div>
-                      <span className="text-xs text-slate-400">{n.usuarios.nombre_completo.split(" ")[0]}</span>
+                      <span className="text-xs text-muted">{n.usuarios.nombre_completo.split(" ")[0]}</span>
                     </div>
                   ) : (
-                    <span className="text-xs text-slate-500 italic">Sistema</span>
+                    <span className="text-xs text-dim italic">Sistema</span>
                   )}
                 </td>
-                <td className="px-5 py-3.5 text-right opacity-50 group-hover:opacity-100 transition-opacity">
+                <td className="px-5 py-3.5 text-right opacity-0 group-hover:opacity-100 transition-opacity">
                   <div className="flex items-center justify-end gap-1">
                     <button
                       onClick={() => abrirEdicion(n)}
-                      className="rounded p-1.5 text-slate-500 hover:bg-white/5 hover:text-sky-400 transition-colors"
+                      className="p-1.5 text-dim hover:text-accent transition-colors"
                       title="Editar Propiedades"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -367,7 +354,7 @@ export default function InventarioAdminTable({
                       <button
                         onClick={() => handleEliminar(n.id)}
                         disabled={deletingId === n.id}
-                        className="rounded p-1.5 text-slate-500 hover:bg-white/5 hover:text-red-400 transition-colors disabled:opacity-50"
+                        className="p-1.5 text-dim hover:text-red transition-colors disabled:opacity-50"
                         title="Borrado Seguro"
                       >
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -382,7 +369,7 @@ export default function InventarioAdminTable({
             {filtrados.length === 0 && (
               <tr>
                 <td colSpan={7} className="px-5 py-12 text-center">
-                  <p className="text-sm font-medium text-slate-400">No se encontraron resultados</p>
+                  <p className="text-sm text-muted">No se encontraron resultados</p>
                 </td>
               </tr>
             )}
@@ -391,18 +378,16 @@ export default function InventarioAdminTable({
       </div>
 
       {/* Footer con conteo */}
-      <div className="border-t border-white/5 bg-black/20 px-5 py-3 text-xs font-medium text-slate-500">
-        Mostrando <span className="text-slate-300">{filtrados.length}</span> de {neumaticosData.length} registros
+      <div className="border-t border-border px-5 py-3 text-xs text-dim">
+        Mostrando <span className="text-foreground">{filtrados.length}</span> de {neumaticosData.length} registros
       </div>
 
-      {/* =========================================
-          MODAL: REGISTRAR INGRESO
-      ========================================= */}
+      {/* MODAL: REGISTRAR INGRESO */}
       {mostrarModalIngreso && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="w-full max-w-lg rounded-lg border border-white/10 bg-[#151517] p-5 shadow-lg animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
-            <h3 className="text-lg font-semibold text-white mb-1">Registrar Ingreso a Bodega</h3>
-            <p className="text-xs text-slate-400 mb-5">Completa este formulario al recepcionar nuevas llantas comerciales.</p>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background bg-opacity-80 backdrop-blur-sm p-4">
+          <div className="w-full max-w-lg bg-surface rounded-md p-6 max-h-[90vh] overflow-y-auto">
+            <h3 className="text-lg font-semibold text-foreground mb-1">Registrar Ingreso a Bodega</h3>
+            <p className="text-xs text-muted mb-5">Completa este formulario al recepcionar nuevas llantas comerciales.</p>
 
             <form onSubmit={handleIngresarBodega} className="space-y-4">
               <div>
@@ -413,9 +398,9 @@ export default function InventarioAdminTable({
                   onChange={(e) => setFormIngreso({ ...formIngreso, modeloId: e.target.value })}
                   className={inputClasses}
                 >
-                  <option value="" className="bg-slate-800">Selecciona un modelo...</option>
+                  <option value="">Selecciona un modelo...</option>
                   {modelos.map(m => (
-                    <option key={m.id} value={m.id} className="bg-slate-800">{m.marca} - {m.medida}</option>
+                    <option key={m.id} value={m.id}>{m.marca} - {m.medida}</option>
                   ))}
                 </select>
               </div>
@@ -469,7 +454,7 @@ export default function InventarioAdminTable({
               </div>
 
               {errorIngreso && (
-                <div className="rounded border border-red-500/20 bg-red-500/10 p-2.5 text-sm text-red-400">
+                <div className="text-sm text-red">
                   {errorIngreso}
                 </div>
               )}
@@ -479,14 +464,14 @@ export default function InventarioAdminTable({
                   type="button"
                   onClick={() => setMostrarModalIngreso(false)}
                   disabled={cargandoIngreso}
-                  className="flex-1 rounded border border-white/10 bg-transparent py-2.5 text-sm font-semibold text-slate-300 hover:bg-white/5 transition-colors"
+                  className="flex-1 py-2.5 text-[13px] text-dim hover:text-foreground transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={cargandoIngreso}
-                  className="flex-1 rounded bg-emerald-600 py-2.5 text-sm font-semibold text-white hover:bg-emerald-500 transition-colors disabled:opacity-50"
+                  className="flex-1 bg-accent text-background rounded-md py-2.5 text-[13px] font-medium hover:bg-accent-hover transition-colors disabled:opacity-50"
                 >
                   {cargandoIngreso ? "Procesando..." : "Ingresar a Bodega"}
                 </button>
@@ -496,15 +481,13 @@ export default function InventarioAdminTable({
         </div>
       )}
 
-      {/* =========================================
-          MODAL: EDITAR NEUMÁTICO
-      ========================================= */}
+      {/* MODAL: EDITAR NEUMÁTICO */}
       {editingNeumatico && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="w-full max-w-lg rounded-lg border border-white/10 bg-[#151517] p-5 shadow-lg overflow-y-auto max-h-[90vh]">
-            <h3 className="text-lg font-semibold text-white mb-1">Editar Neumático</h3>
-            <p className="text-xs text-slate-400 mb-5">
-              Modificando el neumático <span className="font-mono text-slate-300">{editingNeumatico.codigo_unico}</span>.
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background bg-opacity-80 backdrop-blur-sm p-4">
+          <div className="w-full max-w-lg bg-surface rounded-md p-6 overflow-y-auto max-h-[90vh]">
+            <h3 className="text-lg font-semibold text-foreground mb-1">Editar Neumático</h3>
+            <p className="text-xs text-muted mb-5">
+              Modificando el neumático <span className="font-mono text-foreground">{editingNeumatico.codigo_unico}</span>.
             </p>
 
             <form onSubmit={handleEditar} className="space-y-4">
@@ -514,11 +497,11 @@ export default function InventarioAdminTable({
                   required
                   value={formEdit.modeloId}
                   onChange={(e) => setFormEdit({ ...formEdit, modeloId: e.target.value })}
-                  className={inputClassesEdit}
+                  className={inputClasses}
                 >
-                  <option value="" className="bg-slate-800">Selecciona un modelo...</option>
+                  <option value="">Selecciona un modelo...</option>
                   {modelos.map(m => (
-                    <option key={m.id} value={m.id} className="bg-slate-800">{m.marca} - {m.medida}</option>
+                    <option key={m.id} value={m.id}>{m.marca} - {m.medida}</option>
                   ))}
                 </select>
               </div>
@@ -530,7 +513,7 @@ export default function InventarioAdminTable({
                     type="text"
                     value={formEdit.numeroSerie}
                     onChange={(e) => setFormEdit({ ...formEdit, numeroSerie: e.target.value })}
-                    className={`${inputClassesEdit} font-mono`}
+                    className={`${inputClasses} font-mono`}
                     placeholder="S/N"
                   />
                 </div>
@@ -541,7 +524,7 @@ export default function InventarioAdminTable({
                     maxLength={4}
                     value={formEdit.codigoDot}
                     onChange={(e) => setFormEdit({ ...formEdit, codigoDot: e.target.value })}
-                    className={`${inputClassesEdit} font-mono`}
+                    className={`${inputClasses} font-mono`}
                     placeholder="Semana/Año"
                   />
                 </div>
@@ -554,7 +537,7 @@ export default function InventarioAdminTable({
                     type="text"
                     value={formEdit.factura}
                     onChange={(e) => setFormEdit({ ...formEdit, factura: e.target.value })}
-                    className={inputClassesEdit}
+                    className={inputClasses}
                     placeholder="Ej: F-1020"
                   />
                 </div>
@@ -564,7 +547,7 @@ export default function InventarioAdminTable({
                     type="text"
                     value={formEdit.proveedor}
                     onChange={(e) => setFormEdit({ ...formEdit, proveedor: e.target.value })}
-                    className={inputClassesEdit}
+                    className={inputClasses}
                   />
                 </div>
               </div>
@@ -576,12 +559,12 @@ export default function InventarioAdminTable({
                   min="0"
                   value={formEdit.precio || ""}
                   onChange={(e) => setFormEdit({ ...formEdit, precio: parseInt(e.target.value) || 0 })}
-                  className={`${inputClassesEdit} font-mono`}
+                  className={`${inputClasses} font-mono`}
                 />
               </div>
 
               {errorEdit && (
-                <div className="rounded border border-red-500/20 bg-red-500/10 p-2.5 text-sm text-red-400">
+                <div className="text-sm text-red">
                   {errorEdit}
                 </div>
               )}
@@ -591,14 +574,14 @@ export default function InventarioAdminTable({
                   type="button"
                   onClick={() => setEditingNeumatico(null)}
                   disabled={cargandoEdit}
-                  className="flex-1 rounded border border-white/10 bg-transparent py-2.5 text-sm font-semibold text-slate-300 hover:bg-white/5 transition-colors"
+                  className="flex-1 py-2.5 text-[13px] text-dim hover:text-foreground transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={cargandoEdit}
-                  className="flex-1 rounded bg-sky-600 py-2.5 text-sm font-semibold text-white hover:bg-sky-500 transition-colors disabled:opacity-50"
+                  className="flex-1 bg-accent text-background rounded-md py-2.5 text-[13px] font-medium hover:bg-accent-hover transition-colors disabled:opacity-50"
                 >
                   {cargandoEdit ? "Guardando..." : "Guardar Cambios"}
                 </button>

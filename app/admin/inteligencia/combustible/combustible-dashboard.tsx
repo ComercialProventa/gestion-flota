@@ -36,8 +36,8 @@ export default function CombustibleDashboard() {
 
   if (loadingRendimiento || loadingGemelas || loadingAlertas) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 text-slate-500">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-sky-500 border-t-transparent mb-4"></div>
+      <div className="flex flex-col items-center justify-center py-20 text-dim">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent border-t-transparent mb-4"></div>
         <p className="text-sm font-medium animate-pulse">Analizando datos de combustible...</p>
       </div>
     );
@@ -45,34 +45,33 @@ export default function CombustibleDashboard() {
 
   return (
     <div className="space-y-8">
-      {/* ═══ SECCIÓN 1: TENDENCIA DE RENDIMIENTO ═══ */}
+      {/* SECCIÓN 1: TENDENCIA DE RENDIMIENTO */}
       <section>
-        <h2 className="text-base font-bold text-white mb-4 flex items-center gap-2">
+        <h2 className="text-base font-semibold text-foreground mb-4 flex items-center gap-2">
           Tendencia de Rendimiento (Km/L)
-          <span className="text-xs font-normal text-slate-500">— caída &gt;30% = alerta roja</span>
+          <span className="text-xs font-normal text-dim">— caída &gt;30% = alerta roja</span>
         </h2>
 
         {rendimientoData.length === 0 ? (
-          <div className="rounded border border-white/5 bg-[#121214] p-8 text-center text-sm text-slate-500">
+          <div className="bg-surface rounded-md p-8 text-center text-sm text-dim">
             No hay datos suficientes. Se necesitan al menos 2 registros de combustible por unidad.
           </div>
         ) : (
           <div className="space-y-4">
-            {/* Selector de unidad */}
             <div className="flex items-center gap-3 flex-wrap">
               {rendimientoData.map((u) => (
                 <button
                   key={u.busId}
                   type="button"
                   onClick={() => setUnidadSeleccionada(u.busId)}
-                  className={`rounded px-3 py-1.5 text-xs font-medium transition-all cursor-pointer ${
+                  className={`rounded-md px-3 py-1.5 text-[13px] font-medium transition-all cursor-pointer ${
                     u.busId === unidadSeleccionada
                       ? u.enAlerta
-                        ? "bg-red-600 text-white shadow-lg shadow-red-600/30"
-                        : "bg-sky-600 text-white shadow-lg shadow-sky-600/30"
+                        ? "text-red"
+                        : "text-accent"
                       : u.enAlerta
-                        ? "bg-red-500/15 text-red-400 border border-red-500/30 hover:bg-red-500/25"
-                        : "bg-slate-700/50 text-slate-400 border border-white/10 hover:bg-white/5"
+                        ? "text-red"
+                        : "text-dim hover:text-foreground"
                   }`}
                 >
                   {u.patente}
@@ -81,35 +80,32 @@ export default function CombustibleDashboard() {
               ))}
             </div>
 
-            {/* Gráfico SVG + Info */}
             {unidadActual && (
               <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-                {/* Stats */}
                 <div className="space-y-3">
                   <StatCard
                     label="Promedio Histórico"
                     value={`${unidadActual.promedioHistorico} Km/L`}
-                    color="sky"
+                    color="accent"
                   />
                   <StatCard
                     label="Última Semana"
                     value={`${unidadActual.rendimientoActual} Km/L`}
-                    color={unidadActual.enAlerta ? "red" : "emerald"}
+                    color={unidadActual.enAlerta ? "red" : "green"}
                   />
                   <StatCard
                     label="Variación"
                     value={`${unidadActual.variacionPct > 0 ? "+" : ""}${unidadActual.variacionPct}%`}
-                    color={unidadActual.variacionPct < -30 ? "red" : unidadActual.variacionPct < 0 ? "amber" : "emerald"}
+                    color={unidadActual.variacionPct < -30 ? "red" : unidadActual.variacionPct < 0 ? "accent" : "green"}
                   />
                   {unidadActual.enAlerta && (
-                    <div className="rounded border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-400 font-medium animate-pulse">
+                    <div className="text-xs text-red animate-pulse">
                       ALERTA CRÍTICA: Rendimiento anormalmente bajo. Posible extracción de combustible.
                     </div>
                   )}
                 </div>
 
-                {/* Gráfico SVG */}
-                <div className="lg:col-span-3 rounded border border-white/5 bg-[#121214] p-4">
+                <div className="lg:col-span-3 bg-surface rounded-md p-4">
                   <RendimientoChart
                     semanas={unidadActual.semanas}
                     promedio={unidadActual.promedioHistorico}
@@ -121,15 +117,15 @@ export default function CombustibleDashboard() {
         )}
       </section>
 
-      {/* ═══ SECCIÓN 2: COMPARATIVA DE GEMELAS ═══ */}
+      {/* SECCIÓN 2: COMPARATIVA DE GEMELAS */}
       <section>
-        <h2 className="text-base font-bold text-white mb-4 flex items-center gap-2">
+        <h2 className="text-base font-semibold text-foreground mb-4 flex items-center gap-2">
           Comparativa de Unidades Gemelas
-          <span className="text-xs font-normal text-slate-500">— diferencia &gt;30% = alerta</span>
+          <span className="text-xs font-normal text-dim">— diferencia &gt;30% = alerta</span>
         </h2>
 
         {gemelasData.length === 0 ? (
-          <div className="rounded border border-white/5 bg-[#121214] p-8 text-center text-sm text-slate-500">
+          <div className="bg-surface rounded-md p-8 text-center text-sm text-dim">
             No hay unidades gemelas (misma marca, modelo y año) para comparar.
           </div>
         ) : (
@@ -137,49 +133,45 @@ export default function CombustibleDashboard() {
             {gemelasData.map((g) => (
               <div
                 key={g.grupo}
-                className={`rounded border p-5 ${
-                  g.enAlerta
-                    ? "border-red-500/30 bg-red-500/5"
-                    : "border-white/5 bg-[#121214]"
+                className={`bg-surface rounded-md p-5 ${
+                  g.enAlerta ? "ring-1 ring-red/20" : ""
                 }`}
               >
                 <div className="flex items-center justify-between mb-3">
                   <div>
-                    <h3 className="text-sm font-bold text-white">{g.grupo}</h3>
-                    <p className="text-xs text-slate-500">{g.unidades.length} unidades</p>
+                    <h3 className="text-sm font-semibold text-foreground">{g.grupo}</h3>
+                    <p className="text-xs text-dim">{g.unidades.length} unidades</p>
                   </div>
-                  <span className={`rounded-full px-3 py-1 text-xs font-bold ${
-                    g.enAlerta
-                      ? "bg-red-500/20 text-red-400"
-                      : "bg-emerald-500/20 text-emerald-400"
+                  <span className={`text-xs font-medium ${
+                    g.enAlerta ? "text-red" : "text-green"
                   }`}>
                     Δ {g.diferenciaMaxPct}%
                   </span>
                 </div>
 
                 <div className="grid gap-2">
-                  {g.unidades.map((u, i) => {
+                  {g.unidades.map((u) => {
                     const maxRend = Math.max(...g.unidades.map((x) => x.promedioKmL));
                     const pct = maxRend > 0 ? (u.promedioKmL / maxRend) * 100 : 0;
                     const esPeor = g.enAlerta && u.promedioKmL === Math.min(...g.unidades.map((x) => x.promedioKmL));
 
                     return (
                       <div key={u.busId} className="flex items-center gap-3">
-                        <span className={`font-mono text-xs w-20 ${esPeor ? "text-red-400 font-bold" : "text-white"}`}>
+                        <span className={`font-mono text-xs w-20 ${esPeor ? "text-red font-medium" : "text-foreground"}`}>
                           {u.patente}
                         </span>
-                        <div className="flex-1 h-6 rounded-full bg-slate-700/50 overflow-hidden relative">
+                        <div className="flex-1 h-6 rounded-md bg-surface overflow-hidden relative">
                           <div
-                            className={`h-full rounded-full transition-all duration-500 ${
-                              esPeor ? "bg-red-500" : "bg-sky-500"
+                            className={`h-full transition-all duration-500 ${
+                              esPeor ? "bg-red" : "bg-accent"
                             }`}
                             style={{ width: `${Math.max(pct, 5)}%` }}
                           />
-                          <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white">
+                          <span className="absolute inset-0 flex items-center justify-center text-[10px] font-medium text-foreground">
                             {u.promedioKmL} Km/L
                           </span>
                         </div>
-                        <span className="text-[10px] text-slate-500 w-24 text-right">
+                        <span className="text-[10px] text-dim w-24 text-right">
                           {u.totalKm.toLocaleString("es-CL")} km
                         </span>
                       </div>
@@ -188,7 +180,7 @@ export default function CombustibleDashboard() {
                 </div>
 
                 {g.enAlerta && (
-                  <p className="mt-3 text-xs text-red-400 font-medium">
+                  <p className="mt-3 text-xs text-red font-medium">
                     ATENCIÓN: Diferencia de rendimiento &gt;30%. Investigar conductor o fuga.
                   </p>
                 )}
@@ -198,15 +190,15 @@ export default function CombustibleDashboard() {
         )}
       </section>
 
-      {/* ═══ SECCIÓN 3: ALERTAS ESTANQUE FANTASMA ═══ */}
+      {/* SECCIÓN 3: ALERTAS ESTANQUE FANTASMA */}
       <section>
-        <h2 className="text-base font-bold text-white mb-4 flex items-center gap-2">
+        <h2 className="text-base font-semibold text-foreground mb-4 flex items-center gap-2">
           Alertas de Estanque Fantasma
-          <span className="text-xs font-normal text-slate-500">— intentos de carga &gt; capacidad del estanque</span>
+          <span className="text-xs font-normal text-dim">— intentos de carga &gt; capacidad del estanque</span>
         </h2>
 
         {alertasData.length === 0 ? (
-          <div className="rounded border border-emerald-500/20 bg-emerald-500/5 p-6 text-center text-sm text-emerald-400 flex items-center justify-center gap-2">
+          <div className="bg-surface rounded-md p-6 text-center text-sm text-green flex items-center justify-center gap-2">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
             </svg>
@@ -215,14 +207,14 @@ export default function CombustibleDashboard() {
         ) : (
           <div className="space-y-2">
             {alertasData.map((a) => (
-              <div key={a.id} className="rounded border border-red-500/20 bg-red-500/5 p-4 flex items-center gap-4">
-                <div className="flex h-10 w-10 items-center justify-center rounded bg-red-600/20 text-red-400 text-lg shrink-0">
+              <div key={a.id} className="bg-surface rounded-md p-4 flex items-center gap-4">
+                <div className="flex h-10 w-10 items-center justify-center text-red shrink-0">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm font-semibold text-white">{a.titulo}</p>
-                  <p className="text-xs text-slate-400">
-                    Unidad: <span className="font-mono text-white">{a.patente}</span> · {new Date(a.fecha).toLocaleDateString("es-CL")}
+                  <p className="text-sm font-medium text-foreground">{a.titulo}</p>
+                  <p className="text-xs text-muted">
+                    Unidad: <span className="font-mono text-foreground">{a.patente}</span> · {new Date(a.fecha).toLocaleDateString("es-CL")}
                   </p>
                 </div>
               </div>
@@ -234,27 +226,21 @@ export default function CombustibleDashboard() {
   );
 }
 
-// ═══ COMPONENTES AUXILIARES ═══
-
 function StatCard({ label, value, color }: { label: string; value: string; color: string }) {
   const colorMap: Record<string, string> = {
-    sky: "border-sky-500/20 bg-sky-500/5 text-sky-400",
-    emerald: "border-emerald-500/20 bg-emerald-500/5 text-emerald-400",
-    red: "border-red-500/20 bg-red-500/5 text-red-400",
-    amber: "border-amber-500/20 bg-amber-500/5 text-amber-400",
+    accent: "text-accent",
+    green: "text-green",
+    red: "text-red",
   };
 
   return (
-    <div className={`rounded border p-3 ${colorMap[color] || colorMap.sky}`}>
-      <p className="text-[10px] uppercase tracking-wider text-slate-500">{label}</p>
-      <p className="text-lg font-bold">{value}</p>
+    <div className="bg-surface rounded-md p-3">
+      <p className="text-[10px] uppercase tracking-wider text-dim">{label}</p>
+      <p className={`text-lg font-semibold ${colorMap[color] || colorMap.accent}`}>{value}</p>
     </div>
   );
 }
 
-/**
- * Gráfico SVG de rendimiento semanal (línea con puntos).
- */
 function RendimientoChart({
   semanas,
   promedio,
@@ -263,7 +249,7 @@ function RendimientoChart({
   promedio: number;
 }) {
   if (semanas.length === 0) {
-    return <p className="text-center text-sm text-slate-500 py-8">Sin datos</p>;
+    return <p className="text-center text-sm text-dim py-8">Sin datos</p>;
   }
 
   const W = 600;
@@ -284,29 +270,25 @@ function RendimientoChart({
     return PAD.top + chartH - ((val - minVal) / (maxVal - minVal)) * chartH;
   }
 
-  // Línea path
   const linePath = semanas
     .map((s, i) => `${i === 0 ? "M" : "L"} ${toX(i)} ${toY(s.rendimiento)}`)
     .join(" ");
 
-  // Umbral de alerta (-30%)
   const umbral = promedio * 0.7;
 
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto" preserveAspectRatio="xMidYMid meet">
-      {/* Grid lines */}
       {[0, 0.25, 0.5, 0.75, 1].map((pct) => {
         const y = PAD.top + chartH * (1 - pct);
         const val = (minVal + (maxVal - minVal) * pct).toFixed(1);
         return (
           <g key={pct}>
-            <line x1={PAD.left} y1={y} x2={W - PAD.right} y2={y} stroke="#334155" strokeWidth={0.5} />
-            <text x={PAD.left - 6} y={y + 3} textAnchor="end" className="fill-slate-500 text-[9px]">{val}</text>
+            <line x1={PAD.left} y1={y} x2={W - PAD.right} y2={y} stroke="#3f3f46" strokeWidth={0.5} />
+            <text x={PAD.left - 6} y={y + 3} textAnchor="end" className="fill-dim text-[9px]">{val}</text>
           </g>
         );
       })}
 
-      {/* Zona roja (bajo umbral) */}
       <rect
         x={PAD.left}
         y={toY(umbral)}
@@ -316,22 +298,20 @@ function RendimientoChart({
         opacity={0.05}
       />
 
-      {/* Línea de promedio */}
       <line
         x1={PAD.left}
         y1={toY(promedio)}
         x2={W - PAD.right}
         y2={toY(promedio)}
-        stroke="#38bdf8"
+        stroke="#f59e0b"
         strokeWidth={1}
         strokeDasharray="6 3"
         opacity={0.5}
       />
-      <text x={W - PAD.right + 2} y={toY(promedio) - 4} className="fill-sky-400 text-[8px]">
+      <text x={W - PAD.right + 2} y={toY(promedio) - 4} className="fill-accent text-[8px]">
         Prom.
       </text>
 
-      {/* Línea de umbral */}
       <line
         x1={PAD.left}
         y1={toY(umbral)}
@@ -342,14 +322,12 @@ function RendimientoChart({
         strokeDasharray="4 4"
         opacity={0.4}
       />
-      <text x={W - PAD.right + 2} y={toY(umbral) - 4} className="fill-red-400 text-[8px]">
+      <text x={W - PAD.right + 2} y={toY(umbral) - 4} className="fill-red text-[8px]">
         -30%
       </text>
 
-      {/* Línea de datos */}
       <path d={linePath} fill="none" stroke="#f59e0b" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
 
-      {/* Puntos de datos */}
       {semanas.map((s, i) => (
         <g key={s.semana}>
           <circle
@@ -360,29 +338,26 @@ function RendimientoChart({
             stroke={s.rendimiento < umbral ? "#ef4444" : "#f59e0b"}
             strokeWidth={2}
           />
-          {/* Etiquetas X */}
           <text
             x={toX(i)}
             y={H - PAD.bottom + 14}
             textAnchor="middle"
-            className="fill-slate-500 text-[8px]"
+            className="fill-dim text-[8px]"
           >
             {s.semana.replace(/^\d{4}-/, "")}
           </text>
-          {/* Valor sobre punto */}
           <text
             x={toX(i)}
             y={toY(s.rendimiento) - 8}
             textAnchor="middle"
-            className={`text-[9px] font-bold ${s.rendimiento < umbral ? "fill-red-400" : "fill-amber-400"}`}
+            className={`text-[9px] font-semibold ${s.rendimiento < umbral ? "fill-red" : "fill-accent"}`}
           >
             {s.rendimiento}
           </text>
         </g>
       ))}
 
-      {/* Label eje Y */}
-      <text x={12} y={PAD.top + chartH / 2} textAnchor="middle" transform={`rotate(-90, 12, ${PAD.top + chartH / 2})`} className="fill-slate-500 text-[9px]">
+      <text x={12} y={PAD.top + chartH / 2} textAnchor="middle" transform={`rotate(-90, 12, ${PAD.top + chartH / 2})`} className="fill-dim text-[9px]">
         Km/L
       </text>
     </svg>

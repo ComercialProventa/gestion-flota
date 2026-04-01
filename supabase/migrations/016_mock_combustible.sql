@@ -1,10 +1,9 @@
 -- Mock de datos para dashboard de combustible
 -- 10 máquinas, 10 conductores, ~15 cargas/mes × 5 meses (Nov 2025 - Mar 2026)
--- Ejecutar DESPUÉS de la migración 015 (precio_total_pago)
--- Los buses existentes se ignoran si ya tienen datos reales.
+-- Ejecutar DESPUÉS de 017_asientos_nullable y 015_precio_combustible
 
 -- ═══════════════════════════════════════════════════
--- 1. UNIDADES (10 máquinas con personalidad distinta)
+-- 1. UNIDADES
 -- ═══════════════════════════════════════════════════
 
 INSERT INTO buses (id, patente, marca, modelo, ano, chasis, tipo, capacidad_estanque, asientos, vencimiento_revision_tecnica, vencimiento_seguro) VALUES
@@ -21,7 +20,7 @@ INSERT INTO buses (id, patente, marca, modelo, ano, chasis, tipo, capacidad_esta
 ON CONFLICT (id) DO NOTHING;
 
 -- ═══════════════════════════════════════════════════
--- 2. USUARIOS CONDUCTORES (10)
+-- 2. USUARIOS CONDUCTORES
 -- ═══════════════════════════════════════════════════
 
 INSERT INTO usuarios (id, nombre_completo, rut, correo, rol) VALUES
@@ -38,7 +37,7 @@ INSERT INTO usuarios (id, nombre_completo, rut, correo, rol) VALUES
 ON CONFLICT (id) DO NOTHING;
 
 -- ═══════════════════════════════════════════════════
--- 3. ASIGNACIONES (1 conductor → 1 bus)
+-- 3. ASIGNACIONES
 -- ═══════════════════════════════════════════════════
 
 INSERT INTO asignacion_flota (usuario_id, bus_id) VALUES
@@ -55,93 +54,190 @@ INSERT INTO asignacion_flota (usuario_id, bus_id) VALUES
 ON CONFLICT (usuario_id, bus_id) DO NOTHING;
 
 -- ═══════════════════════════════════════════════════
--- 4. REGISTROS DE COMBUSTIBLE
---    15 cargas/mes × 5 meses × 10 máquinas = 750
---    Personalidad por unidad:
---    ABCD-12: Eficiente (3.5 Km/L) — Carlos Mendoza
---    EFGH-34: Ineficiente (2.0 Km/L) — María González ← PROBLEMA
---    IJKL-56: 3 ejes, promedio (2.8 Km/L) — Pedro Ramírez
---    MNOP-78: 3 ejes, bueno (3.2 Km/L) — Ana Martínez
---    QRST-90: Eficiente (3.8 Km/L) — Luis Hernández
---    UVWX-11: Promedio (3.0 Km/L) — Rosa Flores
---    YZAB-22: Camión, bajo (2.3 Km/L) — Jorge Soto
---    CDEF-33: Camión, promedio (2.8 Km/L) — Carmen Vargas
---    GHIJ-44: 3 ejes, bueno (3.4 Km/L) — Miguel Torres
---    KLMN-55: 3 ejes, promedio (2.6 Km/L) — Patricia Rojas
+-- 4. REGISTROS DE COMBUSTIBLE (~750 registros)
+-- ═══════════════════════════════════════════════════
 
 DO $$
 DECLARE
-  bus_data RECORD;
-  fecha_base DATE := '2025-11-01';
-  fecha_fin  DATE := '2026-03-31';
+  bus_id_var TEXT;
+  km_inicio  INTEGER;
+  kml_base   NUMERIC;
+  precio_l   INTEGER;
   fecha_carga DATE;
-  km_actual INTEGER;
-  kml_target NUMERIC;
-  litros NUMERIC;
-  precio INTEGER;
-  dias_entre_cargas INTEGER;
-  rand_offset NUMERIC;
-  dia_count INTEGER;
+  fecha_fin   DATE := '2026-03-31';
+  km_actual   INTEGER;
+  kml_real    NUMERIC;
+  litros_val  NUMERIC;
+  precio_val  INTEGER;
+  dias_add    INTEGER;
+  mes_actual  INTEGER;
 BEGIN
-  -- Configuración por bus: (bus_id, km_inicio, kml_base, precio_litro_base)
-  FOR bus_data IN
-    SELECT * FROM (VALUES
-      ('a0000001-0001-0001-0001-000000000001', 120000, 3.5, 980),  -- ABCD-12 eficiente
-      ('a0000001-0001-0001-0001-000000000002',  95000, 2.0, 980),  -- EFGH-34 ineficiente
-      ('a0000001-0001-0001-0001-000000000003', 180000, 2.8, 1020), -- IJKL-56
-      ('a0000001-0001-0001-0001-000000000004', 155000, 3.2, 1020), -- MNOP-78
-      ('a0000001-0001-0001-0001-000000000005',  75000, 3.8, 990),  -- QRST-90
-      ('a0000001-0001-0001-0001-000000000006',  88000, 3.0, 990),  -- UVWX-11
-      ('a0000001-0001-0001-0001-000000000007', 200000, 2.3, 1050), -- YZAB-22 camión
-      ('a0000001-0001-0001-0001-000000000008', 175000, 2.8, 1050), -- CDEF-33 camión
-      ('a0000001-0001-0001-0001-000000000009', 130000, 3.4, 1000), -- GHIJ-44
-      ('a0000001-0001-0001-0001-000000000010', 142000, 2.6, 1000)  -- KLMN-55
-    ) AS t(bus_id, km_inicio, kml_base, precio_litro)
-  LOOP
-    km_actual := bus_data.km_inicio;
-    fecha_carga := fecha_base;
-    dia_count := 0;
-
-    WHILE fecha_carga <= fecha_fin LOOP
-      -- ~15 cargas por mes = cada 2 días con variación
-      dias_entre_cargas := 2 + (random() * 2)::INTEGER; -- 2-3 días
-
-      -- Variación aleatoria del rendimiento ±15%
-      rand_offset := 1 + (random() * 0.3 - 0.15);
-      kml_target := bus_data.km_base * rand_offset;
-
-      -- Simular caída en enero (unidades cansadas, calor)
-      IF EXTRACT(MONTH FROM fecha_carga) = 1 THEN
-        kml_target := kml_target * 0.85;
-      END IF;
-
-      -- Km recorridos: ~300-500 km entre cargas
-      km_actual := km_actual + (300 + (random() * 200)::INTEGER);
-
-      -- Litros: km_recorridos / rendimiento
-      litros := ROUND((300 + random() * 200) / kml_target, 1);
-
-      -- Precio con variación ±5%
-      precio := ROUND(litros * bus_data.precio_litro * (1 + random() * 0.1 - 0.05));
-
-      INSERT INTO registros_combustible (bus_id, fecha, hora, kilometraje, litros_cargados, precio_total_pago)
-      VALUES (
-        bus_data.bus_id,
-        fecha_carga,
-        LPAD((6 + (random() * 14)::INTEGER)::TEXT, 2, '0') || ':' || LPAD((random() * 59)::INTEGER::TEXT, 2, '0'),
-        km_actual,
-        litros,
-        precio
-      );
-
-      fecha_carga := fecha_carga + dias_entre_cargas;
-      dia_count := dia_count + 1;
-    END LOOP;
+  -- Bus 1: ABCD-12 — Eficiente (3.5 Km/L) — Carlos Mendoza
+  bus_id_var := 'a0000001-0001-0001-0001-000000000001';
+  km_inicio := 120000; kml_base := 3.5; precio_l := 980;
+  km_actual := km_inicio;
+  fecha_carga := '2025-11-01';
+  WHILE fecha_carga <= fecha_fin LOOP
+    kml_real := kml_base * (0.85 + random() * 0.3);
+    mes_actual := EXTRACT(MONTH FROM fecha_carga);
+    IF mes_actual = 1 THEN kml_real := kml_real * 0.85; END IF;
+    km_actual := km_actual + (300 + (random() * 200)::INTEGER);
+    litros_val := ROUND((300 + random() * 200) / kml_real, 1);
+    precio_val := ROUND(litros_val * precio_l * (0.95 + random() * 0.1));
+    INSERT INTO registros_combustible (bus_id, fecha, hora, kilometraje, litros_cargados, precio_total_pago)
+    VALUES (bus_id_var, fecha_carga, LPAD((6 + (random() * 14)::INTEGER)::TEXT, 2, '0') || ':' || LPAD((random() * 59)::INTEGER::TEXT, 2, '0'), km_actual, litros_val, precio_val);
+    dias_add := 2 + (random() * 2)::INTEGER;
+    fecha_carga := fecha_carga + dias_add;
   END LOOP;
+
+  -- Bus 2: EFGH-34 — INEFICIENTE (2.0 Km/L) — María González ← PROBLEMA
+  bus_id_var := 'a0000001-0001-0001-0001-000000000002';
+  km_inicio := 95000; kml_base := 2.0; precio_l := 980;
+  km_actual := km_inicio;
+  fecha_carga := '2025-11-01';
+  WHILE fecha_carga <= fecha_fin LOOP
+    kml_real := kml_base * (0.85 + random() * 0.3);
+    km_actual := km_actual + (300 + (random() * 200)::INTEGER);
+    litros_val := ROUND((300 + random() * 200) / kml_real, 1);
+    precio_val := ROUND(litros_val * precio_l * (0.95 + random() * 0.1));
+    INSERT INTO registros_combustible (bus_id, fecha, hora, kilometraje, litros_cargados, precio_total_pago)
+    VALUES (bus_id_var, fecha_carga, LPAD((6 + (random() * 14)::INTEGER)::TEXT, 2, '0') || ':' || LPAD((random() * 59)::INTEGER::TEXT, 2, '0'), km_actual, litros_val, precio_val);
+    dias_add := 2 + (random() * 2)::INTEGER;
+    fecha_carga := fecha_carga + dias_add;
+  END LOOP;
+
+  -- Bus 3: IJKL-56 — 3 ejes (2.8 Km/L) — Pedro Ramírez (gemela con MNOP-78)
+  bus_id_var := 'a0000001-0001-0001-0001-000000000003';
+  km_inicio := 180000; kml_base := 2.8; precio_l := 1020;
+  km_actual := km_inicio;
+  fecha_carga := '2025-11-01';
+  WHILE fecha_carga <= fecha_fin LOOP
+    kml_real := kml_base * (0.85 + random() * 0.3);
+    km_actual := km_actual + (300 + (random() * 200)::INTEGER);
+    litros_val := ROUND((300 + random() * 200) / kml_real, 1);
+    precio_val := ROUND(litros_val * precio_l * (0.95 + random() * 0.1));
+    INSERT INTO registros_combustible (bus_id, fecha, hora, kilometraje, litros_cargados, precio_total_pago)
+    VALUES (bus_id_var, fecha_carga, LPAD((6 + (random() * 14)::INTEGER)::TEXT, 2, '0') || ':' || LPAD((random() * 59)::INTEGER::TEXT, 2, '0'), km_actual, litros_val, precio_val);
+    dias_add := 2 + (random() * 2)::INTEGER;
+    fecha_carga := fecha_carga + dias_add;
+  END LOOP;
+
+  -- Bus 4: MNOP-78 — 3 ejes, mejor (3.2 Km/L) — Ana Martínez (gemela con IJKL-56)
+  bus_id_var := 'a0000001-0001-0001-0001-000000000004';
+  km_inicio := 155000; kml_base := 3.2; precio_l := 1020;
+  km_actual := km_inicio;
+  fecha_carga := '2025-11-01';
+  WHILE fecha_carga <= fecha_fin LOOP
+    kml_real := kml_base * (0.85 + random() * 0.3);
+    km_actual := km_actual + (300 + (random() * 200)::INTEGER);
+    litros_val := ROUND((300 + random() * 200) / kml_real, 1);
+    precio_val := ROUND(litros_val * precio_l * (0.95 + random() * 0.1));
+    INSERT INTO registros_combustible (bus_id, fecha, hora, kilometraje, litros_cargados, precio_total_pago)
+    VALUES (bus_id_var, fecha_carga, LPAD((6 + (random() * 14)::INTEGER)::TEXT, 2, '0') || ':' || LPAD((random() * 59)::INTEGER::TEXT, 2, '0'), km_actual, litros_val, precio_val);
+    dias_add := 2 + (random() * 2)::INTEGER;
+    fecha_carga := fecha_carga + dias_add;
+  END LOOP;
+
+  -- Bus 5: QRST-90 — Muy eficiente (3.8 Km/L) — Luis Hernández
+  bus_id_var := 'a0000001-0001-0001-0001-000000000005';
+  km_inicio := 75000; kml_base := 3.8; precio_l := 990;
+  km_actual := km_inicio;
+  fecha_carga := '2025-11-01';
+  WHILE fecha_carga <= fecha_fin LOOP
+    kml_real := kml_base * (0.85 + random() * 0.3);
+    km_actual := km_actual + (300 + (random() * 200)::INTEGER);
+    litros_val := ROUND((300 + random() * 200) / kml_real, 1);
+    precio_val := ROUND(litros_val * precio_l * (0.95 + random() * 0.1));
+    INSERT INTO registros_combustible (bus_id, fecha, hora, kilometraje, litros_cargados, precio_total_pago)
+    VALUES (bus_id_var, fecha_carga, LPAD((6 + (random() * 14)::INTEGER)::TEXT, 2, '0') || ':' || LPAD((random() * 59)::INTEGER::TEXT, 2, '0'), km_actual, litros_val, precio_val);
+    dias_add := 2 + (random() * 2)::INTEGER;
+    fecha_carga := fecha_carga + dias_add;
+  END LOOP;
+
+  -- Bus 6: UVWX-11 — Promedio (3.0 Km/L) — Rosa Flores (gemela con QRST-90)
+  bus_id_var := 'a0000001-0001-0001-0001-000000000006';
+  km_inicio := 88000; kml_base := 3.0; precio_l := 990;
+  km_actual := km_inicio;
+  fecha_carga := '2025-11-01';
+  WHILE fecha_carga <= fecha_fin LOOP
+    kml_real := kml_base * (0.85 + random() * 0.3);
+    km_actual := km_actual + (300 + (random() * 200)::INTEGER);
+    litros_val := ROUND((300 + random() * 200) / kml_real, 1);
+    precio_val := ROUND(litros_val * precio_l * (0.95 + random() * 0.1));
+    INSERT INTO registros_combustible (bus_id, fecha, hora, kilometraje, litros_cargados, precio_total_pago)
+    VALUES (bus_id_var, fecha_carga, LPAD((6 + (random() * 14)::INTEGER)::TEXT, 2, '0') || ':' || LPAD((random() * 59)::INTEGER::TEXT, 2, '0'), km_actual, litros_val, precio_val);
+    dias_add := 2 + (random() * 2)::INTEGER;
+    fecha_carga := fecha_carga + dias_add;
+  END LOOP;
+
+  -- Bus 7: YZAB-22 — Camión (2.3 Km/L) — Jorge Soto
+  bus_id_var := 'a0000001-0001-0001-0001-000000000007';
+  km_inicio := 200000; kml_base := 2.3; precio_l := 1050;
+  km_actual := km_inicio;
+  fecha_carga := '2025-11-01';
+  WHILE fecha_carga <= fecha_fin LOOP
+    kml_real := kml_base * (0.85 + random() * 0.3);
+    km_actual := km_actual + (300 + (random() * 200)::INTEGER);
+    litros_val := ROUND((300 + random() * 200) / kml_real, 1);
+    precio_val := ROUND(litros_val * precio_l * (0.95 + random() * 0.1));
+    INSERT INTO registros_combustible (bus_id, fecha, hora, kilometraje, litros_cargados, precio_total_pago)
+    VALUES (bus_id_var, fecha_carga, LPAD((6 + (random() * 14)::INTEGER)::TEXT, 2, '0') || ':' || LPAD((random() * 59)::INTEGER::TEXT, 2, '0'), km_actual, litros_val, precio_val);
+    dias_add := 2 + (random() * 2)::INTEGER;
+    fecha_carga := fecha_carga + dias_add;
+  END LOOP;
+
+  -- Bus 8: CDEF-33 — Camión promedio (2.8 Km/L) — Carmen Vargas (gemela con YZAB-22)
+  bus_id_var := 'a0000001-0001-0001-0001-000000000008';
+  km_inicio := 175000; kml_base := 2.8; precio_l := 1050;
+  km_actual := km_inicio;
+  fecha_carga := '2025-11-01';
+  WHILE fecha_carga <= fecha_fin LOOP
+    kml_real := kml_base * (0.85 + random() * 0.3);
+    km_actual := km_actual + (300 + (random() * 200)::INTEGER);
+    litros_val := ROUND((300 + random() * 200) / kml_real, 1);
+    precio_val := ROUND(litros_val * precio_l * (0.95 + random() * 0.1));
+    INSERT INTO registros_combustible (bus_id, fecha, hora, kilometraje, litros_cargados, precio_total_pago)
+    VALUES (bus_id_var, fecha_carga, LPAD((6 + (random() * 14)::INTEGER)::TEXT, 2, '0') || ':' || LPAD((random() * 59)::INTEGER::TEXT, 2, '0'), km_actual, litros_val, precio_val);
+    dias_add := 2 + (random() * 2)::INTEGER;
+    fecha_carga := fecha_carga + dias_add;
+  END LOOP;
+
+  -- Bus 9: GHIJ-44 — 3 ejes, bueno (3.4 Km/L) — Miguel Torres (gemela con KLMN-55)
+  bus_id_var := 'a0000001-0001-0001-0001-000000000009';
+  km_inicio := 130000; kml_base := 3.4; precio_l := 1000;
+  km_actual := km_inicio;
+  fecha_carga := '2025-11-01';
+  WHILE fecha_carga <= fecha_fin LOOP
+    kml_real := kml_base * (0.85 + random() * 0.3);
+    km_actual := km_actual + (300 + (random() * 200)::INTEGER);
+    litros_val := ROUND((300 + random() * 200) / kml_real, 1);
+    precio_val := ROUND(litros_val * precio_l * (0.95 + random() * 0.1));
+    INSERT INTO registros_combustible (bus_id, fecha, hora, kilometraje, litros_cargados, precio_total_pago)
+    VALUES (bus_id_var, fecha_carga, LPAD((6 + (random() * 14)::INTEGER)::TEXT, 2, '0') || ':' || LPAD((random() * 59)::INTEGER::TEXT, 2, '0'), km_actual, litros_val, precio_val);
+    dias_add := 2 + (random() * 2)::INTEGER;
+    fecha_carga := fecha_carga + dias_add;
+  END LOOP;
+
+  -- Bus 10: KLMN-55 — 3 ejes, más bajo (2.6 Km/L) — Patricia Rojas (gemela con GHIJ-44)
+  bus_id_var := 'a0000001-0001-0001-0001-000000000010';
+  km_inicio := 142000; kml_base := 2.6; precio_l := 1000;
+  km_actual := km_inicio;
+  fecha_carga := '2025-11-01';
+  WHILE fecha_carga <= fecha_fin LOOP
+    kml_real := kml_base * (0.85 + random() * 0.3);
+    km_actual := km_actual + (300 + (random() * 200)::INTEGER);
+    litros_val := ROUND((300 + random() * 200) / kml_real, 1);
+    precio_val := ROUND(litros_val * precio_l * (0.95 + random() * 0.1));
+    INSERT INTO registros_combustible (bus_id, fecha, hora, kilometraje, litros_cargados, precio_total_pago)
+    VALUES (bus_id_var, fecha_carga, LPAD((6 + (random() * 14)::INTEGER)::TEXT, 2, '0') || ':' || LPAD((random() * 59)::INTEGER::TEXT, 2, '0'), km_actual, litros_val, precio_val);
+    dias_add := 2 + (random() * 2)::INTEGER;
+    fecha_carga := fecha_carga + dias_add;
+  END LOOP;
+
 END $$;
 
 -- ═══════════════════════════════════════════════════
--- 5. ALERTA DE ESTANQUE FANTASMA (1 para probar)
+-- 5. ALERTA DE ESTANQUE FANTASMA
 -- ═══════════════════════════════════════════════════
 
 INSERT INTO alertas_sistema (bus_id, tipo, severidad, titulo, detalle, resuelta) VALUES
@@ -150,4 +246,4 @@ INSERT INTO alertas_sistema (bus_id, tipo, severidad, titulo, detalle, resuelta)
    'Se intentó cargar 480 L, superando la capacidad máxima de 400 L (+20%).',
    false);
 
-SELECT 'Mock data inserted: 10 buses, 10 conductores, 10 asignaciones, ~750 registros combustible, 1 alerta' AS resultado;
+SELECT 'Mock data insertado correctamente' AS resultado;

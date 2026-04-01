@@ -297,7 +297,7 @@ export default function CombustibleDashboard() {
 
       {/* ─── ALERTAS ─── */}
       <section>
-        <h2 className="text-[11px] font-medium text-dim uppercase tracking-wide mb-3">Alertas de Estanque Fantasma</h2>
+        <h2 className="text-[11px] font-medium text-dim uppercase tracking-wide mb-3">Alertas de Capacidad de Estanque</h2>
         {alertasData.length === 0 ? (
           <p className="text-[13px] text-green py-4">Sin alertas activas. Todo en orden.</p>
         ) : (

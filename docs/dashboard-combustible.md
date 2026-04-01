@@ -126,7 +126,7 @@ Seleccionas "Este mes" (Marzo) y activas "vs anterior". Verás:
 
 ---
 
-## Alertas de Estanque Fantasma
+## Alertas de Capacidad de Estanque
 
 Si un conductor intenta cargar **más litros que la capacidad del estanque** del bus, el sistema genera una alerta automática.
 
@@ -155,7 +155,7 @@ La variación muestra si estamos gastando más o menos que el mes anterior.
 | **Km/L** | Kilómetros por litro. Medida de eficiencia del motor. |
 | **Costo/Km** | Pesos chilenos gastados por cada kilómetro recorrido. |
 | **Gemelas** | Unidades del mismo modelo, marca y año. |
-| **Estanque Fantasma** | Intento de cargar más combustible que la capacidad del tanque. |
+| **Estanque** | Alerta cuando se intenta cargar más combustible que la capacidad del tanque. |
 | **Umbral -30%** | Si una unidad rinde 30% peor que su promedio, se activa alerta. |
 | **Proyección** | Estimación de gasto futuro basado en el ritmo actual. |
 

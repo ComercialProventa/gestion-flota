@@ -40,7 +40,7 @@ export default function MantenimientoDashboard() {
             Alertas de Frecuencia de Cambios
           </h2>
           <p className="text-xs text-muted mt-1">
-            Detecta piezas que se cambian más de 3 veces en 30 días, sugiriendo fallas ocultas o posibles robos.
+            Detecta piezas que se cambian más de 3 veces en 30 días, sugiriendo fallas ocultas o patrón inusual.
           </p>
         </div>
 

@@ -13,7 +13,7 @@ export default function NeumaticosPage() {
     <div className="max-w-5xl">
       <header className="px-8 pt-10 pb-6">
         <h1 className="text-[22px] font-bold tracking-tight text-foreground">Auditoría de Neumáticos</h1>
-        <p className="text-[13px] text-muted mt-0.5">Rentabilidad CPK y Alertas Antirrobo</p>
+        <p className="text-[13px] text-muted mt-0.5">Rentabilidad CPK y alertas de rendimiento</p>
       </header>
 
       <main className="px-8 pb-12">

@@ -3,16 +3,16 @@ import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Centro de Inteligencia | Gestión de Flota",
-  description: "Módulos de auditoría, antirrobo y análisis de eficiencia",
+  description: "Módulos de auditoría y análisis de eficiencia operacional",
 };
 
 const MODULOS = [
   {
     href: "/admin/inteligencia/combustible",
-    titulo: "Antirrobo de Combustible",
-    descripcion: "Tendencias de rendimiento Km/L, comparativa de unidades gemelas y alertas de estanque fantasma",
+    titulo: "Eficiencia de Combustible",
+    descripcion: "Rendimiento Km/L, comparativa de unidades gemelas y análisis de costo por kilómetro",
     accentColor: "text-amber-400",
-    badges: ["Tendencia Km/L", "Gemelas", "Estanque Fantasma"],
+    badges: ["Tendencia Km/L", "Gemelas", "Costo/Km"],
     icon: (
       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M15.362 5.214A8.252 8.252 0 0112 21 8.25 8.25 0 016.038 7.048 8.287 8.287 0 009 9.6a8.983 8.983 0 013.361-6.867 8.21 8.21 0 003 2.48z" />
@@ -52,14 +52,14 @@ export default function InteligenciaHub() {
     <div className="max-w-5xl">
       <header className="px-8 pt-10 pb-6">
         <h1 className="text-[22px] font-bold tracking-tight text-foreground">Centro de Inteligencia</h1>
-        <p className="text-[13px] text-muted mt-0.5">Auditoría, antirrobo y análisis de eficiencia</p>
+        <p className="text-[13px] text-muted mt-0.5">Auditoría y análisis de eficiencia operacional</p>
       </header>
 
       <main className="px-8 pb-12">
         <p className="text-[13px] text-muted leading-relaxed mb-8">
           Estos módulos cruzan automáticamente los datos operacionales para detectar{" "}
-          <span className="text-amber-400 font-semibold">robos de combustible</span>,{" "}
-          <span className="text-emerald-400 font-semibold">fraudes en neumáticos</span> y{" "}
+          <span className="text-amber-400 font-semibold">desviaciones de rendimiento</span>,{" "}
+          <span className="text-emerald-400 font-semibold">desgaste prematuro</span> y{" "}
           <span className="text-sky-400 font-semibold">anomalías en mantenimiento</span>.
           Las alertas se generan en tiempo real con cada registro.
         </p>

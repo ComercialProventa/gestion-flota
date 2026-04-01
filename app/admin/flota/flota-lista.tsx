@@ -23,7 +23,7 @@ function estadoTexto(fecha: string | null): { texto: string; color: string } {
   const dias = Math.ceil((new Date(fecha).getTime() - Date.now()) / 86400000);
   if (dias < 0) return { texto: `Vencido ${Math.abs(dias)}d`, color: "text-red" };
   if (dias <= 30) return { texto: `${dias}d`, color: "text-accent" };
-  return { texto: `${dias}d`, color: "text-muted" };
+  return { texto: `${dias}d`, color: "text-green" };
 }
 
 export default function FlotaLista({ unidades }: { unidades: Unidad[] }) {
@@ -77,8 +77,8 @@ export default function FlotaLista({ unidades }: { unidades: Unidad[] }) {
       <div className="hidden md:grid grid-cols-12 gap-4 px-4 py-2 text-[11px] font-medium text-dim uppercase tracking-wide">
         <div className="col-span-3">Unidad</div>
         <div className="col-span-2">Patente</div>
-        <div className="col-span-2">Año</div>
         <div className="col-span-2">Rev. Técnica</div>
+        <div className="col-span-2">Seguro</div>
         <div className="col-span-3 text-right">Acciones</div>
       </div>
 
@@ -89,6 +89,7 @@ export default function FlotaLista({ unidades }: { unidades: Unidad[] }) {
         ) : (
           filtradas.map((u) => {
             const rt = estadoTexto(u.vencimiento_revision_tecnica);
+            const sg = estadoTexto(u.vencimiento_seguro);
             return (
               <div key={u.id} className="grid grid-cols-1 md:grid-cols-12 gap-1 md:gap-4 px-4 py-3 hover:bg-surface transition-colors group">
                 <div className="md:col-span-3">
@@ -100,11 +101,21 @@ export default function FlotaLista({ unidades }: { unidades: Unidad[] }) {
                 <div className="hidden md:block md:col-span-2">
                   <span className="text-[12px] font-mono font-medium text-foreground">{u.patente}</span>
                 </div>
-                <div className="hidden md:block md:col-span-2">
-                  <span className="text-[12px] text-muted">{u.ano}</span>
-                </div>
-                <div className="hidden md:block md:col-span-2">
+                <div className="hidden md:flex md:col-span-2 items-center gap-2">
                   <span className={`text-[12px] font-medium ${rt.color}`}>{rt.texto}</span>
+                  {u.vencimiento_revision_tecnica && (
+                    <button type="button" onClick={() => { setRenovarFecha(""); setRenovarError(null); setRenovando({ unidad: u, tipo: "revision_tecnica", label: "Revisión Técnica" }); }} className="text-[10px] text-dim hover:text-accent transition-colors cursor-pointer opacity-0 group-hover:opacity-100">
+                      Renovar
+                    </button>
+                  )}
+                </div>
+                <div className="hidden md:flex md:col-span-2 items-center gap-2">
+                  <span className={`text-[12px] font-medium ${sg.color}`}>{sg.texto}</span>
+                  {u.vencimiento_seguro && (
+                    <button type="button" onClick={() => { setRenovarFecha(""); setRenovarError(null); setRenovando({ unidad: u, tipo: "seguro", label: "Seguro Obligatorio" }); }} className="text-[10px] text-dim hover:text-accent transition-colors cursor-pointer opacity-0 group-hover:opacity-100">
+                      Renovar
+                    </button>
+                  )}
                 </div>
                 <div className="md:col-span-3 flex md:justify-end gap-3 mt-1 md:mt-0">
                   <Link href={`/admin/flota/${u.id}/editar`} className="text-[11px] text-dim hover:text-foreground transition-colors">

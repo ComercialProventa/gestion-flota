@@ -13,67 +13,28 @@ export default function EditarUnidadClient({ id }: { id: string }) {
   });
 
   if (isLoading) {
-    return (
-      <main className="mx-auto max-w-4xl px-4 py-8">
-        <div className="flex flex-col items-center justify-center py-20 text-zinc-500">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent border-t-transparent mb-4"></div>
-          <p className="text-sm font-medium animate-pulse">Cargando unidad...</p>
-        </div>
-      </main>
-    );
+    return <div className="px-8 pt-10 text-dim text-[13px]">Cargando unidad...</div>;
   }
 
   if (isError || !unidad) {
-    return (
-      <main className="mx-auto max-w-4xl px-4 py-8">
-        <div className="rounded border border-red-500/20 bg-red-500/10 p-4 text-red-400">
-          Error al cargar la unidad: {error?.message || "No encontrada"}
-        </div>
-      </main>
-    );
+    return <div className="px-8 pt-10 text-red text-[13px]">Error: {error?.message || "No encontrada"}</div>;
   }
 
   return (
-    <main className="mx-auto max-w-4xl px-4 py-8 space-y-6 antialiased">
-      <div className="flex items-center gap-4 border-b border-border-default pb-6">
-        <Link
-          href="/admin/flota"
-          className="flex h-8 w-8 items-center justify-center rounded-lg border border-border-strong bg-surface-overlay text-zinc-400 hover:text-foreground hover:bg-surface-raised transition-colors"
-          title="Volver al listado"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
-          </svg>
+    <div className="max-w-3xl">
+      {/* Header */}
+      <div className="flex items-center gap-3 px-8 pt-10 pb-6">
+        <Link href="/admin/flota" className="text-dim hover:text-foreground transition-colors text-[13px]">
+          ← Volver
         </Link>
-        <div>
-          <h1 className="text-xl font-bold tracking-tight text-foreground">Editar Ficha de Unidad</h1>
-          <p className="mt-0.5 text-sm text-zinc-400">
-            Modificando registro de la patente: <span className="font-mono font-semibold text-accent uppercase">{unidad.patente}</span>
-          </p>
-        </div>
+        <h1 className="text-[22px] font-bold text-foreground tracking-tight">Editar Unidad</h1>
+        <span className="text-[13px] font-mono text-accent uppercase">{unidad.patente}</span>
       </div>
 
-      <section className="rounded-xl border border-border-default bg-surface-card p-6">
-        <div className="mb-6 flex items-center gap-3 border-b border-border-subtle pb-4">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/10 text-accent">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-            </svg>
-          </div>
-          <div>
-            <h2 className="text-sm font-semibold text-foreground">Información del Vehículo</h2>
-            <p className="text-[11px] text-zinc-500 uppercase tracking-wider">Actualiza los datos técnicos y vigencias</p>
-          </div>
-        </div>
-
+      {/* Formulario */}
+      <div className="px-8 pb-12">
         <EditarUnidadForm unidad={unidad} />
-      </section>
-
-      <footer className="pt-4 text-center">
-        <p className="text-[10px] font-medium uppercase tracking-widest text-zinc-600">
-          Maestro de Flota Proventa · Edición de Activos
-        </p>
-      </footer>
-    </main>
+      </div>
+    </div>
   );
 }

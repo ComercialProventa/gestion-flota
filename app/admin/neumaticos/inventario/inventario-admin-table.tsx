@@ -229,10 +229,10 @@ export default function InventarioAdminTable({
   }
 
   return (
-    <div className="bg-surface rounded-md flex flex-col">
+    <div>
 
       {/* Barra de filtros + búsqueda */}
-      <div className="border-b border-border p-4 space-y-3">
+      <div className="mb-4 space-y-3">
         <div className="flex flex-wrap items-center gap-2">
           {FILTROS.map((f) => (
             <button
@@ -277,7 +277,7 @@ export default function InventarioAdminTable({
       {/* Tabla */}
       <div className="overflow-x-auto">
         <table className="w-full text-left text-[13px] text-foreground">
-          <thead className="text-[11px] font-medium text-dim uppercase tracking-wide border-b border-border">
+          <thead className="text-[11px] font-medium text-dim uppercase tracking-wide">
             <tr>
               <th className="px-5 py-3">Código</th>
               <th className="px-5 py-3">Serie / DOT</th>
@@ -378,7 +378,7 @@ export default function InventarioAdminTable({
       </div>
 
       {/* Footer con conteo */}
-      <div className="border-t border-border px-5 py-3 text-xs text-dim">
+      <div className="px-5 py-3 text-[11px] text-dim">
         Mostrando <span className="text-foreground">{filtrados.length}</span> de {neumaticosData.length} registros
       </div>
 

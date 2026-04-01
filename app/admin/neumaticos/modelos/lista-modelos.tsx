@@ -61,10 +61,10 @@ export default function ListaModelos() {
     const inputClasses = "rounded-md bg-surface px-3 py-2 text-[13px] text-foreground placeholder:text-dim focus:outline-none focus:ring-1 focus:ring-accent/30";
 
     return (
-        <section className="bg-surface rounded-md flex flex-col">
+        <div>
 
             {/* Toolbar */}
-            <div className="border-b border-border p-4 flex flex-col sm:flex-row gap-3 justify-between items-center">
+            <div className="mb-4 flex flex-col sm:flex-row gap-3 justify-between items-center">
                 <div className="relative w-full sm:max-w-xs">
                     <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-dim">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -98,56 +98,50 @@ export default function ListaModelos() {
 
             {/* Tabla */}
             <div className="overflow-x-auto">
-                <table className="w-full text-left text-[13px]">
-                    <thead className="border-b border-border text-[11px] font-medium text-dim uppercase tracking-wide">
-                        <tr>
-                            <th className="px-5 py-3">Fabricante & Medida</th>
-                            <th className="px-5 py-3">Aplicación</th>
-                            <th className="px-5 py-3">Vida Útil (KM)</th>
-                            <th className="px-5 py-3">Registro</th>
-                            <th className="px-5 py-3 text-right">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-divider">
-                        {modelosProcesados.length === 0 ? (
-                            <tr>
-                                <td colSpan={5} className="py-20 text-center text-dim">
-                                    No se encontraron modelos registrados.
-                                </td>
-                            </tr>
-                        ) : (
-                            modelosProcesados.map((m) => {
-                                const fechaFormat = new Date(m.creado_en).toLocaleDateString("es-CL", {
-                                    day: "2-digit", month: "short", year: "numeric"
-                                });
+                <div className="hidden md:grid grid-cols-12 gap-4 px-4 py-2 text-[11px] font-medium text-dim uppercase tracking-wide">
+                    <div className="col-span-3">Fabricante & Medida</div>
+                    <div className="col-span-3">Aplicación</div>
+                    <div className="col-span-2">Vida Útil</div>
+                    <div className="col-span-2">Registro</div>
+                    <div className="col-span-2 text-right">Acciones</div>
+                </div>
+                <div className="divide-y divide-divider">
+                    {modelosProcesados.length === 0 ? (
+                        <div className="py-12 text-center text-dim text-[13px]">
+                            No se encontraron modelos registrados.
+                        </div>
+                    ) : (
+                        modelosProcesados.map((m) => {
+                            const fechaFormat = new Date(m.creado_en).toLocaleDateString("es-CL", {
+                                day: "2-digit", month: "short", year: "numeric"
+                            });
 
-                                return (
-                                    <tr key={m.id} className="hover:bg-surface-hover transition-colors group">
-                                        <td className="px-5 py-3.5">
-                                            <div className="font-medium text-foreground leading-tight">{m.marca}</div>
-                                            <div className="font-mono text-[11px] text-accent mt-0.5">{m.medida}</div>
-                                        </td>
-                                        <td className="px-5 py-3.5">
-                                            <span className="text-[11px] font-medium text-dim uppercase tracking-wide">
-                                                {m.aplicacion_eje}
-                                            </span>
-                                        </td>
-                                        <td className="px-5 py-3.5 font-mono text-sm text-foreground">
-                                            {m.vida_util_km.toLocaleString("es-CL")}
-                                        </td>
-                                        <td className="px-5 py-3.5 text-xs text-dim">
-                                            {fechaFormat}
-                                        </td>
-                                        <td className="px-5 py-3.5 text-right">
-                                            <EliminarModeloBtn modeloId={m.id} />
-                                        </td>
-                                    </tr>
-                                );
-                            })
-                        )}
-                    </tbody>
-                </table>
+                            return (
+                                <div key={m.id} className="grid grid-cols-1 md:grid-cols-12 gap-1 md:gap-4 px-4 py-3 hover:bg-surface transition-colors group">
+                                    <div className="md:col-span-3">
+                                        <span className="text-[13px] font-medium text-foreground">{m.marca}</span>
+                                        <span className="font-mono text-[11px] text-accent ml-2">{m.medida}</span>
+                                    </div>
+                                    <div className="hidden md:block md:col-span-3">
+                                        <span className="text-[12px] text-dim uppercase">{m.aplicacion_eje}</span>
+                                    </div>
+                                    <div className="hidden md:block md:col-span-2">
+                                        <span className="text-[12px] font-mono text-foreground">{m.vida_util_km.toLocaleString("es-CL")} km</span>
+                                    </div>
+                                    <div className="hidden md:block md:col-span-2">
+                                        <span className="text-[12px] text-dim">{fechaFormat}</span>
+                                    </div>
+                                    <div className="md:col-span-2 flex md:justify-end mt-1 md:mt-0">
+                                        <EliminarModeloBtn modeloId={m.id} />
+                                    </div>
+                                </div>
+                            );
+                        })
+                    )}
+                </div>
             </div>
-        </section>
+
+            <div className="px-4 py-3 text-[11px] text-dim">{modelosProcesados.length} modelos</div>
+        </div>
     );
 }

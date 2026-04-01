@@ -129,8 +129,7 @@ export default function CombustibleDashboard() {
 
       {/* ─── TOP 3 PROBLEMAS ─── */}
       {problemasData.length > 0 && (
-        <section>
-          <h2 className="text-[11px] font-medium text-dim uppercase tracking-wide mb-4">Problemas Detectados</h2>
+        <Section titulo="Problemas Detectados" defaultOpen>
           <div className="space-y-4">
             {problemasData.map((p, i) => (
               <div key={p.busId + p.tipo} className="bg-surface rounded-md p-5">
@@ -155,12 +154,11 @@ export default function CombustibleDashboard() {
               </div>
             ))}
           </div>
-        </section>
+        </Section>
       )}
 
       {/* ─── RANKING ─── */}
-      <section>
-        <h2 className="text-[11px] font-medium text-dim uppercase tracking-wide mb-3">Ranking de Eficiencia</h2>
+      <Section titulo="Ranking de Eficiencia" count={rankingData.length}>
         {rankingData.length === 0 ? (
           <p className="text-[13px] text-dim py-8">No hay datos suficientes. Se necesitan al menos 2 registros por unidad.</p>
         ) : (
@@ -190,12 +188,11 @@ export default function CombustibleDashboard() {
             </div>
           </div>
         )}
-      </section>
+      </Section>
 
       {/* ─── CORRELACIÓN CONDUCTOR ─── */}
       {conductoresData.length > 0 && (
-        <section>
-          <h2 className="text-[11px] font-medium text-dim uppercase tracking-wide mb-3">Rendimiento por Conductor</h2>
+        <Section titulo="Rendimiento por Conductor" count={conductoresData.length}>
           <div>
             <div className="hidden md:grid grid-cols-12 gap-4 px-4 py-2 text-[11px] font-medium text-dim uppercase tracking-wide">
               <div className="col-span-3">Conductor</div>
@@ -208,7 +205,6 @@ export default function CombustibleDashboard() {
             <div className="divide-y divide-divider">
               {conductoresData.map((c) => {
                 const enAlerta = c.viajes < 0;
-                const viajes = Math.abs(c.viajes);
                 return (
                   <div key={c.conductorId} className="grid grid-cols-1 md:grid-cols-12 gap-1 md:gap-4 px-4 py-3 hover:bg-surface transition-colors">
                     <div className="md:col-span-3">
@@ -224,15 +220,13 @@ export default function CombustibleDashboard() {
                 );
               })}
             </div>
-            <div className="px-4 py-3 text-[11px] text-dim">{conductoresData.length} conductores con datos</div>
           </div>
-        </section>
+        </Section>
       )}
 
       {/* ─── TENDENCIA ─── */}
       {rendimientoData.length > 0 && (
-        <section>
-          <h2 className="text-[11px] font-medium text-dim uppercase tracking-wide mb-3">Tendencia Semanal</h2>
+        <Section titulo="Tendencia Semanal">
           <div className="flex gap-2 flex-wrap mb-4">
             {rendimientoData.map((u) => (
               <button key={u.busId} onClick={() => setUnidadSel(u.busId)}
@@ -257,13 +251,12 @@ export default function CombustibleDashboard() {
               </div>
             </div>
           )}
-        </section>
+        </Section>
       )}
 
       {/* ─── GEMELAS ─── */}
       {gemelasData.length > 0 && (
-        <section>
-          <h2 className="text-[11px] font-medium text-dim uppercase tracking-wide mb-3">Comparativa Gemelas</h2>
+        <Section titulo="Comparativa Gemelas" count={gemelasData.length}>
           <div className="space-y-3">
             {gemelasData.map((g) => (
               <div key={g.grupo} className={`bg-surface rounded-md p-4 ${g.enAlerta ? "ring-1 ring-red/20" : ""}`}>
@@ -292,12 +285,11 @@ export default function CombustibleDashboard() {
               </div>
             ))}
           </div>
-        </section>
+        </Section>
       )}
 
       {/* ─── ALERTAS ─── */}
-      <section>
-        <h2 className="text-[11px] font-medium text-dim uppercase tracking-wide mb-3">Alertas de Capacidad de Estanque</h2>
+      <Section titulo="Alertas de Capacidad de Estanque" count={alertasData.length || undefined}>
         {alertasData.length === 0 ? (
           <p className="text-[13px] text-green py-4">Sin alertas activas. Todo en orden.</p>
         ) : (
@@ -320,8 +312,24 @@ export default function CombustibleDashboard() {
             ))}
           </div>
         )}
-      </section>
+      </Section>
     </div>
+  );
+}
+
+function Section({ titulo, count, defaultOpen = false, children }: { titulo: string; count?: number; defaultOpen?: boolean; children: React.ReactNode }) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <section>
+      <button onClick={() => setOpen(!open)} className="w-full flex items-center gap-2 py-3 group cursor-pointer">
+        <svg xmlns="http://www.w3.org/2000/svg" className={`h-3 w-3 text-dim transition-transform ${open ? "rotate-90" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+        </svg>
+        <h2 className="text-[11px] font-medium text-dim uppercase tracking-wide group-hover:text-foreground transition-colors">{titulo}</h2>
+        {count !== undefined && <span className="text-[10px] text-dim font-mono">{count}</span>}
+      </button>
+      {open && <div className="pb-4">{children}</div>}
+    </section>
   );
 }
 

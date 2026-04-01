@@ -14,7 +14,7 @@ export async function getBuses() {
 
   const { data, error } = await supabase
     .from("buses")
-    .select("id, patente, marca, modelo, ano, chasis, foto_url, vencimiento_revision_tecnica, vencimiento_seguro, capacidad_estanque")
+    .select("id, patente, marca, modelo, ano, chasis, tipo, foto_url, vencimiento_revision_tecnica, vencimiento_seguro, capacidad_estanque")
     .order("patente", { ascending: true });
 
   if (error) throw new Error(error.message);
@@ -44,8 +44,9 @@ export async function registrarUnidad(formData: FormData) {
   const patente = (formData.get("patente") as string || "").trim().toUpperCase().replace(/\s+/g, "");
   const marca = (formData.get("marca") as string || "").trim();
   const modelo = (formData.get("modelo") as string || "").trim();
+  const tipo = (formData.get("tipo") as string) || "bus";
   const ano = parseInt(formData.get("ano") as string, 10);
-  const asientos = parseInt(formData.get("asientos") as string, 10);
+  const asientos = formData.get("asientos") ? parseInt(formData.get("asientos") as string, 10) : null;
   const capacidad_estanque = parseInt(formData.get("capacidad_estanque") as string, 10);
   const chasis = (formData.get("chasis") as string) || "2_ejes_6_ruedas";
   const vencimientoRevision = formData.get("vencimiento_revision_tecnica") as string || null;
@@ -55,13 +56,14 @@ export async function registrarUnidad(formData: FormData) {
   if (!marca) return { error: "La marca es obligatoria" };
   if (!modelo) return { error: "El modelo es obligatorio" };
   if (isNaN(ano) || ano < 1990 || ano > new Date().getFullYear() + 1) return { error: "Año no válido" };
-  if (isNaN(asientos) || asientos < 1 || asientos > 100) return { error: "Asientos entre 1 y 100" };
+  if (tipo === "bus" && (isNaN(asientos!) || asientos! < 1 || asientos! > 100)) return { error: "Asientos entre 1 y 100" };
   if (isNaN(capacidad_estanque) || capacidad_estanque < 1 || capacidad_estanque > 2000) return { error: "Capacidad de estanque entre 1 y 2000 litros" };
   if (!EJES_VALIDOS.includes(chasis)) return { error: "Tipo de ejes no válido" };
 
   const supabase = await createClient();
 
-  const insertPayload: Record<string, unknown> = { patente, marca, modelo, ano, asientos, chasis, capacidad_estanque };
+  const insertPayload: Record<string, unknown> = { patente, marca, modelo, tipo, ano, chasis, capacidad_estanque };
+  if (tipo === "bus" && asientos) insertPayload.asientos = asientos;
   if (vencimientoRevision) insertPayload.vencimiento_revision_tecnica = vencimientoRevision;
   if (vencimientoSeguro) insertPayload.vencimiento_seguro = vencimientoSeguro;
 
@@ -96,8 +98,9 @@ export async function actualizarUnidad(formData: FormData) {
   const patente = (formData.get("patente") as string || "").trim().toUpperCase().replace(/\s+/g, "");
   const marca = (formData.get("marca") as string || "").trim();
   const modelo = (formData.get("modelo") as string || "").trim();
+  const tipo = (formData.get("tipo") as string) || "bus";
   const ano = parseInt(formData.get("ano") as string, 10);
-  const asientos = parseInt(formData.get("asientos") as string, 10);
+  const asientos = formData.get("asientos") ? parseInt(formData.get("asientos") as string, 10) : null;
   const capacidad_estanque = parseInt(formData.get("capacidad_estanque") as string, 10);
   const chasis = (formData.get("chasis") as string) || "2_ejes_6_ruedas";
   const vencimientoRevision = formData.get("vencimiento_revision_tecnica") as string || null;
@@ -107,17 +110,18 @@ export async function actualizarUnidad(formData: FormData) {
   if (!marca) return { error: "La marca es obligatoria" };
   if (!modelo) return { error: "El modelo es obligatorio" };
   if (isNaN(ano) || ano < 1990 || ano > new Date().getFullYear() + 1) return { error: "Año no válido" };
-  if (isNaN(asientos) || asientos < 1 || asientos > 100) return { error: "Asientos entre 1 y 100" };
+  if (tipo === "bus" && (isNaN(asientos!) || asientos! < 1 || asientos! > 100)) return { error: "Asientos entre 1 y 100" };
   if (isNaN(capacidad_estanque) || capacidad_estanque < 1 || capacidad_estanque > 2000) return { error: "Capacidad de estanque entre 1 y 2000 litros" };
   if (!EJES_VALIDOS.includes(chasis)) return { error: "Tipo de ejes no válido" };
 
   const supabase = await createClient();
 
   const updatePayload: Record<string, unknown> = {
-    patente, marca, modelo, ano, asientos, chasis, capacidad_estanque,
+    patente, marca, modelo, tipo, ano, chasis, capacidad_estanque,
     vencimiento_revision_tecnica: vencimientoRevision,
     vencimiento_seguro: vencimientoSeguro,
   };
+  if (tipo === "bus" && asientos) updatePayload.asientos = asientos;
 
   const foto = formData.get("foto") as File | null;
   if (foto && foto.size > 0) {

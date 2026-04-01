@@ -12,6 +12,7 @@ export type Unidad = {
   modelo: string;
   ano: number;
   chasis: string;
+  tipo: string;
   foto_url: string | null;
   vencimiento_revision_tecnica: string | null;
   vencimiento_seguro: string | null;
@@ -96,6 +97,7 @@ export default function FlotaLista({ unidades }: { unidades: Unidad[] }) {
                   <Link href={`/admin/flota/${u.id}`} className="text-[13px] font-medium text-foreground hover:text-accent transition-colors">
                     {u.marca} {u.modelo}
                   </Link>
+                  <span className="text-[10px] text-dim uppercase ml-1.5">{u.tipo === "camion" ? "camión" : ""}</span>
                   <p className="text-[11px] text-dim md:hidden font-mono mt-0.5">{u.patente}</p>
                 </div>
                 <div className="hidden md:block md:col-span-2">

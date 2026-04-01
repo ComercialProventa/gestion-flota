@@ -87,21 +87,38 @@ function getSemanaISO(date: Date): string {
   return `${d.getFullYear()}-S${String(weekNum).padStart(2, "0")}`;
 }
 
-function fechaDesde(filtro: string): string | null {
-  const now = new Date();
-  switch (filtro) {
-    case "1m": now.setMonth(now.getMonth() - 1); break;
-    case "3m": now.setMonth(now.getMonth() - 3); break;
-    case "6m": now.setMonth(now.getMonth() - 6); break;
-    case "1y": now.setFullYear(now.getFullYear() - 1); break;
-    default: return null;
-  }
-  return now.toISOString().split("T")[0];
+function toISO(d: Date): string {
+  return d.toISOString().split("T")[0];
 }
 
-// ─── RENDIMIENTO SEMANAL POR UNIDAD ─────────────────────────
+// Devuelve el periodo anterior de igual duración
+function periodoAnterior(desde: string, hasta: string): { desde: string; hasta: string } {
+  const d1 = new Date(desde);
+  const d2 = new Date(hasta);
+  const dias = Math.ceil((d2.getTime() - d1.getTime()) / 86400000);
+  const anteriorHasta = new Date(d1);
+  anteriorHasta.setDate(anteriorHasta.getDate() - 1);
+  const anteriorDesde = new Date(anteriorHasta);
+  anteriorDesde.setDate(anteriorDesde.getDate() - dias);
+  return { desde: toISO(anteriorDesde), hasta: toISO(anteriorHasta) };
+}
 
-export async function obtenerRendimientoFlota(filtro: string = "all"): Promise<UnidadRendimiento[]> {
+// ─── QUERY BASE ─────────────────────────────────────────────
+
+async function queryRegistros(desde?: string, hasta?: string) {
+  const supabase = await createClient();
+  let q = supabase
+    .from("registros_combustible")
+    .select("bus_id, fecha, kilometraje, litros_cargados, precio_total_pago")
+    .order("fecha", { ascending: true });
+  if (desde) q = q.gte("fecha", desde);
+  if (hasta) q = q.lte("fecha", hasta);
+  return q;
+}
+
+// ─── RENDIMIENTO SEMANAL ────────────────────────────────────
+
+export async function obtenerRendimientoFlota(desde?: string, hasta?: string): Promise<UnidadRendimiento[]> {
   const supabase = await createClient();
 
   const { data: buses } = await supabase
@@ -111,15 +128,7 @@ export async function obtenerRendimientoFlota(filtro: string = "all"): Promise<U
 
   if (!buses || buses.length === 0) return [];
 
-  let query = supabase
-    .from("registros_combustible")
-    .select("bus_id, fecha, kilometraje, litros_cargados, precio_total_pago")
-    .order("fecha", { ascending: true });
-
-  const desde = fechaDesde(filtro);
-  if (desde) query = query.gte("fecha", desde);
-
-  const { data: registros } = await query;
+  const { data: registros } = await queryRegistros(desde, hasta);
   if (!registros || registros.length === 0) return [];
 
   const resultado: UnidadRendimiento[] = [];
@@ -147,9 +156,7 @@ export async function obtenerRendimientoFlota(filtro: string = "all"): Promise<U
     if (porSemana.size === 0) continue;
 
     const semanas: RendimientoSemanal[] = [];
-    let totalKm = 0;
-    let totalLitros = 0;
-    let totalGasto = 0;
+    let totalKm = 0; let totalLitros = 0; let totalGasto = 0;
 
     for (const [semana, datos] of porSemana.entries()) {
       const rend = datos.litros > 0 ? datos.km / datos.litros : 0;
@@ -168,21 +175,10 @@ export async function obtenerRendimientoFlota(filtro: string = "all"): Promise<U
     const costoPorKm = totalGasto > 0 && totalKm > 0 ? Math.round(totalGasto / totalKm) : null;
 
     resultado.push({
-      busId: bus.id,
-      patente: bus.patente,
-      marca: bus.marca,
-      modelo: bus.modelo,
-      ano: bus.ano,
-      tipo: bus.tipo || "bus",
-      promedioHistorico,
-      rendimientoActual,
-      variacionPct,
-      enAlerta: variacionPct < -30,
-      semanas,
-      costoPorKm,
-      gastoTotal: totalGasto,
-      kmTotal: totalKm,
-      litrosTotal: Math.round(totalLitros),
+      busId: bus.id, patente: bus.patente, marca: bus.marca, modelo: bus.modelo, ano: bus.ano,
+      tipo: bus.tipo || "bus", promedioHistorico, rendimientoActual, variacionPct,
+      enAlerta: variacionPct < -30, semanas, costoPorKm, gastoTotal: totalGasto,
+      kmTotal: totalKm, litrosTotal: Math.round(totalLitros),
     });
   }
 
@@ -197,7 +193,7 @@ export async function obtenerRendimientoFlota(filtro: string = "all"): Promise<U
 
 // ─── RANKING ────────────────────────────────────────────────
 
-export async function obtenerRanking(filtro: string = "all"): Promise<RankingItem[]> {
+export async function obtenerRanking(desde?: string, hasta?: string): Promise<RankingItem[]> {
   const supabase = await createClient();
 
   const { data: buses } = await supabase
@@ -207,15 +203,7 @@ export async function obtenerRanking(filtro: string = "all"): Promise<RankingIte
 
   if (!buses) return [];
 
-  let query = supabase
-    .from("registros_combustible")
-    .select("bus_id, kilometraje, litros_cargados, precio_total_pago, fecha")
-    .order("fecha", { ascending: true });
-
-  const desde = fechaDesde(filtro);
-  if (desde) query = query.gte("fecha", desde);
-
-  const { data: registros } = await query;
+  const { data: registros } = await queryRegistros(desde, hasta);
   if (!registros) return [];
 
   const items: RankingItem[] = [];
@@ -224,10 +212,7 @@ export async function obtenerRanking(filtro: string = "all"): Promise<RankingIte
     const regs = registros.filter((r) => r.bus_id === bus.id);
     if (regs.length < 2) continue;
 
-    let totalKm = 0;
-    let totalLitros = 0;
-    let totalGasto = 0;
-
+    let totalKm = 0; let totalLitros = 0; let totalGasto = 0;
     for (let i = 1; i < regs.length; i++) {
       const kmRec = regs[i].kilometraje - regs[i - 1].kilometraje;
       if (kmRec > 0) {
@@ -240,21 +225,9 @@ export async function obtenerRanking(filtro: string = "all"): Promise<RankingIte
     const kmL = totalLitros > 0 ? Math.round((totalKm / totalLitros) * 100) / 100 : 0;
     const costoPorKm = totalGasto > 0 && totalKm > 0 ? Math.round(totalGasto / totalKm) : null;
 
-    items.push({
-      busId: bus.id,
-      patente: bus.patente,
-      marca: bus.marca,
-      modelo: bus.modelo,
-      tipo: bus.tipo || "bus",
-      kmL,
-      costoPorKm,
-      gastoTotal: totalGasto,
-      kmTotal: totalKm,
-      enAlerta: false,
-    });
+    items.push({ busId: bus.id, patente: bus.patente, marca: bus.marca, modelo: bus.modelo, tipo: bus.tipo || "bus", kmL, costoPorKm, gastoTotal: totalGasto, kmTotal: totalKm, enAlerta: false });
   }
 
-  // Marcar alertas: las que están por debajo del promedio -30%
   const promedios = items.filter(i => i.kmL > 0).map(i => i.kmL);
   if (promedios.length > 0) {
     const promFlota = promedios.reduce((a, b) => a + b, 0) / promedios.length;
@@ -262,15 +235,15 @@ export async function obtenerRanking(filtro: string = "all"): Promise<RankingIte
     items.forEach(i => { if (i.kmL > 0 && i.kmL < umbral) i.enAlerta = true; });
   }
 
-  items.sort((a, b) => a.kmL - b.kmL); // Peores primero
+  items.sort((a, b) => a.kmL - b.kmL);
   return items;
 }
 
 // ─── KPI RESUMEN ────────────────────────────────────────────
 
-export async function obtenerKpis(filtro: string = "all"): Promise<KpiResumen> {
-  const ranking = await obtenerRanking(filtro);
-  const rendimiento = await obtenerRendimientoFlota(filtro);
+export async function obtenerKpis(desde?: string, hasta?: string): Promise<KpiResumen> {
+  const ranking = await obtenerRanking(desde, hasta);
+  const rendimiento = await obtenerRendimientoFlota(desde, hasta);
 
   if (ranking.length === 0) {
     return { rendimientoPromedioFlota: 0, costoPorKmPromedio: null, gastoTotalPeriodo: 0, kmTotalesPeriodo: 0, unidadesConAlerta: 0, totalUnidades: 0 };
@@ -278,40 +251,26 @@ export async function obtenerKpis(filtro: string = "all"): Promise<KpiResumen> {
 
   const kmLs = ranking.filter(r => r.kmL > 0).map(r => r.kmL);
   const costos = ranking.filter(r => r.costoPorKm !== null).map(r => r.costoPorKm!);
-  const gastoTotal = ranking.reduce((acc, r) => acc + r.gastoTotal, 0);
-  const kmTotales = ranking.reduce((acc, r) => acc + r.kmTotal, 0);
 
   return {
     rendimientoPromedioFlota: kmLs.length > 0 ? Math.round((kmLs.reduce((a, b) => a + b, 0) / kmLs.length) * 100) / 100 : 0,
     costoPorKmPromedio: costos.length > 0 ? Math.round(costos.reduce((a, b) => a + b, 0) / costos.length) : null,
-    gastoTotalPeriodo: gastoTotal,
-    kmTotalesPeriodo: kmTotales,
+    gastoTotalPeriodo: ranking.reduce((acc, r) => acc + r.gastoTotal, 0),
+    kmTotalesPeriodo: ranking.reduce((acc, r) => acc + r.kmTotal, 0),
     unidadesConAlerta: rendimiento.filter(r => r.enAlerta).length,
     totalUnidades: ranking.length,
   };
 }
 
-// ─── COMPARATIVA GEMELAS ────────────────────────────────────
+// ─── GEMELAS ────────────────────────────────────────────────
 
-export async function obtenerComparativaGemelas(filtro: string = "all"): Promise<ComparativaGemela[]> {
+export async function obtenerComparativaGemelas(desde?: string, hasta?: string): Promise<ComparativaGemela[]> {
   const supabase = await createClient();
 
-  const { data: buses } = await supabase
-    .from("buses")
-    .select("id, patente, marca, modelo, ano")
-    .order("marca");
-
+  const { data: buses } = await supabase.from("buses").select("id, patente, marca, modelo, ano").order("marca");
   if (!buses) return [];
 
-  let query = supabase
-    .from("registros_combustible")
-    .select("bus_id, kilometraje, litros_cargados, fecha")
-    .order("fecha", { ascending: true });
-
-  const desde = fechaDesde(filtro);
-  if (desde) query = query.gte("fecha", desde);
-
-  const { data: registros } = await query;
+  const { data: registros } = await queryRegistros(desde, hasta);
   if (!registros) return [];
 
   const totalesPorBus = new Map<string, { totalKm: number; totalLitros: number }>();
@@ -377,11 +336,7 @@ export async function obtenerAlertasEstanque(): Promise<AlertaEstanque[]> {
 
 export async function resolverAlerta(alertaId: string) {
   const supabase = await createClient();
-  const { error } = await supabase
-    .from("alertas_sistema")
-    .update({ resuelta: true })
-    .eq("id", alertaId);
-
+  const { error } = await supabase.from("alertas_sistema").update({ resuelta: true }).eq("id", alertaId);
   if (error) return { error: error.message };
   revalidatePath("/admin/inteligencia/combustible");
   return { success: true };

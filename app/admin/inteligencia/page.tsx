@@ -49,77 +49,57 @@ const MODULOS = [
 
 export default function InteligenciaHub() {
   return (
-    <div className="flex flex-col h-full space-y-6 p-4 md:p-6 lg:p-8 antialiased">
-      <header className="flex items-center justify-between border-b border-border-default pb-5">
-        <div>
-          <h1 className="text-xl font-bold tracking-tight text-foreground mb-1">Centro de Inteligencia</h1>
-          <p className="text-sm text-zinc-400">Auditoría, antirrobo y análisis de eficiencia</p>
-        </div>
+    <div className="max-w-5xl">
+      <header className="px-8 pt-10 pb-6">
+        <h1 className="text-[22px] font-bold tracking-tight text-foreground">Centro de Inteligencia</h1>
+        <p className="text-[13px] text-muted mt-0.5">Auditoría, antirrobo y análisis de eficiencia</p>
       </header>
 
-      <main className="flex-1 w-full mx-auto max-w-5xl mt-2">
-        {/* Banner de contexto */}
-        <div className="mb-6 rounded-xl border border-border-default bg-surface-card p-5">
-          <p className="text-sm text-zinc-300 leading-relaxed">
-            Estos módulos cruzan automáticamente los datos operacionales para detectar{" "}
-            <span className="text-amber-400 font-semibold">robos de combustible</span>,{" "}
-            <span className="text-emerald-400 font-semibold">fraudes en neumáticos</span> y{" "}
-            <span className="text-sky-400 font-semibold">anomalías en mantenimiento</span>.
-            Las alertas se generan en tiempo real con cada registro.
-          </p>
-        </div>
+      <main className="px-8 pb-12">
+        <p className="text-[13px] text-muted leading-relaxed mb-8">
+          Estos módulos cruzan automáticamente los datos operacionales para detectar{" "}
+          <span className="text-amber-400 font-semibold">robos de combustible</span>,{" "}
+          <span className="text-emerald-400 font-semibold">fraudes en neumáticos</span> y{" "}
+          <span className="text-sky-400 font-semibold">anomalías en mantenimiento</span>.
+          Las alertas se generan en tiempo real con cada registro.
+        </p>
 
-        {/* Cards de módulos */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {MODULOS.map((mod) => (
             <Link
               key={mod.href}
               href={mod.href}
-              className="group relative rounded-xl border border-border-default bg-surface-card p-5 transition-all hover:border-border-strong hover:bg-surface-raised"
+              className="group"
             >
-              <div className={`mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-accent/8 ${mod.accentColor}`}>
+              <div className={`mb-2 ${mod.accentColor}`}>
                 {mod.icon}
               </div>
-              <h2 className="text-[15px] font-bold text-foreground mb-1.5">{mod.titulo}</h2>
-              <p className="text-[12px] text-zinc-400 leading-relaxed mb-4">{mod.descripcion}</p>
+              <h2 className="text-[15px] font-bold text-foreground mb-1">{mod.titulo}</h2>
+              <p className="text-[12px] text-muted leading-relaxed mb-3">{mod.descripcion}</p>
               <div className="flex flex-wrap gap-1.5">
                 {mod.badges.map((b) => (
-                  <span key={b} className="rounded-full bg-surface-overlay px-2 py-0.5 text-[10px] font-medium text-zinc-400 border border-border-subtle">
+                  <span key={b} className="text-[10px] font-medium text-muted">
                     {b}
                   </span>
                 ))}
-              </div>
-              <div className="absolute top-5 right-5 text-zinc-600 group-hover:text-accent transition-all group-hover:translate-x-0.5">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-                </svg>
               </div>
             </Link>
           ))}
         </div>
 
-        {/* Resumen diario */}
-        <div className="mt-6 rounded-xl border border-border-default bg-surface-card p-4 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-surface-overlay text-zinc-400">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
-              </svg>
-            </div>
-            <div>
-              <h3 className="text-sm font-bold text-foreground">Resumen Diario a Gerencia</h3>
-              <p className="text-xs text-zinc-400 mt-1">
-                Envío automático configurable vía Cron Job a <code className="text-accent bg-accent/10 px-1 py-0.5 rounded text-[11px] font-mono">/api/resumen-diario</code>
-              </p>
-            </div>
+        <div className="mt-10 flex items-center gap-4">
+          <div className="text-muted">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+            </svg>
           </div>
-          <span className="rounded-full bg-success/10 px-3 py-1 text-[10px] font-bold text-success flex items-center gap-1.5 uppercase tracking-wider border border-success/20">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-success"></span>
-            </span>
-            API Activa
-          </span>
+          <div>
+            <h3 className="text-[13px] font-medium text-foreground">Resumen Diario a Gerencia</h3>
+            <p className="text-[12px] text-muted">
+              Envío automático vía <code className="text-accent font-mono">/api/resumen-diario</code>
+            </p>
+          </div>
+          <span className="text-[10px] font-medium text-emerald-400">API Activa</span>
         </div>
       </main>
     </div>

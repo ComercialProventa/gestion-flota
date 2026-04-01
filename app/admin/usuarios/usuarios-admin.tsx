@@ -33,9 +33,8 @@ export default function UsuariosAdmin() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 text-zinc-500">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-accent border-t-transparent mb-4"></div>
-        <p className="text-sm font-medium animate-pulse">Cargando usuarios...</p>
+      <div className="py-12 text-center text-dim text-[13px]">
+        Cargando usuarios...
       </div>
     );
   }
@@ -75,8 +74,8 @@ export default function UsuariosAdmin() {
   }
 
   // Clases del Sistema de Diseño Técnico
-  const labelClasses = "block text-[11px] font-semibold text-zinc-500 mb-1.5 uppercase tracking-wider";
-  const inputClasses = "w-full rounded-lg border border-border-strong bg-surface-overlay px-3 py-2 text-sm text-foreground placeholder:text-zinc-600 focus:border-accent focus:ring-1 focus:ring-accent/20 focus:outline-none transition-all";
+  const labelClasses = "block text-[11px] font-medium text-dim mb-1";
+  const inputClasses = "w-full bg-surface rounded-md px-3 py-2 text-[13px] text-foreground placeholder:text-dim focus:outline-none focus:ring-1 focus:ring-accent/30 transition-all";
 
   return (
     <>
@@ -90,15 +89,15 @@ export default function UsuariosAdmin() {
 
       {/* MODAL: EDITAR PERFIL */}
       {editando && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-          <div className="w-full max-w-sm rounded-xl border border-border-default bg-surface-card p-6 shadow-2xl space-y-5">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="w-full max-w-sm bg-surface rounded-lg p-6 space-y-5">
             <div>
-              <h3 className="text-lg font-bold text-foreground tracking-tight">Editar Usuario</h3>
-              <p className="text-xs text-zinc-500 font-mono mt-1">{editando.correo}</p>
+              <h3 className="text-[15px] font-semibold text-foreground">Editar Usuario</h3>
+              <p className="text-[12px] text-dim font-mono mt-0.5">{editando.correo}</p>
             </div>
 
-            {editExito && <div className="text-[12px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 p-2 rounded">Cambios guardados.</div>}
-            {editError && <div className="text-[12px] text-red-400 bg-red-500/10 border border-red-500/20 p-2 rounded">{editError}</div>}
+            {editExito && <div className="text-[12px] text-green">Cambios guardados.</div>}
+            {editError && <div className="text-[12px] text-red">{editError}</div>}
 
             <form action={handleGuardarPerfil} className="space-y-4">
               <div>
@@ -112,16 +111,16 @@ export default function UsuariosAdmin() {
               <div>
                 <label className={labelClasses}>Rol de Acceso</label>
                 <select name="rol" required defaultValue={editando.rol} className={inputClasses}>
-                  <option value="administrador" className="bg-slate-900">Administrador</option>
-                  <option value="administrativo" className="bg-slate-900">Administrativo</option>
-                  <option value="taller_conductor" className="bg-slate-900">Taller</option>
-                  <option value="conductor" className="bg-slate-900">Conductor</option>
+                  <option value="administrador" className="bg-surface">Administrador</option>
+                  <option value="administrativo" className="bg-surface">Administrativo</option>
+                  <option value="taller_conductor" className="bg-surface">Taller</option>
+                  <option value="conductor" className="bg-surface">Conductor</option>
                 </select>
               </div>
 
               <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => setEditando(null)} className="flex-1 rounded-lg border border-border-strong py-2 text-sm font-medium text-zinc-400 hover:bg-surface-raised transition-colors">Cancelar</button>
-                <button type="submit" disabled={editLoading} className="flex-1 rounded-lg bg-accent-600 py-2 text-sm font-semibold text-white hover:bg-accent-500 transition-colors">
+                <button type="button" onClick={() => setEditando(null)} className="flex-1 py-2 text-[13px] text-dim hover:text-foreground transition-colors">Cancelar</button>
+                <button type="submit" disabled={editLoading} className="flex-1 py-2 text-[13px] font-medium text-accent hover:text-accent-hover transition-colors">
                   {editLoading ? "Guardando..." : "Guardar"}
                 </button>
               </div>
@@ -132,12 +131,12 @@ export default function UsuariosAdmin() {
 
       {/* MODAL: CAMBIAR PWD */}
       {cambiandoPwd && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-          <div className="w-full max-w-sm rounded-xl border border-border-default bg-surface-card p-6 shadow-2xl space-y-5">
-            <h3 className="text-lg font-bold text-foreground tracking-tight">Nueva Contraseña</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="w-full max-w-sm bg-surface rounded-lg p-6 space-y-5">
+            <h3 className="text-[15px] font-semibold text-foreground">Nueva Contraseña</h3>
 
-            {pwdExito && <div className="text-[12px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 p-2 rounded">Contraseña actualizada.</div>}
-            {pwdError && <div className="text-[12px] text-red-400 bg-red-500/10 border border-red-500/20 p-2 rounded">{pwdError}</div>}
+            {pwdExito && <div className="text-[12px] text-green">Contraseña actualizada.</div>}
+            {pwdError && <div className="text-[12px] text-red">{pwdError}</div>}
 
             <form action={handleCambiarPwd} className="space-y-4">
               <div>
@@ -145,8 +144,8 @@ export default function UsuariosAdmin() {
                 <input name="nueva_contrasena" type="password" required minLength={8} placeholder="Mínimo 8 caracteres" className={inputClasses} />
               </div>
               <div className="flex gap-3 pt-2">
-                <button type="button" onClick={() => setCambiandoPwd(null)} className="flex-1 rounded-lg border border-border-strong py-2 text-sm font-medium text-zinc-400 hover:bg-surface-raised transition-colors">Cancelar</button>
-                <button type="submit" disabled={pwdLoading} className="flex-1 rounded bg-amber-600 py-2 text-sm font-semibold text-white hover:bg-amber-500 transition-colors">
+                <button type="button" onClick={() => setCambiandoPwd(null)} className="flex-1 py-2 text-[13px] text-dim hover:text-foreground transition-colors">Cancelar</button>
+                <button type="submit" disabled={pwdLoading} className="flex-1 py-2 text-[13px] font-medium text-accent hover:text-accent-hover transition-colors">
                   {pwdLoading ? "Cambiando..." : "Actualizar"}
                 </button>
               </div>

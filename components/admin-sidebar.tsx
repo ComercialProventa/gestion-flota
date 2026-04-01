@@ -107,27 +107,24 @@ export default function AdminSidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="hidden md:flex flex-col w-64 border-r border-border-subtle bg-surface-base min-h-screen sticky top-0 h-screen">
+    <aside className="hidden md:flex flex-col w-56 bg-background min-h-screen sticky top-0 h-screen">
       {/* Brand */}
-      <div className="flex h-16 items-center px-6 border-b border-border-subtle">
-        <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/10 text-accent">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <div className="flex h-14 items-center px-5">
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-7 w-7 items-center justify-center rounded-md bg-accent-dim text-accent">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75" />
             </svg>
           </div>
-          <div>
-            <span className="text-sm font-bold text-foreground tracking-tight">Proventa</span>
-            <span className="text-[10px] font-medium text-zinc-500 block leading-none mt-0.5">Admin Panel</span>
-          </div>
+          <span className="text-sm font-semibold text-foreground tracking-tight">Proventa</span>
         </div>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto py-5 px-3 space-y-6">
+      <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-5">
         {MENU_ITEMS.map((seccion) => (
           <div key={seccion.grupo}>
-            <h4 className="px-3 mb-2 text-[10px] font-semibold uppercase tracking-[0.08em] text-zinc-500">
+            <h4 className="px-2.5 mb-1 text-[10px] font-medium uppercase tracking-[0.06em] text-dim">
               {seccion.grupo}
             </h4>
             <ul className="space-y-0.5">
@@ -139,37 +136,30 @@ export default function AdminSidebar() {
                   <li key={link.name}>
                     <Link
                       href={link.href}
-                      className={`group flex items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] font-medium transition-all duration-150 ${
+                      className={`group flex items-center gap-2.5 rounded-md px-2.5 py-2 text-[13px] font-medium transition-colors ${
                         isActive
-                          ? "bg-surface-overlay text-foreground"
-                          : "text-zinc-400 hover:bg-surface-raised hover:text-zinc-200"
+                          ? "bg-surface-hover text-foreground"
+                          : "text-muted hover:bg-surface-hover hover:text-foreground"
                       }`}
                     >
-                      <span
-                        className={`shrink-0 transition-colors ${
-                          isActive ? "text-accent" : "text-zinc-500 group-hover:text-zinc-400"
-                        }`}
-                      >
+                      <span className={`shrink-0 transition-colors ${isActive ? "text-accent" : "text-dim group-hover:text-muted"}`}>
                         {link.icon}
                       </span>
                       <span className="flex-1">{link.name}</span>
-                      {isActive && (
-                        <span className="h-1.5 w-1.5 rounded-full bg-accent shrink-0" />
-                      )}
                     </Link>
 
                     {hasSubItems && isActive && link.subItems && (
-                      <ul className="ml-10 mt-1 space-y-0.5 border-l border-border-default pl-3 mb-1">
+                      <ul className="ml-10 mt-0.5 space-y-0.5 mb-1">
                         {link.subItems.map((sub) => {
                           const isSubActive = pathname === sub.href;
                           return (
                             <li key={sub.name}>
                               <Link
                                 href={sub.href}
-                                className={`block rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+                                className={`block rounded px-2 py-1.5 text-xs transition-colors ${
                                   isSubActive
-                                    ? "bg-surface-overlay text-foreground"
-                                    : "text-zinc-500 hover:text-zinc-300 hover:bg-surface-raised"
+                                    ? "text-foreground font-medium"
+                                    : "text-dim hover:text-foreground"
                                 }`}
                               >
                                 {sub.name}
@@ -187,15 +177,15 @@ export default function AdminSidebar() {
         ))}
       </nav>
 
-      {/* User Footer */}
-      <div className="p-3 border-t border-border-subtle">
-        <div className="flex items-center gap-3 rounded-lg bg-surface-raised border border-border-subtle px-3 py-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-accent/15 text-accent text-[11px] font-bold">
+      {/* User */}
+      <div className="px-3 py-3">
+        <div className="flex items-center gap-2.5 px-2.5 py-2">
+          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-accent-dim text-accent text-[10px] font-bold">
             AD
           </div>
           <div className="flex-1 overflow-hidden min-w-0">
-            <p className="text-[13px] font-semibold text-foreground truncate">Administrador</p>
-            <p className="text-[11px] text-zinc-500 truncate font-mono">admin@proventa.cl</p>
+            <p className="text-[12px] font-medium text-foreground truncate leading-none">Admin</p>
+            <p className="text-[10px] text-dim truncate font-mono mt-0.5">admin@proventa.cl</p>
           </div>
         </div>
       </div>

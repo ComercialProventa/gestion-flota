@@ -17,11 +17,8 @@ export default function AdminLayout({
       <div className="flex min-h-screen bg-background">
         <AdminSidebar />
         <div className="flex-1 flex flex-col min-w-0">
-          <header className="md:hidden flex h-14 items-center justify-between border-b border-border-subtle bg-surface-base px-4">
-            <span className="text-sm font-bold text-foreground">Proventa</span>
-            <span className="text-[10px] font-semibold text-accent tracking-wider uppercase">
-              Admin
-            </span>
+          <header className="md:hidden flex h-12 items-center px-4">
+            <span className="text-sm font-semibold text-foreground">Proventa</span>
           </header>
           <main className="flex-1 overflow-y-auto">
             {children}

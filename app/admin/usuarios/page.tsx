@@ -10,25 +10,21 @@ export const metadata: Metadata = {
 
 export default function UsuariosAdminPage() {
   return (
-    <div className="flex flex-col h-full space-y-6 p-4 md:p-6 lg:p-8 antialiased">
-      <header className="flex items-center justify-between border-b border-border-default pb-5">
+    <div className="max-w-5xl">
+      <header className="flex items-center justify-between px-8 pt-10 pb-6">
         <div>
-          <h1 className="text-xl font-bold tracking-tight text-foreground mb-1">Gestión de Usuarios</h1>
-          <p className="text-sm text-zinc-400">Administración de cuentas y permisos.</p>
+          <h1 className="text-[22px] font-bold tracking-tight text-foreground">Gestión de Usuarios</h1>
+          <p className="text-[13px] text-muted mt-0.5">Administración de cuentas y permisos.</p>
         </div>
-
         <Link
           href="/admin/usuarios/nuevo"
-          className="flex items-center justify-center gap-2 rounded-lg bg-accent-600 px-4 py-2 text-[13px] font-semibold text-white hover:bg-accent-500 transition-colors"
+          className="text-[13px] font-medium text-accent hover:text-accent-hover transition-colors"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-          </svg>
-          Nuevo Usuario
+          + Nuevo usuario
         </Link>
       </header>
 
-      <main className="flex-1 w-full mx-auto max-w-6xl mt-2">
+      <main className="px-8 pb-12">
         <UsuariosAdmin />
       </main>
     </div>

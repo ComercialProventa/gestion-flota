@@ -220,15 +220,4 @@ BEGIN
 
 END $$;
 
--- ═══════════════════════════════════════════════════
--- 5. ALERTA ESTANQUE FANTASMA
--- ═══════════════════════════════════════════════════
-
-INSERT INTO alertas_sistema (bus_id, tipo, severidad, titulo, detalle, resuelta) VALUES
-  ('a0000001-0001-0001-0001-000000000002', 'estanque_fantasma', 'critica',
-   'Alerta: Estanque Fantasma (EFGH-34)',
-   'Se intentó cargar 480 L, superando la capacidad máxima de 400 L (+20%).',
-   false)
-ON CONFLICT DO NOTHING;
-
-SELECT 'Mock data OK: 10 buses, 10 conductores, 10 asignaciones, ~750 cargas, 1 alerta' AS resultado;
+SELECT 'Mock data OK: 10 buses, 10 conductores, 10 asignaciones, ~750 cargas' AS resultado;

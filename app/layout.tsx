@@ -1,22 +1,29 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Plus_Jakarta_Sans, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({
+const fontSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
   display: "swap",
+  variable: "--font-sans",
+  weight: ["300", "400", "500", "600", "700"],
+});
+
+const fontMono = JetBrains_Mono({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-mono",
+  weight: ["400", "500"],
 });
 
 export const metadata: Metadata = {
   title: "Gestión de Flota | Comercial Proventa",
   description: "Sistema de gestión de flota de buses — Comercial Proventa",
-  // 1. Enlazamos el manifest de la PWA
   manifest: "/manifest.json",
-  // 2. Configuramos la experiencia nativa para iOS (iPhone/iPad)
   appleWebApp: {
     capable: true,
-    statusBarStyle: "black-translucent", // Funde la hora/batería del iPhone con tu fondo oscuro
-    title: "Proventa", // Nombre corto que aparecerá debajo del ícono en iOS
+    statusBarStyle: "black-translucent",
+    title: "Proventa",
   },
 };
 
@@ -25,8 +32,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  // 3. Recomendado para PWA: color de la barra del navegador en Android
-  themeColor: "#0a0a0a",
+  themeColor: "#09090b",
 };
 
 export default function RootLayout({
@@ -36,7 +42,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" className="h-full antialiased">
-      <body className={`${inter.className} min-h-full flex flex-col bg-[#0a0a0a] text-slate-200`}>
+      <body className={`${fontSans.variable} ${fontMono.variable} font-sans min-h-full flex flex-col bg-background text-foreground`}>
         {children}
       </body>
     </html>

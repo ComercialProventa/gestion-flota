@@ -59,7 +59,7 @@ ON CONFLICT (usuario_id, bus_id) DO NOTHING;
 
 DO $$
 DECLARE
-  bus_id_var TEXT;
+  bus_id_var UUID;
   km_inicio  INTEGER;
   kml_base   NUMERIC;
   precio_l   INTEGER;

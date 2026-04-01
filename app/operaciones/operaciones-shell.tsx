@@ -49,17 +49,15 @@ export default function OperacionesShell({
   const { theme, toggleTheme } = useTheme();
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-slate-200 antialiased">
-      {/* ─── Header de Consola (Optimizado) ─── */}
-      <header className="sticky top-0 z-40 bg-[#0a0a0a]/90 backdrop-blur-md border-b border-white/10 h-20">
+    <div className="min-h-screen bg-background text-foreground antialiased">
+      <header className="sticky top-0 z-40 bg-background/90 backdrop-blur-md border-b border-divider h-20">
         <div className="mx-auto flex h-full max-w-sm items-center justify-between px-4">
 
           <div className="flex items-center gap-4">
-            {/* Botón Atrás: Menos redondeado, más técnico */}
             {backHref && (
               <Link
                 href={backHref}
-                className="flex h-11 w-11 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-amber-500 active:bg-white/10 transition-colors"
+                className="flex h-11 w-11 items-center justify-center rounded-lg border border-divider bg-surface text-accent active:bg-surface-hover transition-colors"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
@@ -67,15 +65,14 @@ export default function OperacionesShell({
               </Link>
             )}
 
-            {/* Contexto Centralizado: Título y Operario */}
             <div className="flex flex-col justify-center">
-              <h1 className="text-[14px] font-black uppercase tracking-tighter leading-none text-white">
+              <h1 className="text-[14px] font-black uppercase tracking-tighter leading-none text-foreground">
                 {title}
               </h1>
               {subtitle && (
                 <div className="flex items-center gap-1.5 mt-1.5">
-                  <span className="h-1 w-2 rounded-full bg-amber-500/50" />
-                  <p className="text-[9px] font-mono font-bold text-slate-500 uppercase tracking-widest">
+                  <span className="h-1 w-2 rounded-full bg-accent/50" />
+                  <p className="text-[9px] font-mono font-bold text-muted uppercase tracking-widest">
                     {subtitle}
                   </p>
                 </div>
@@ -83,27 +80,25 @@ export default function OperacionesShell({
             </div>
           </div>
 
-          {/* Menú Hamburguesa: Consistente con el botón atrás */}
           <button
             type="button"
             onClick={() => setMenuOpen(!menuOpen)}
-            className="flex h-11 w-11 flex-col items-center justify-center gap-1.5 rounded-lg border border-white/10 bg-white/5 active:bg-white/10"
+            className="flex h-11 w-11 flex-col items-center justify-center gap-1.5 rounded-lg border border-divider bg-surface active:bg-surface-hover"
             aria-label="Menú"
           >
-            <span className={`h-0.5 w-5 bg-white transition-transform ${menuOpen ? "rotate-45 translate-y-2" : ""}`} />
-            <span className={`h-0.5 w-5 bg-white transition-opacity ${menuOpen ? "opacity-0" : ""}`} />
-            <span className={`h-0.5 w-3 bg-amber-500 self-end mr-3 transition-transform ${menuOpen ? "-rotate-45 -translate-y-2 w-5" : ""}`} />
+            <span className={`h-0.5 w-5 bg-foreground transition-transform ${menuOpen ? "rotate-45 translate-y-2" : ""}`} />
+            <span className={`h-0.5 w-5 bg-foreground transition-opacity ${menuOpen ? "opacity-0" : ""}`} />
+            <span className={`h-0.5 w-3 bg-accent self-end mr-3 transition-transform ${menuOpen ? "-rotate-45 -translate-y-2 w-5" : ""}`} />
           </button>
         </div>
       </header>
 
-      {/* ─── Drawer Lateral (Bordes rectificados) ─── */}
       {menuOpen && (
         <>
           <div className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm" onClick={() => setMenuOpen(false)} />
-          <nav className="fixed top-20 right-0 z-50 w-72 h-[calc(100vh-5rem)] border-l border-white/10 bg-[#121214] shadow-2xl animate-in slide-in-from-right duration-300">
+          <nav className="fixed top-20 right-0 z-50 w-72 h-[calc(100vh-5rem)] border-l border-divider bg-surface shadow-2xl animate-in slide-in-from-right duration-300">
             <div className="p-6 space-y-1.5">
-              <p className="text-[10px] font-bold text-slate-600 uppercase tracking-[0.3em] px-3 mb-4">Navegación Sistema</p>
+              <p className="text-[10px] font-bold text-muted uppercase tracking-[0.3em] px-3 mb-4">Navegación Sistema</p>
               {NAV_ITEMS.map((item) => {
                 if (rol === "conductor" && item.href !== "/operaciones" && item.href !== "/operaciones/combustible") return null;
                 const isActive = pathname === item.href;
@@ -112,19 +107,19 @@ export default function OperacionesShell({
                     key={item.href}
                     href={item.href}
                     onClick={() => setMenuOpen(false)}
-                    className={`flex items-center gap-4 rounded-lg px-4 py-3.5 text-[14px] font-bold transition-all ${isActive ? "bg-amber-500 text-black" : "text-slate-400 active:bg-white/5"
+                    className={`flex items-center gap-4 rounded-lg px-4 py-3.5 text-[14px] font-bold transition-all ${isActive ? "bg-accent text-black" : "text-dim active:bg-surface-hover"
                       }`}
                   >
-                    <NavIcon icon={item.icon} className={isActive ? "text-black" : "text-slate-500"} />
+                    <NavIcon icon={item.icon} className={isActive ? "text-black" : "text-dim"} />
                     {item.label}
                   </Link>
                 );
               })}
             </div>
-            <div className="absolute bottom-0 w-full p-6 border-t border-white/5 bg-black space-y-2">
+            <div className="absolute bottom-0 w-full p-6 border-t border-divider bg-background space-y-2">
               <button
                 onClick={toggleTheme}
-                className="w-full flex items-center justify-center gap-3 rounded-lg bg-white/5 py-3 text-[12px] font-bold uppercase tracking-widest text-slate-400 active:bg-white/10 transition-all"
+                className="w-full flex items-center justify-center gap-3 rounded-lg bg-surface py-3 text-[12px] font-bold uppercase tracking-widest text-dim active:bg-surface-hover transition-all"
               >
                 {theme === "dark" ? (
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

@@ -3,9 +3,9 @@
 import { calcularVigencia, type EstadoVigencia } from "@/utils/fechas";
 
 const BADGE_STYLES: Record<EstadoVigencia, string> = {
-  verde: "bg-emerald-100 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-400",
-  amarillo: "bg-amber-100 text-amber-800 dark:bg-amber-500/15 dark:text-amber-400",
-  rojo: "bg-red-100 text-red-800 dark:bg-red-500/15 dark:text-red-400",
+  verde: "bg-green/15 text-green",
+  amarillo: "bg-accent-muted text-accent",
+  rojo: "bg-red/15 text-red",
 };
 
 const BAR_COLORS: Record<EstadoVigencia, string> = {

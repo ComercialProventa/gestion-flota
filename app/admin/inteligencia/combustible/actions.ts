@@ -1,14 +1,15 @@
 "use server";
 
 import { createClient } from "@/utils/supabase/server";
+import { revalidatePath } from "next/cache";
 
 // ─── TIPOS ──────────────────────────────────────────────────
 
 export type RendimientoSemanal = {
-  semana: string; // 'YYYY-WNN'
+  semana: string;
   kmRecorridos: number;
   litrosTotales: number;
-  rendimiento: number; // km/L
+  rendimiento: number;
 };
 
 export type UnidadRendimiento = {
@@ -17,15 +18,33 @@ export type UnidadRendimiento = {
   marca: string;
   modelo: string;
   ano: number;
+  tipo: string;
   promedioHistorico: number;
   rendimientoActual: number;
-  variacionPct: number; // porcentaje de variación vs promedio
+  variacionPct: number;
   enAlerta: boolean;
   semanas: RendimientoSemanal[];
+  costoPorKm: number | null;
+  gastoTotal: number;
+  kmTotal: number;
+  litrosTotal: number;
+};
+
+export type RankingItem = {
+  busId: string;
+  patente: string;
+  marca: string;
+  modelo: string;
+  tipo: string;
+  kmL: number;
+  costoPorKm: number | null;
+  gastoTotal: number;
+  kmTotal: number;
+  enAlerta: boolean;
 };
 
 export type ComparativaGemela = {
-  grupo: string; // 'Mercedes-Benz O-500 2022'
+  grupo: string;
   unidades: {
     busId: string;
     patente: string;
@@ -48,51 +67,80 @@ export type AlertaEstanque = {
   titulo: string;
 };
 
+export type KpiResumen = {
+  rendimientoPromedioFlota: number;
+  costoPorKmPromedio: number | null;
+  gastoTotalPeriodo: number;
+  kmTotalesPeriodo: number;
+  unidadesConAlerta: number;
+  totalUnidades: number;
+};
+
+// ─── HELPERS ────────────────────────────────────────────────
+
+function getSemanaISO(date: Date): string {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() + 3 - ((d.getDay() + 6) % 7));
+  const week1 = new Date(d.getFullYear(), 0, 4);
+  const weekNum = 1 + Math.round(((d.getTime() - week1.getTime()) / 86400000 - 3 + ((week1.getDay() + 6) % 7)) / 7);
+  return `${d.getFullYear()}-S${String(weekNum).padStart(2, "0")}`;
+}
+
+function fechaDesde(filtro: string): string | null {
+  const now = new Date();
+  switch (filtro) {
+    case "1m": now.setMonth(now.getMonth() - 1); break;
+    case "3m": now.setMonth(now.getMonth() - 3); break;
+    case "6m": now.setMonth(now.getMonth() - 6); break;
+    case "1y": now.setFullYear(now.getFullYear() - 1); break;
+    default: return null;
+  }
+  return now.toISOString().split("T")[0];
+}
+
 // ─── RENDIMIENTO SEMANAL POR UNIDAD ─────────────────────────
 
-/**
- * Calcula el rendimiento semanal (Km/L) de cada unidad,
- * detectando caídas >30% vs promedio histórico.
- */
-export async function obtenerRendimientoFlota(): Promise<UnidadRendimiento[]> {
+export async function obtenerRendimientoFlota(filtro: string = "all"): Promise<UnidadRendimiento[]> {
   const supabase = await createClient();
 
-  // 1. Obtener todos los buses
   const { data: buses } = await supabase
     .from("buses")
-    .select("id, patente, marca, modelo, ano")
+    .select("id, patente, marca, modelo, ano, tipo")
     .order("patente");
 
   if (!buses || buses.length === 0) return [];
 
-  // 2. Obtener todos los registros de combustible ordenados
-  const { data: registros } = await supabase
+  let query = supabase
     .from("registros_combustible")
-    .select("bus_id, fecha, kilometraje, litros_cargados")
+    .select("bus_id, fecha, kilometraje, litros_cargados, precio_total_pago")
     .order("fecha", { ascending: true });
 
+  const desde = fechaDesde(filtro);
+  if (desde) query = query.gte("fecha", desde);
+
+  const { data: registros } = await query;
   if (!registros || registros.length === 0) return [];
 
   const resultado: UnidadRendimiento[] = [];
 
   for (const bus of buses) {
     const regs = registros.filter((r) => r.bus_id === bus.id);
-    if (regs.length < 2) continue; // Necesitamos al menos 2 registros para calcular
+    if (regs.length < 2) continue;
 
-    // Agrupar por semana ISO
-    const porSemana = new Map<string, { km: number; litros: number }>();
+    const porSemana = new Map<string, { km: number; litros: number; gasto: number }>();
 
     for (let i = 1; i < regs.length; i++) {
       const kmRec = regs[i].kilometraje - regs[i - 1].kilometraje;
       const litros = regs[i].litros_cargados;
+      const precio = regs[i].precio_total_pago || 0;
       if (kmRec <= 0 || litros <= 0) continue;
 
-      const fecha = new Date(regs[i].fecha);
-      const semana = getSemanaISO(fecha);
-
-      const entry = porSemana.get(semana) || { km: 0, litros: 0 };
+      const semana = getSemanaISO(new Date(regs[i].fecha));
+      const entry = porSemana.get(semana) || { km: 0, litros: 0, gasto: 0 };
       entry.km += kmRec;
       entry.litros += litros;
+      entry.gasto += precio;
       porSemana.set(semana, entry);
     }
 
@@ -101,32 +149,23 @@ export async function obtenerRendimientoFlota(): Promise<UnidadRendimiento[]> {
     const semanas: RendimientoSemanal[] = [];
     let totalKm = 0;
     let totalLitros = 0;
+    let totalGasto = 0;
 
     for (const [semana, datos] of porSemana.entries()) {
       const rend = datos.litros > 0 ? datos.km / datos.litros : 0;
-      semanas.push({
-        semana,
-        kmRecorridos: datos.km,
-        litrosTotales: datos.litros,
-        rendimiento: Math.round(rend * 100) / 100,
-      });
+      semanas.push({ semana, kmRecorridos: datos.km, litrosTotales: datos.litros, rendimiento: Math.round(rend * 100) / 100 });
       totalKm += datos.km;
       totalLitros += datos.litros;
+      totalGasto += datos.gasto;
     }
 
-    // Ordenar cronológicamente
     semanas.sort((a, b) => a.semana.localeCompare(b.semana));
 
-    const promedioHistorico = totalLitros > 0
-      ? Math.round((totalKm / totalLitros) * 100) / 100
-      : 0;
-
+    const promedioHistorico = totalLitros > 0 ? Math.round((totalKm / totalLitros) * 100) / 100 : 0;
     const ultimaSemana = semanas[semanas.length - 1];
     const rendimientoActual = ultimaSemana.rendimiento;
-
-    const variacionPct = promedioHistorico > 0
-      ? Math.round(((rendimientoActual - promedioHistorico) / promedioHistorico) * 100)
-      : 0;
+    const variacionPct = promedioHistorico > 0 ? Math.round(((rendimientoActual - promedioHistorico) / promedioHistorico) * 100) : 0;
+    const costoPorKm = totalGasto > 0 && totalKm > 0 ? Math.round(totalGasto / totalKm) : null;
 
     resultado.push({
       busId: bus.id,
@@ -134,15 +173,19 @@ export async function obtenerRendimientoFlota(): Promise<UnidadRendimiento[]> {
       marca: bus.marca,
       modelo: bus.modelo,
       ano: bus.ano,
+      tipo: bus.tipo || "bus",
       promedioHistorico,
       rendimientoActual,
       variacionPct,
-      enAlerta: variacionPct < -30, // >30% de caída → alerta
+      enAlerta: variacionPct < -30,
       semanas,
+      costoPorKm,
+      gastoTotal: totalGasto,
+      kmTotal: totalKm,
+      litrosTotal: Math.round(totalLitros),
     });
   }
 
-  // Ordenar: alertas primero
   resultado.sort((a, b) => {
     if (a.enAlerta && !b.enAlerta) return -1;
     if (!a.enAlerta && b.enAlerta) return 1;
@@ -152,13 +195,105 @@ export async function obtenerRendimientoFlota(): Promise<UnidadRendimiento[]> {
   return resultado;
 }
 
-// ─── COMPARATIVA DE UNIDADES GEMELAS ────────────────────────
+// ─── RANKING ────────────────────────────────────────────────
 
-/**
- * Agrupa unidades de misma marca+modelo+año y compara rendimiento.
- * Alerta si diferencia >30%.
- */
-export async function obtenerComparativaGemelas(): Promise<ComparativaGemela[]> {
+export async function obtenerRanking(filtro: string = "all"): Promise<RankingItem[]> {
+  const supabase = await createClient();
+
+  const { data: buses } = await supabase
+    .from("buses")
+    .select("id, patente, marca, modelo, tipo")
+    .order("patente");
+
+  if (!buses) return [];
+
+  let query = supabase
+    .from("registros_combustible")
+    .select("bus_id, kilometraje, litros_cargados, precio_total_pago, fecha")
+    .order("fecha", { ascending: true });
+
+  const desde = fechaDesde(filtro);
+  if (desde) query = query.gte("fecha", desde);
+
+  const { data: registros } = await query;
+  if (!registros) return [];
+
+  const items: RankingItem[] = [];
+
+  for (const bus of buses) {
+    const regs = registros.filter((r) => r.bus_id === bus.id);
+    if (regs.length < 2) continue;
+
+    let totalKm = 0;
+    let totalLitros = 0;
+    let totalGasto = 0;
+
+    for (let i = 1; i < regs.length; i++) {
+      const kmRec = regs[i].kilometraje - regs[i - 1].kilometraje;
+      if (kmRec > 0) {
+        totalKm += kmRec;
+        totalLitros += regs[i].litros_cargados;
+        totalGasto += regs[i].precio_total_pago || 0;
+      }
+    }
+
+    const kmL = totalLitros > 0 ? Math.round((totalKm / totalLitros) * 100) / 100 : 0;
+    const costoPorKm = totalGasto > 0 && totalKm > 0 ? Math.round(totalGasto / totalKm) : null;
+
+    items.push({
+      busId: bus.id,
+      patente: bus.patente,
+      marca: bus.marca,
+      modelo: bus.modelo,
+      tipo: bus.tipo || "bus",
+      kmL,
+      costoPorKm,
+      gastoTotal: totalGasto,
+      kmTotal: totalKm,
+      enAlerta: false,
+    });
+  }
+
+  // Marcar alertas: las que están por debajo del promedio -30%
+  const promedios = items.filter(i => i.kmL > 0).map(i => i.kmL);
+  if (promedios.length > 0) {
+    const promFlota = promedios.reduce((a, b) => a + b, 0) / promedios.length;
+    const umbral = promFlota * 0.7;
+    items.forEach(i => { if (i.kmL > 0 && i.kmL < umbral) i.enAlerta = true; });
+  }
+
+  items.sort((a, b) => a.kmL - b.kmL); // Peores primero
+  return items;
+}
+
+// ─── KPI RESUMEN ────────────────────────────────────────────
+
+export async function obtenerKpis(filtro: string = "all"): Promise<KpiResumen> {
+  const ranking = await obtenerRanking(filtro);
+  const rendimiento = await obtenerRendimientoFlota(filtro);
+
+  if (ranking.length === 0) {
+    return { rendimientoPromedioFlota: 0, costoPorKmPromedio: null, gastoTotalPeriodo: 0, kmTotalesPeriodo: 0, unidadesConAlerta: 0, totalUnidades: 0 };
+  }
+
+  const kmLs = ranking.filter(r => r.kmL > 0).map(r => r.kmL);
+  const costos = ranking.filter(r => r.costoPorKm !== null).map(r => r.costoPorKm!);
+  const gastoTotal = ranking.reduce((acc, r) => acc + r.gastoTotal, 0);
+  const kmTotales = ranking.reduce((acc, r) => acc + r.kmTotal, 0);
+
+  return {
+    rendimientoPromedioFlota: kmLs.length > 0 ? Math.round((kmLs.reduce((a, b) => a + b, 0) / kmLs.length) * 100) / 100 : 0,
+    costoPorKmPromedio: costos.length > 0 ? Math.round(costos.reduce((a, b) => a + b, 0) / costos.length) : null,
+    gastoTotalPeriodo: gastoTotal,
+    kmTotalesPeriodo: kmTotales,
+    unidadesConAlerta: rendimiento.filter(r => r.enAlerta).length,
+    totalUnidades: ranking.length,
+  };
+}
+
+// ─── COMPARATIVA GEMELAS ────────────────────────────────────
+
+export async function obtenerComparativaGemelas(filtro: string = "all"): Promise<ComparativaGemela[]> {
   const supabase = await createClient();
 
   const { data: buses } = await supabase
@@ -168,32 +303,28 @@ export async function obtenerComparativaGemelas(): Promise<ComparativaGemela[]> 
 
   if (!buses) return [];
 
-  const { data: registros } = await supabase
+  let query = supabase
     .from("registros_combustible")
     .select("bus_id, kilometraje, litros_cargados, fecha")
     .order("fecha", { ascending: true });
 
+  const desde = fechaDesde(filtro);
+  if (desde) query = query.gte("fecha", desde);
+
+  const { data: registros } = await query;
   if (!registros) return [];
 
-  // Calcular totales por bus
   const totalesPorBus = new Map<string, { totalKm: number; totalLitros: number }>();
-
   for (const bus of buses) {
     const regs = registros.filter((r) => r.bus_id === bus.id);
-    let totalKm = 0;
-    let totalLitros = 0;
-
+    let totalKm = 0; let totalLitros = 0;
     for (let i = 1; i < regs.length; i++) {
       const kmRec = regs[i].kilometraje - regs[i - 1].kilometraje;
-      if (kmRec > 0) {
-        totalKm += kmRec;
-        totalLitros += regs[i].litros_cargados;
-      }
+      if (kmRec > 0) { totalKm += kmRec; totalLitros += regs[i].litros_cargados; }
     }
     totalesPorBus.set(bus.id, { totalKm, totalLitros });
   }
 
-  // Agrupar por marca+modelo+año
   const grupos = new Map<string, typeof buses>();
   for (const bus of buses) {
     const key = `${bus.marca} ${bus.modelo} ${bus.ano}`;
@@ -203,38 +334,19 @@ export async function obtenerComparativaGemelas(): Promise<ComparativaGemela[]> 
   }
 
   const resultado: ComparativaGemela[] = [];
-
   for (const [grupo, unidades] of grupos.entries()) {
-    if (unidades.length < 2) continue; // Solo comparar si hay gemelas
-
+    if (unidades.length < 2) continue;
     const items = unidades.map((bus) => {
       const t = totalesPorBus.get(bus.id) || { totalKm: 0, totalLitros: 0 };
-      return {
-        busId: bus.id,
-        patente: bus.patente,
-        promedioKmL: t.totalLitros > 0
-          ? Math.round((t.totalKm / t.totalLitros) * 100) / 100
-          : 0,
-        totalKm: t.totalKm,
-        totalLitros: Math.round(t.totalLitros * 10) / 10,
-      };
+      return { busId: bus.id, patente: bus.patente, promedioKmL: t.totalLitros > 0 ? Math.round((t.totalKm / t.totalLitros) * 100) / 100 : 0, totalKm: t.totalKm, totalLitros: Math.round(t.totalLitros * 10) / 10 };
     });
-
-    // Calcular diferencia máxima
     const rendimientos = items.map((i) => i.promedioKmL).filter((r) => r > 0);
     let diferenciaMaxPct = 0;
     if (rendimientos.length >= 2) {
-      const max = Math.max(...rendimientos);
-      const min = Math.min(...rendimientos);
+      const max = Math.max(...rendimientos); const min = Math.min(...rendimientos);
       diferenciaMaxPct = max > 0 ? Math.round(((max - min) / max) * 100) : 0;
     }
-
-    resultado.push({
-      grupo,
-      unidades: items,
-      diferenciaMaxPct,
-      enAlerta: diferenciaMaxPct > 30,
-    });
+    resultado.push({ grupo, unidades: items, diferenciaMaxPct, enAlerta: diferenciaMaxPct > 30 });
   }
 
   resultado.sort((a, b) => b.diferenciaMaxPct - a.diferenciaMaxPct);
@@ -243,12 +355,8 @@ export async function obtenerComparativaGemelas(): Promise<ComparativaGemela[]> 
 
 // ─── ALERTAS ESTANQUE FANTASMA ──────────────────────────────
 
-/**
- * Obtiene alertas de intento de carga mayor a la capacidad del estanque.
- */
 export async function obtenerAlertasEstanque(): Promise<AlertaEstanque[]> {
   const supabase = await createClient();
-
   const { data } = await supabase
     .from("alertas_sistema")
     .select("id, bus_id, titulo, detalle, creado_en, buses(patente)")
@@ -258,26 +366,23 @@ export async function obtenerAlertasEstanque(): Promise<AlertaEstanque[]> {
     .limit(20);
 
   if (!data) return [];
-
   return data.map((a: any) => ({
-    id: a.id,
-    busId: a.bus_id,
-    patente: a.buses?.patente || "—",
-    capacidadEstanque: 0,
-    litrosIntentados: 0,
-    excedentePct: 0,
-    fecha: a.creado_en,
-    titulo: a.titulo,
+    id: a.id, busId: a.bus_id, patente: a.buses?.patente || "—",
+    capacidadEstanque: 0, litrosIntentados: 0, excedentePct: 0,
+    fecha: a.creado_en, titulo: a.titulo,
   }));
 }
 
-// ─── HELPER ─────────────────────────────────────────────────
+// ─── RESOLVER ALERTA ────────────────────────────────────────
 
-function getSemanaISO(date: Date): string {
-  const d = new Date(date);
-  d.setHours(0, 0, 0, 0);
-  d.setDate(d.getDate() + 3 - ((d.getDay() + 6) % 7));
-  const week1 = new Date(d.getFullYear(), 0, 4);
-  const weekNum = 1 + Math.round(((d.getTime() - week1.getTime()) / 86400000 - 3 + ((week1.getDay() + 6) % 7)) / 7);
-  return `${d.getFullYear()}-S${String(weekNum).padStart(2, "0")}`;
+export async function resolverAlerta(alertaId: string) {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("alertas_sistema")
+    .update({ resuelta: true })
+    .eq("id", alertaId);
+
+  if (error) return { error: error.message };
+  revalidatePath("/admin/inteligencia/combustible");
+  return { success: true };
 }

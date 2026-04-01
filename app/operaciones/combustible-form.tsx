@@ -12,6 +12,7 @@ export default function CombustibleForm({ buses, userId }: { buses: Bus[]; userI
   const [hora, setHora] = useState("");
   const [kilometraje, setKilometraje] = useState("");
   const [litros, setLitros] = useState("");
+  const [precio, setPrecio] = useState("");
 
   const [ultimoKm, setUltimoKm] = useState<number | null>(null);
   const [cargandoKm, setCargandoKm] = useState(false);
@@ -48,7 +49,7 @@ export default function CombustibleForm({ buses, userId }: { buses: Bus[]; userI
     if (result.error) { setError(result.error); }
     else if (result.success) {
       setExito(result.mensaje!);
-      setBusId(""); setKilometraje(""); setLitros(""); setUltimoKm(null);
+      setBusId(""); setKilometraje(""); setLitros(""); setPrecio(""); setUltimoKm(null);
     }
     setLoading(false);
   }
@@ -138,6 +139,22 @@ export default function CombustibleForm({ buses, userId }: { buses: Bus[]; userI
             value={litros}
             onChange={(e) => setLitros(e.target.value)}
             className="w-full h-20 rounded-sm border-2 border-white/20 bg-transparent px-4 font-mono text-3xl font-black text-amber-500 focus:border-amber-500 focus:outline-none placeholder:text-amber-900/30"
+          />
+        </div>
+
+        {/* 04. PRECIO TOTAL */}
+        <div className="space-y-2">
+          <label className="text-[12px] font-black uppercase tracking-[0.2em] text-slate-500 ml-1">
+            04. Total Pagado ($)
+          </label>
+          <input
+            name="precio_total_pago"
+            type="number"
+            inputMode="numeric"
+            placeholder="0"
+            value={precio}
+            onChange={(e) => setPrecio(e.target.value)}
+            className="w-full h-20 rounded-sm border-2 border-white/20 bg-transparent px-4 font-mono text-3xl font-black text-white focus:border-amber-500 focus:outline-none placeholder:text-slate-700"
           />
         </div>
 

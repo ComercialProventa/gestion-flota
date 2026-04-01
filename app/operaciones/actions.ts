@@ -140,6 +140,8 @@ export async function registrarCargaCombustible(formData: FormData) {
   const hora = formData.get("hora") as string;
   const kilometraje = parseInt(formData.get("kilometraje") as string, 10);
   const litrosCargados = parseFloat(formData.get("litros_cargados") as string);
+  const precioRaw = formData.get("precio_total_pago") as string | null;
+  const precioTotal = precioRaw ? parseInt(precioRaw, 10) : null;
 
   // Validación básica
   if (!busId || !fecha || !hora || isNaN(kilometraje) || isNaN(litrosCargados)) {
@@ -208,6 +210,7 @@ export async function registrarCargaCombustible(formData: FormData) {
       hora,
       kilometraje,
       litros_cargados: litrosCargados,
+      precio_total_pago: precioTotal,
     });
 
   if (dbError) {

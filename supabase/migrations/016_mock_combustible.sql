@@ -82,7 +82,7 @@ BEGIN
     mes_actual := EXTRACT(MONTH FROM fecha_carga);
     IF mes_actual = 1 THEN kml_real := kml_real * 0.85; END IF;
     km_actual := km_actual + (300 + (random() * 200)::INTEGER);
-    litros_val := ROUND((300 + random() * 200) / kml_real, 1);
+    litros_val := ROUND(((300 + random() * 200) / kml_real)::numeric, 1);
     precio_val := ROUND(litros_val * precio_l * (0.95 + random() * 0.1));
     INSERT INTO registros_combustible (bus_id, fecha, hora, kilometraje, litros_cargados, precio_total_pago)
     VALUES (bus_id_var, fecha_carga, LPAD((6 + (random() * 14)::INTEGER)::TEXT, 2, '0') || ':' || LPAD((random() * 59)::INTEGER::TEXT, 2, '0'), km_actual, litros_val, precio_val);
@@ -98,7 +98,7 @@ BEGIN
   WHILE fecha_carga <= fecha_fin LOOP
     kml_real := kml_base * (0.85 + random() * 0.3);
     km_actual := km_actual + (300 + (random() * 200)::INTEGER);
-    litros_val := ROUND((300 + random() * 200) / kml_real, 1);
+    litros_val := ROUND(((300 + random() * 200) / kml_real)::numeric, 1);
     precio_val := ROUND(litros_val * precio_l * (0.95 + random() * 0.1));
     INSERT INTO registros_combustible (bus_id, fecha, hora, kilometraje, litros_cargados, precio_total_pago)
     VALUES (bus_id_var, fecha_carga, LPAD((6 + (random() * 14)::INTEGER)::TEXT, 2, '0') || ':' || LPAD((random() * 59)::INTEGER::TEXT, 2, '0'), km_actual, litros_val, precio_val);
@@ -114,7 +114,7 @@ BEGIN
   WHILE fecha_carga <= fecha_fin LOOP
     kml_real := kml_base * (0.85 + random() * 0.3);
     km_actual := km_actual + (300 + (random() * 200)::INTEGER);
-    litros_val := ROUND((300 + random() * 200) / kml_real, 1);
+    litros_val := ROUND(((300 + random() * 200) / kml_real)::numeric, 1);
     precio_val := ROUND(litros_val * precio_l * (0.95 + random() * 0.1));
     INSERT INTO registros_combustible (bus_id, fecha, hora, kilometraje, litros_cargados, precio_total_pago)
     VALUES (bus_id_var, fecha_carga, LPAD((6 + (random() * 14)::INTEGER)::TEXT, 2, '0') || ':' || LPAD((random() * 59)::INTEGER::TEXT, 2, '0'), km_actual, litros_val, precio_val);
@@ -130,7 +130,7 @@ BEGIN
   WHILE fecha_carga <= fecha_fin LOOP
     kml_real := kml_base * (0.85 + random() * 0.3);
     km_actual := km_actual + (300 + (random() * 200)::INTEGER);
-    litros_val := ROUND((300 + random() * 200) / kml_real, 1);
+    litros_val := ROUND(((300 + random() * 200) / kml_real)::numeric, 1);
     precio_val := ROUND(litros_val * precio_l * (0.95 + random() * 0.1));
     INSERT INTO registros_combustible (bus_id, fecha, hora, kilometraje, litros_cargados, precio_total_pago)
     VALUES (bus_id_var, fecha_carga, LPAD((6 + (random() * 14)::INTEGER)::TEXT, 2, '0') || ':' || LPAD((random() * 59)::INTEGER::TEXT, 2, '0'), km_actual, litros_val, precio_val);
@@ -146,7 +146,7 @@ BEGIN
   WHILE fecha_carga <= fecha_fin LOOP
     kml_real := kml_base * (0.85 + random() * 0.3);
     km_actual := km_actual + (300 + (random() * 200)::INTEGER);
-    litros_val := ROUND((300 + random() * 200) / kml_real, 1);
+    litros_val := ROUND(((300 + random() * 200) / kml_real)::numeric, 1);
     precio_val := ROUND(litros_val * precio_l * (0.95 + random() * 0.1));
     INSERT INTO registros_combustible (bus_id, fecha, hora, kilometraje, litros_cargados, precio_total_pago)
     VALUES (bus_id_var, fecha_carga, LPAD((6 + (random() * 14)::INTEGER)::TEXT, 2, '0') || ':' || LPAD((random() * 59)::INTEGER::TEXT, 2, '0'), km_actual, litros_val, precio_val);
@@ -162,7 +162,7 @@ BEGIN
   WHILE fecha_carga <= fecha_fin LOOP
     kml_real := kml_base * (0.85 + random() * 0.3);
     km_actual := km_actual + (300 + (random() * 200)::INTEGER);
-    litros_val := ROUND((300 + random() * 200) / kml_real, 1);
+    litros_val := ROUND(((300 + random() * 200) / kml_real)::numeric, 1);
     precio_val := ROUND(litros_val * precio_l * (0.95 + random() * 0.1));
     INSERT INTO registros_combustible (bus_id, fecha, hora, kilometraje, litros_cargados, precio_total_pago)
     VALUES (bus_id_var, fecha_carga, LPAD((6 + (random() * 14)::INTEGER)::TEXT, 2, '0') || ':' || LPAD((random() * 59)::INTEGER::TEXT, 2, '0'), km_actual, litros_val, precio_val);
@@ -178,7 +178,7 @@ BEGIN
   WHILE fecha_carga <= fecha_fin LOOP
     kml_real := kml_base * (0.85 + random() * 0.3);
     km_actual := km_actual + (300 + (random() * 200)::INTEGER);
-    litros_val := ROUND((300 + random() * 200) / kml_real, 1);
+    litros_val := ROUND(((300 + random() * 200) / kml_real)::numeric, 1);
     precio_val := ROUND(litros_val * precio_l * (0.95 + random() * 0.1));
     INSERT INTO registros_combustible (bus_id, fecha, hora, kilometraje, litros_cargados, precio_total_pago)
     VALUES (bus_id_var, fecha_carga, LPAD((6 + (random() * 14)::INTEGER)::TEXT, 2, '0') || ':' || LPAD((random() * 59)::INTEGER::TEXT, 2, '0'), km_actual, litros_val, precio_val);
@@ -194,7 +194,7 @@ BEGIN
   WHILE fecha_carga <= fecha_fin LOOP
     kml_real := kml_base * (0.85 + random() * 0.3);
     km_actual := km_actual + (300 + (random() * 200)::INTEGER);
-    litros_val := ROUND((300 + random() * 200) / kml_real, 1);
+    litros_val := ROUND(((300 + random() * 200) / kml_real)::numeric, 1);
     precio_val := ROUND(litros_val * precio_l * (0.95 + random() * 0.1));
     INSERT INTO registros_combustible (bus_id, fecha, hora, kilometraje, litros_cargados, precio_total_pago)
     VALUES (bus_id_var, fecha_carga, LPAD((6 + (random() * 14)::INTEGER)::TEXT, 2, '0') || ':' || LPAD((random() * 59)::INTEGER::TEXT, 2, '0'), km_actual, litros_val, precio_val);
@@ -210,7 +210,7 @@ BEGIN
   WHILE fecha_carga <= fecha_fin LOOP
     kml_real := kml_base * (0.85 + random() * 0.3);
     km_actual := km_actual + (300 + (random() * 200)::INTEGER);
-    litros_val := ROUND((300 + random() * 200) / kml_real, 1);
+    litros_val := ROUND(((300 + random() * 200) / kml_real)::numeric, 1);
     precio_val := ROUND(litros_val * precio_l * (0.95 + random() * 0.1));
     INSERT INTO registros_combustible (bus_id, fecha, hora, kilometraje, litros_cargados, precio_total_pago)
     VALUES (bus_id_var, fecha_carga, LPAD((6 + (random() * 14)::INTEGER)::TEXT, 2, '0') || ':' || LPAD((random() * 59)::INTEGER::TEXT, 2, '0'), km_actual, litros_val, precio_val);
@@ -226,7 +226,7 @@ BEGIN
   WHILE fecha_carga <= fecha_fin LOOP
     kml_real := kml_base * (0.85 + random() * 0.3);
     km_actual := km_actual + (300 + (random() * 200)::INTEGER);
-    litros_val := ROUND((300 + random() * 200) / kml_real, 1);
+    litros_val := ROUND(((300 + random() * 200) / kml_real)::numeric, 1);
     precio_val := ROUND(litros_val * precio_l * (0.95 + random() * 0.1));
     INSERT INTO registros_combustible (bus_id, fecha, hora, kilometraje, litros_cargados, precio_total_pago)
     VALUES (bus_id_var, fecha_carga, LPAD((6 + (random() * 14)::INTEGER)::TEXT, 2, '0') || ':' || LPAD((random() * 59)::INTEGER::TEXT, 2, '0'), km_actual, litros_val, precio_val);

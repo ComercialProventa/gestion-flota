@@ -65,7 +65,7 @@ export default function UsuariosTable({
       <div className="relative">
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500"
+          className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -82,23 +82,23 @@ export default function UsuariosTable({
           value={busqueda}
           onChange={(e) => setBusqueda(e.target.value)}
           placeholder="Buscar por nombre, RUT o correo..."
-          className="w-full rounded border border-white/10 bg-black/40 pl-10 pr-4 py-2 text-[13px] text-white placeholder-slate-500 focus:border-sky-500 focus:ring-1 focus:ring-sky-500/30 focus:outline-none transition-colors"
+          className="w-full rounded-lg border border-border-strong bg-surface-overlay pl-10 pr-4 py-2 text-[13px] text-foreground placeholder:text-zinc-500 focus:border-accent focus:ring-1 focus:ring-accent/20 focus:outline-none transition-colors"
         />
       </div>
 
       {/* Tabla */}
-      <div className="rounded border border-white/10 bg-[#121214] overflow-hidden">
+      <div className="rounded-xl border border-border-default bg-surface-card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-white/5 text-left">
-                <th className="px-5 py-3 font-medium text-slate-400">Nombre</th>
-                <th className="px-5 py-3 font-medium text-slate-400">RUT</th>
-                <th className="px-5 py-3 font-medium text-slate-400 hidden md:table-cell">Correo</th>
-                <th className="px-5 py-3 font-medium text-slate-400">Rol</th>
-                <th className="px-5 py-3 font-medium text-slate-400 hidden lg:table-cell">Creado</th>
+              <tr className="border-b border-border-subtle text-left">
+                <th className="px-5 py-3 font-medium text-zinc-400">Nombre</th>
+                <th className="px-5 py-3 font-medium text-zinc-400">RUT</th>
+                <th className="px-5 py-3 font-medium text-zinc-400 hidden md:table-cell">Correo</th>
+                <th className="px-5 py-3 font-medium text-zinc-400">Rol</th>
+                <th className="px-5 py-3 font-medium text-zinc-400 hidden lg:table-cell">Creado</th>
                 {esAdmin && (
-                  <th className="px-5 py-3 font-medium text-slate-400 text-right">Acciones</th>
+                  <th className="px-5 py-3 font-medium text-zinc-400 text-right">Acciones</th>
                 )}
               </tr>
             </thead>
@@ -107,7 +107,7 @@ export default function UsuariosTable({
                 <tr>
                   <td
                     colSpan={esAdmin ? 6 : 5}
-                    className="px-5 py-8 text-center text-slate-500"
+                    className="px-5 py-8 text-center text-zinc-500"
                   >
                     No se encontraron usuarios
                   </td>
@@ -116,28 +116,28 @@ export default function UsuariosTable({
                 filtrados.map((u) => (
                   <tr
                     key={u.id}
-                    className="border-b border-white/5 hover:bg-white/5 transition-colors"
+                    className="border-b border-border-subtle hover:bg-surface-raised transition-colors"
                   >
                     <td className="px-5 py-3">
-                      <p className="font-semibold text-white">{u.nombre_completo}</p>
-                      <p className="text-xs text-slate-500 md:hidden">{u.correo}</p>
+                      <p className="font-semibold text-foreground">{u.nombre_completo}</p>
+                      <p className="text-xs text-zinc-500 md:hidden">{u.correo}</p>
                     </td>
-                    <td className="px-5 py-3 font-mono text-slate-300 text-xs">
+                    <td className="px-5 py-3 font-mono text-zinc-300 text-xs">
                       {u.rut}
                     </td>
-                    <td className="px-5 py-3 text-slate-300 hidden md:table-cell">
+                    <td className="px-5 py-3 text-zinc-300 hidden md:table-cell">
                       {u.correo}
                     </td>
                     <td className="px-5 py-3">
                       <span
                         className={`inline-block rounded-full border px-2.5 py-0.5 text-xs font-medium ${
-                          ROLES_COLOR[u.rol] || "bg-slate-700 text-slate-300 border-slate-600"
+                          ROLES_COLOR[u.rol] || "bg-zinc-700 text-zinc-300 border-zinc-600"
                         }`}
                       >
                         {ROLES_LABEL[u.rol] || u.rol}
                       </span>
                     </td>
-                    <td className="px-5 py-3 text-xs text-slate-500 hidden lg:table-cell">
+                    <td className="px-5 py-3 text-xs text-zinc-500 hidden lg:table-cell">
                       {u.creado_en
                         ? new Date(u.creado_en).toLocaleDateString("es-CL")
                         : "—"}
@@ -149,7 +149,7 @@ export default function UsuariosTable({
                             <button
                               type="button"
                               onClick={() => onAsignar?.(u)}
-                              className="rounded bg-indigo-600/20 px-2.5 py-1 text-[11px] font-medium text-indigo-400 hover:bg-indigo-600/30 transition-colors cursor-pointer"
+                              className="rounded-lg bg-accent/10 px-2.5 py-1 text-[11px] font-medium text-accent hover:bg-accent/20 transition-colors cursor-pointer"
                             >
                               Flota
                             </button>
@@ -157,14 +157,14 @@ export default function UsuariosTable({
                           <button
                             type="button"
                             onClick={() => onEditarPerfil?.(u)}
-                            className="rounded bg-sky-600/20 px-2.5 py-1 text-[11px] font-medium text-sky-400 hover:bg-sky-600/30 transition-colors cursor-pointer"
+                            className="rounded-lg bg-accent/10 px-2.5 py-1 text-[11px] font-medium text-accent hover:bg-accent/20 transition-colors cursor-pointer"
                           >
                             Editar
                           </button>
                           <button
                             type="button"
                             onClick={() => onCambiarContrasena?.(u)}
-                            className="rounded bg-amber-600/20 px-2.5 py-1 text-[11px] font-medium text-amber-400 hover:bg-amber-600/30 transition-colors cursor-pointer"
+                            className="rounded-lg bg-warning/10 px-2.5 py-1 text-[11px] font-medium text-warning hover:bg-warning/20 transition-colors cursor-pointer"
                           >
                             Password
                           </button>
@@ -179,7 +179,7 @@ export default function UsuariosTable({
         </div>
       </div>
 
-      <p className="text-xs text-slate-600 text-center">
+      <p className="text-xs text-zinc-600 text-center">
         {filtrados.length} de {usuarios.length} usuarios
       </p>
     </div>

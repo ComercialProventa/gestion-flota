@@ -41,11 +41,11 @@ export default function DocumentProgressBar({
     return (
       <div className="space-y-1.5">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-medium text-slate-500">{nombre}</span>
-          <span className="text-xs text-slate-600">Sin fecha</span>
+          <span className="text-xs font-medium text-zinc-500">{nombre}</span>
+          <span className="text-xs text-zinc-600">Sin fecha</span>
         </div>
-        <div className="w-full rounded-full bg-slate-700/50 h-2">
-          <div className="h-2 rounded-full bg-slate-700" style={{ width: "0%" }} />
+        <div className="w-full rounded-full bg-surface-overlay h-2">
+          <div className="h-2 rounded-full bg-zinc-700" style={{ width: "0%" }} />
         </div>
       </div>
     );
@@ -66,12 +66,12 @@ export default function DocumentProgressBar({
   return (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between">
-        <span className="text-xs font-medium text-slate-400">{nombre}</span>
+        <span className="text-xs font-medium text-zinc-400">{nombre}</span>
         <span className={`text-xs font-semibold ${TEXT_COLORS[estadoColor]}`}>
           {textoEstado}
         </span>
       </div>
-      <div className="w-full rounded-full bg-slate-700/40 h-2 overflow-hidden">
+      <div className="w-full rounded-full bg-surface-overlay h-2 overflow-hidden">
         <div
           className={`h-2 rounded-full transition-all duration-500 ${BAR_COLORS[estadoColor]}`}
           style={{ width: `${porcentajeRestante}%` }}

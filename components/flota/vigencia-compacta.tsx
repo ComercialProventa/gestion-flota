@@ -46,13 +46,13 @@ export default function VigenciaCompacta({
     return (
       <div className="space-y-1">
         <div className="flex items-center justify-between">
-          <span className="text-[11px] font-medium text-slate-500">{nombreDocumento}</span>
-          <span className="rounded-full bg-slate-700/50 px-2 py-0.5 text-[10px] font-semibold text-slate-500">
+          <span className="text-[11px] font-medium text-zinc-500">{nombreDocumento}</span>
+          <span className="rounded-full bg-surface-overlay px-2 py-0.5 text-[10px] font-semibold text-zinc-500">
             Sin fecha
           </span>
         </div>
-        <div className="w-full rounded-full bg-slate-700/40 h-1.5">
-          <div className="h-1.5 rounded-full bg-slate-700" style={{ width: "0%" }} />
+        <div className="w-full rounded-full bg-surface-overlay h-1.5">
+          <div className="h-1.5 rounded-full bg-zinc-700" style={{ width: "0%" }} />
         </div>
       </div>
     );
@@ -74,7 +74,7 @@ export default function VigenciaCompacta({
   return (
     <div className="space-y-1">
       <div className="flex items-center gap-2">
-        <span className="text-[11px] font-medium text-slate-400 flex-shrink-0">{nombreDocumento}</span>
+        <span className="text-[11px] font-medium text-zinc-400 flex-shrink-0">{nombreDocumento}</span>
         <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold leading-none ${BADGE_STYLES[estadoColor]}`}>
           {BADGE_TEXT[estadoColor]} · {textoCorto}
         </span>
@@ -82,7 +82,7 @@ export default function VigenciaCompacta({
           <button
             type="button"
             onClick={(e) => { e.preventDefault(); e.stopPropagation(); onRenovar(); }}
-            className="ml-auto rounded-md bg-sky-600/20 p-1 text-sky-400 hover:bg-sky-600/30 transition-colors cursor-pointer flex-shrink-0"
+            className="ml-auto rounded-md bg-accent/10 p-1 text-accent hover:bg-accent/20 transition-colors cursor-pointer flex-shrink-0"
             title={`Renovar ${nombreDocumento}`}
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -91,7 +91,7 @@ export default function VigenciaCompacta({
           </button>
         )}
       </div>
-      <div className="w-full rounded-full bg-slate-700/40 h-1.5 overflow-hidden">
+      <div className="w-full rounded-full bg-surface-overlay h-1.5 overflow-hidden">
         <div
           className={`h-1.5 rounded-full transition-all duration-500 ${BAR_COLORS[estadoColor]}`}
           style={{ width: `${porcentajeRestante}%` }}

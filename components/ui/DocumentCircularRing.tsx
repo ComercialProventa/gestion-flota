@@ -60,16 +60,16 @@ export default function DocumentCircularRing({
               cy={size / 2}
               r={radius}
               fill="none"
-              stroke="rgb(51 65 85 / 0.4)"
+              stroke="rgb(63 63 70 / 0.4)"
               strokeWidth={strokeWidth}
             />
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-lg font-bold text-slate-600">—</span>
-            <span className="text-[9px] uppercase tracking-wider text-slate-600">N/A</span>
+            <span className="text-lg font-bold text-zinc-600">—</span>
+            <span className="text-[9px] uppercase tracking-wider text-zinc-600">N/A</span>
           </div>
         </div>
-        <span className="text-xs font-medium text-slate-500">{nombre}</span>
+        <span className="text-xs font-medium text-zinc-500">{nombre}</span>
       </div>
     );
   }
@@ -87,7 +87,7 @@ export default function DocumentCircularRing({
             cy={size / 2}
             r={radius}
             fill="none"
-            stroke="rgb(51 65 85 / 0.3)"
+            stroke="rgb(63 63 70 / 0.3)"
             strokeWidth={strokeWidth}
           />
           {/* Progreso */}
@@ -114,9 +114,9 @@ export default function DocumentCircularRing({
           </span>
         </div>
       </div>
-      <span className="text-xs font-medium text-slate-300">{nombre}</span>
+      <span className="text-xs font-medium text-zinc-300">{nombre}</span>
       {fechaVencimiento && (
-        <span className="text-[10px] text-slate-500">
+        <span className="text-[10px] text-zinc-500">
           {new Date(fechaVencimiento).toLocaleDateString("es-CL")}
         </span>
       )}

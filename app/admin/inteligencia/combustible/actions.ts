@@ -76,6 +76,39 @@ export type KpiResumen = {
   totalUnidades: number;
 };
 
+export type Problema = {
+  busId: string;
+  patente: string;
+  marca: string;
+  modelo: string;
+  conductor: string | null;
+  tipo: "ineficiencia" | "costo" | "caida";
+  titulo: string;
+  detalle: string;
+  accion: string;
+  valor: number;
+  referencia: number;
+};
+
+export type ConductorRendimiento = {
+  conductorId: string;
+  nombre: string;
+  unidades: string[];
+  kmL: number;
+  costoPorKm: number | null;
+  gastoTotal: number;
+  kmTotal: number;
+  viajes: number;
+};
+
+export type Proyeccion = {
+  gastoProyectado: number;
+  gastoAnterior: number;
+  variacionPct: number;
+  costoKmProyectado: number | null;
+  diasAnalizados: number;
+};
+
 // ─── HELPERS ────────────────────────────────────────────────
 
 function getSemanaISO(date: Date): string {
@@ -330,6 +363,228 @@ export async function obtenerAlertasEstanque(): Promise<AlertaEstanque[]> {
     capacidadEstanque: 0, litrosIntentados: 0, excedentePct: 0,
     fecha: a.creado_en, titulo: a.titulo,
   }));
+}
+
+// ─── TOP 3 PROBLEMAS ────────────────────────────────────────
+
+export async function obtenerTopProblemas(desde?: string, hasta?: string): Promise<Problema[]> {
+  const ranking = await obtenerRanking(desde, hasta);
+  const rendimiento = await obtenerRendimientoFlota(desde, hasta);
+  if (ranking.length === 0) return [];
+
+  const supabase = await createClient();
+
+  // Obtener asignaciones de conductores
+  const { data: asignaciones } = await supabase
+    .from("asignacion_flota")
+    .select("bus_id, usuarios(nombre_completo)");
+
+  const conductorPorBus = new Map<string, string>();
+  if (asignaciones) {
+    for (const a of asignaciones as any[]) {
+      if (a.usuarios?.nombre_completo) {
+        conductorPorBus.set(a.bus_id, a.usuarios.nombre_completo);
+      }
+    }
+  }
+
+  const problemas: Problema[] = [];
+  const kmLs = ranking.filter(r => r.kmL > 0).map(r => r.kmL);
+  const promedioFlota = kmLs.length > 0 ? kmLs.reduce((a, b) => a + b, 0) / kmLs.length : 0;
+  const costos = ranking.filter(r => r.costoPorKm !== null).map(r => r.costoPorKm!);
+  const costoPromedio = costos.length > 0 ? costos.reduce((a, b) => a + b, 0) / costos.length : 0;
+  const gastoPromedio = ranking.length > 0 ? ranking.reduce((a, r) => a + r.gastoTotal, 0) / ranking.length : 0;
+
+  // 1. Unidad más ineficiente (peor Km/L)
+  const peorKmL = ranking[0];
+  if (peorKmL && peorKmL.kmL > 0 && peorKmL.kmL < promedioFlota * 0.75) {
+    problemas.push({
+      busId: peorKmL.busId, patente: peorKmL.patente, marca: peorKmL.marca, modelo: peorKmL.modelo,
+      conductor: conductorPorBus.get(peorKmL.busId) || null,
+      tipo: "ineficiencia",
+      titulo: `Unidad más ineficiente: ${peorKmL.patente}`,
+      detalle: `Rinde ${peorKmL.kmL} Km/L vs promedio flota de ${promedioFlota.toFixed(1)} Km/L (${Math.round(((peorKmL.kmL - promedioFlota) / promedioFlota) * 100)}% bajo el promedio).`,
+      accion: conductorPorBus.get(peorKmL.busId)
+        ? `Revisar con ${conductorPorBus.get(peorKmL.busId)} las cargas de este periodo. Verificar si hay rutas con mayor pendiente o tráfico.`
+        : "Asignar conductor responsable y revisar cargas del periodo.",
+      valor: peorKmL.kmL,
+      referencia: promedioFlota,
+    });
+  }
+
+  // 2. Unidad más cara por km
+  const masCara = [...ranking].filter(r => r.costoPorKm !== null).sort((a, b) => (b.costoPorKm || 0) - (a.costoPorKm || 0))[0];
+  if (masCara && masCara.costoPorKm && masCara.costoPorKm > costoPromedio * 1.4) {
+    problemas.push({
+      busId: masCara.busId, patente: masCara.patente, marca: masCara.marca, modelo: masCara.modelo,
+      conductor: conductorPorBus.get(masCara.busId) || null,
+      tipo: "costo",
+      titulo: `Costo más alto: ${masCara.patente}`,
+      detalle: `Cuesta $${masCara.costoPorKm.toLocaleString("es-CL")}/km vs promedio de $${Math.round(costoPromedio).toLocaleString("es-CL")}/km. Gasto total: $${masCara.gastoTotal.toLocaleString("es-CL")}.`,
+      accion: "Verificar si el precio de combustible en la estación de esta unidad es superior, o si hay exceso de cargas cortas.",
+      valor: masCara.costoPorKm,
+      referencia: costoPromedio,
+    });
+  }
+
+  // 3. Unidad que más empeoró (mayor caída vs su propio promedio)
+  const conCaida = rendimiento.filter(r => r.variacionPct < -20).sort((a, b) => a.variacionPct - b.variacionPct)[0];
+  if (conCaida) {
+    problemas.push({
+      busId: conCaida.busId, patente: conCaida.patente, marca: conCaida.marca, modelo: conCaida.modelo,
+      conductor: conductorPorBus.get(conCaida.busId) || null,
+      tipo: "caida",
+      titulo: `Mayor caída: ${conCaida.patente}`,
+      detalle: `Cayó ${conCaida.variacionPct}% vs su propio promedio histórico. De ${conCaida.promedioHistorico} a ${conCaida.rendimientoActual} Km/L.`,
+      accion: conductorPorBus.get(conCaida.busId)
+        ? `Consultar con ${conductorPorBus.get(conCaida.busId)} qué cambió este periodo. Revisar mantención mecánica y presión de neumáticos.`
+        : "Revisar mantención mecánica, presión de neumáticos y registros de carga.",
+      valor: conCaida.rendimientoActual,
+      referencia: conCaida.promedioHistorico,
+    });
+  }
+
+  // Si no hay problemas suficientes, completar con la que más gasta
+  if (problemas.length < 3) {
+    const masGasta = [...ranking].sort((a, b) => b.gastoTotal - a.gastoTotal)[0];
+    if (masGasta && !problemas.find(p => p.busId === masGasta.busId)) {
+      problemas.push({
+        busId: masGasta.busId, patente: masGasta.patente, marca: masGasta.marca, modelo: masGasta.modelo,
+        conductor: conductorPorBus.get(masGasta.busId) || null,
+        tipo: "costo",
+        titulo: `Mayor gasto: ${masGasta.patente}`,
+        detalle: `Gastó $${masGasta.gastoTotal.toLocaleString("es-CL")} este periodo (${masGasta.kmTotal.toLocaleString("es-CL")} km recorridos).`,
+        accion: "Comparar con unidades del mismo modelo. Verificar si tiene más km que las demás.",
+        valor: masGasta.gastoTotal,
+        referencia: gastoPromedio,
+      });
+    }
+  }
+
+  return problemas.slice(0, 3);
+}
+
+// ─── CORRELACIÓN CONDUCTOR ──────────────────────────────────
+
+export async function obtenerCorrelacionConductor(desde?: string, hasta?: string): Promise<ConductorRendimiento[]> {
+  const supabase = await createClient();
+
+  // Obtener asignaciones con datos del conductor
+  const { data: asignaciones } = await supabase
+    .from("asignacion_flota")
+    .select("usuario_id, bus_id, usuarios(id, nombre_completo)");
+
+  if (!asignaciones || asignaciones.length === 0) return [];
+
+  // Obtener registros de combustible
+  let query = supabase
+    .from("registros_combustible")
+    .select("bus_id, kilometraje, litros_cargados, precio_total_pago, fecha")
+    .order("fecha", { ascending: true });
+
+  if (desde) query = query.gte("fecha", desde);
+  if (hasta) query = query.lte("fecha", hasta);
+
+  const { data: registros } = await query;
+  if (!registros || registros.length === 0) return [];
+
+  // Agrupar asignaciones por conductor
+  const porConductor = new Map<string, { id: string; nombre: string; buses: string[] }>();
+  for (const a of asignaciones as unknown as any[]) {
+    const uid = a.usuario_id;
+    const nombre = a.usuarios?.nombre_completo || "Sin nombre";
+    const entry = porConductor.get(uid) || { id: uid, nombre, buses: [] as string[] };
+    if (!entry.buses.includes(a.bus_id)) entry.buses.push(a.bus_id);
+    porConductor.set(uid, entry);
+  }
+
+  const resultado: ConductorRendimiento[] = [];
+
+  for (const [, cond] of porConductor) {
+    const regsDelConductor = registros.filter(r => cond.buses.includes(r.bus_id));
+    if (regsDelConductor.length < 2) continue;
+
+    // Agrupar por bus y calcular
+    let totalKm = 0; let totalLitros = 0; let totalGasto = 0; let viajes = 0;
+    const busesConDatos: string[] = [];
+
+    for (const busId of cond.buses) {
+      const regsBus = regsDelConductor.filter(r => r.bus_id === busId);
+      if (regsBus.length < 2) continue;
+      busesConDatos.push(busId);
+
+      for (let i = 1; i < regsBus.length; i++) {
+        const kmRec = regsBus[i].kilometraje - regsBus[i - 1].kilometraje;
+        if (kmRec > 0) {
+          totalKm += kmRec;
+          totalLitros += regsBus[i].litros_cargados;
+          totalGasto += regsBus[i].precio_total_pago || 0;
+          viajes++;
+        }
+      }
+    }
+
+    if (viajes === 0) continue;
+
+    resultado.push({
+      conductorId: cond.id,
+      nombre: cond.nombre,
+      unidades: busesConDatos,
+      kmL: totalLitros > 0 ? Math.round((totalKm / totalLitros) * 100) / 100 : 0,
+      costoPorKm: totalGasto > 0 && totalKm > 0 ? Math.round(totalGasto / totalKm) : null,
+      gastoTotal: totalGasto,
+      kmTotal: totalKm,
+      viajes,
+    });
+  }
+
+  // Marcar alertas
+  const kmLs = resultado.filter(r => r.kmL > 0).map(r => r.kmL);
+  if (kmLs.length > 0) {
+    const promedio = kmLs.reduce((a, b) => a + b, 0) / kmLs.length;
+    const umbral = promedio * 0.7;
+    resultado.forEach(r => { if (r.kmL > 0 && r.kmL < umbral) r.viajes = -r.viajes; }); // viajes negativo = alerta
+  }
+
+  resultado.sort((a, b) => a.kmL - b.kmL); // Peores primero
+  return resultado;
+}
+
+// ─── PROYECCIÓN MENSUAL ─────────────────────────────────────
+
+export async function obtenerProyeccion(desde?: string, hasta?: string): Promise<Proyeccion> {
+  if (!desde || !hasta) return { gastoProyectado: 0, gastoAnterior: 0, variacionPct: 0, costoKmProyectado: null, diasAnalizados: 0 };
+
+  const diasPeriodo = Math.ceil((new Date(hasta).getTime() - new Date(desde).getTime()) / 86400000) + 1;
+  const kpis = await obtenerKpis(desde, hasta);
+
+  // Proyectar a 30 días
+  const gastoDiario = kpis.gastoTotalPeriodo / diasPeriodo;
+  const gastoProyectado = Math.round(gastoDiario * 30);
+  const kmDiario = kpis.kmTotalesPeriodo / diasPeriodo;
+  const kmProyectado = kmDiario * 30;
+  const costoKmProyectado = kmProyectado > 0 ? Math.round(gastoProyectado / kmProyectado) : null;
+
+  // Periodo anterior para comparar
+  const d1 = new Date(desde); const d2 = new Date(hasta);
+  const ant = (() => {
+    const antHasta = new Date(d1); antHasta.setDate(antHasta.getDate() - 1);
+    const antDesde = new Date(antHasta); antDesde.setDate(antDesde.getDate() - diasPeriodo + 1);
+    return { desde: toISO(antDesde), hasta: toISO(antHasta) };
+  })();
+
+  const kpisAnt = await obtenerKpis(ant.desde, ant.hasta);
+  const variacionPct = kpisAnt.gastoTotalPeriodo > 0
+    ? Math.round(((kpis.gastoTotalPeriodo - kpisAnt.gastoTotalPeriodo) / kpisAnt.gastoTotalPeriodo) * 100)
+    : 0;
+
+  return {
+    gastoProyectado,
+    gastoAnterior: kpisAnt.gastoTotalPeriodo,
+    variacionPct,
+    costoKmProyectado,
+    diasAnalizados: diasPeriodo,
+  };
 }
 
 // ─── RESOLVER ALERTA ────────────────────────────────────────

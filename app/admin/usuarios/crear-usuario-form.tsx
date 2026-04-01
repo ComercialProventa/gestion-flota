@@ -44,19 +44,19 @@ export default function CrearUsuarioForm() {
     <div className="space-y-6">
       {/* Mensaje de éxito con la contraseña generada */}
       {resultado && (
-        <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-5">
+        <div className="rounded-md border border-green/30 bg-green/10 p-5">
           <div className="flex items-center gap-2 mb-3">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <p className="font-semibold text-emerald-400">{resultado.mensaje}</p>
+            <p className="font-semibold text-green">{resultado.mensaje}</p>
           </div>
-          <div className="rounded-lg bg-slate-900/50 p-4">
-            <p className="text-sm text-slate-400 mb-1">Contraseña generada:</p>
-            <p className="font-mono text-lg font-bold text-white tracking-wider">
+          <div className="rounded-md bg-background p-4">
+            <p className="text-[11px] font-medium text-dim mb-1">Contraseña generada:</p>
+            <p className="font-mono text-lg font-bold text-foreground tracking-wider">
               {resultado.contrasena}
             </p>
-            <p className="mt-2 text-xs text-slate-500">
+            <p className="mt-2 text-xs text-dim">
               ! Anota esta contraseña. No se podrá visualizar nuevamente.
             </p>
           </div>
@@ -65,7 +65,7 @@ export default function CrearUsuarioForm() {
 
       {/* Mensaje de error */}
       {error && (
-        <div className="rounded-lg bg-red-500/10 border border-red-500/30 px-4 py-3 text-sm text-red-400">
+        <div className="rounded-md bg-red/10 border border-red/30 px-4 py-3 text-sm text-red">
           {error}
         </div>
       )}
@@ -74,7 +74,7 @@ export default function CrearUsuarioForm() {
       <form action={handleSubmit} className="space-y-5">
         {/* Nombre Completo */}
         <div>
-          <label htmlFor="nombre_completo" className="block text-sm font-medium text-slate-300 mb-1.5">
+          <label htmlFor="nombre_completo" className="text-[11px] font-medium text-dim mb-1">
             Nombre Completo
           </label>
           <input
@@ -83,13 +83,13 @@ export default function CrearUsuarioForm() {
             type="text"
             required
             placeholder="Ej: Juan Pérez González"
-            className="w-full rounded-lg border border-slate-600 bg-slate-700/50 px-4 py-2.5 text-white placeholder-slate-400 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 focus:outline-none transition-colors"
+            className="w-full bg-surface rounded-md px-3 py-2 text-[13px] text-foreground placeholder:text-dim focus:ring-1 focus:ring-accent/30 focus:outline-none transition-colors"
           />
         </div>
 
         {/* RUT */}
         <div>
-          <label htmlFor="rut" className="block text-sm font-medium text-slate-300 mb-1.5">
+          <label htmlFor="rut" className="text-[11px] font-medium text-dim mb-1">
             RUT
           </label>
           <input
@@ -98,13 +98,13 @@ export default function CrearUsuarioForm() {
             type="text"
             required
             placeholder="Ej: 12.345.678-9"
-            className="w-full rounded-lg border border-slate-600 bg-slate-700/50 px-4 py-2.5 text-white placeholder-slate-400 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 focus:outline-none transition-colors"
+            className="w-full bg-surface rounded-md px-3 py-2 text-[13px] text-foreground placeholder:text-dim focus:ring-1 focus:ring-accent/30 focus:outline-none transition-colors"
           />
         </div>
 
         {/* Correo Electrónico */}
         <div>
-          <label htmlFor="correo" className="block text-sm font-medium text-slate-300 mb-1.5">
+          <label htmlFor="correo" className="text-[11px] font-medium text-dim mb-1">
             Correo Electrónico
           </label>
           <input
@@ -113,13 +113,13 @@ export default function CrearUsuarioForm() {
             type="email"
             required
             placeholder="Ej: juan.perez@empresa.cl"
-            className="w-full rounded-lg border border-slate-600 bg-slate-700/50 px-4 py-2.5 text-white placeholder-slate-400 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 focus:outline-none transition-colors"
+            className="w-full bg-surface rounded-md px-3 py-2 text-[13px] text-foreground placeholder:text-dim focus:ring-1 focus:ring-accent/30 focus:outline-none transition-colors"
           />
         </div>
 
         {/* Rol */}
         <div>
-          <label htmlFor="rol" className="block text-sm font-medium text-slate-300 mb-1.5">
+          <label htmlFor="rol" className="text-[11px] font-medium text-dim mb-1">
             Rol
           </label>
           <select
@@ -127,7 +127,7 @@ export default function CrearUsuarioForm() {
             name="rol"
             required
             defaultValue=""
-            className="w-full rounded-lg border border-slate-600 bg-slate-700/50 px-4 py-2.5 text-white focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 focus:outline-none transition-colors"
+            className="w-full bg-surface rounded-md px-3 py-2 text-[13px] text-foreground focus:ring-1 focus:ring-accent/30 focus:outline-none transition-colors"
           >
             <option value="" disabled>
               Selecciona un rol
@@ -143,7 +143,7 @@ export default function CrearUsuarioForm() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full rounded-lg bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-sky-600/25 hover:bg-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 cursor-pointer"
+          className="w-full rounded-md bg-accent px-4 py-2.5 text-[13px] font-semibold text-foreground hover:bg-accent-hover focus:outline-none focus:ring-1 focus:ring-accent/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 cursor-pointer"
         >
           {loading ? (
             <span className="inline-flex items-center gap-2">
